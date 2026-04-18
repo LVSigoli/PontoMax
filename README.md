@@ -1,40 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# PontoMax
 
-## Getting Started
+PontoMax é uma aplicação web para registro e gestão de ponto eletrônico em pequenas e médias empresas. O sistema foi pensado para reduzir controles manuais, melhorar a confiabilidade dos registros e oferecer uma visão gerencial clara sobre jornadas, horas extras, feriados, escalas e solicitações de ajuste.
 
-First, run the development server:
+## Objetivo
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+O produto atende empresas que precisam controlar a jornada de seus colaboradores de forma simples, confiável e flexível. A experiência principal deve ser rápida para o funcionário registrar ponto e robusta para gestores acompanharem inconsistências, solicitações e indicadores operacionais.
+
+## Contexto De Domínio
+
+O PontoMax é multiempresa. Um cliente contratante pode possuir uma ou mais empresas no sistema, e cada empresa mantém seus próprios usuários, jornadas, feriados e registros.
+
+Perfis principais:
+
+- Funcionário: registra ponto, consulta histórico e solicita ajustes.
+- Gerente: analisa solicitações de ajuste, aprovando ou recusando correções.
+- Cliente: representa o contratante do serviço e pode agrupar múltiplas empresas.
+
+## Regras De Negócio
+
+- Uma empresa pode possuir vários usuários.
+- Um usuário pertence a apenas uma empresa.
+- Um usuário segue uma jornada.
+- Uma jornada pode estar associada a vários usuários.
+- Uma empresa pode possuir vários feriados cadastrados.
+- Um usuário pode registrar vários pontos.
+- Um usuário pode criar várias solicitações de ajuste.
+- Usuários gerenciais podem analisar solicitações de ajuste.
+- Registros de ponto não devem ser editados diretamente.
+- Alterações devem ocorrer apenas via solicitação de ajuste.
+- Feriados e dias não úteis podem impactar o cálculo de horas extras.
+- O sistema deve preservar integridade, auditoria e histórico das operações.
+
+## Módulos
+
+- Autenticação e recuperação de senha.
+- Gestão de clientes.
+- Gestão de empresas.
+- Gestão de usuários.
+- Configuração de jornadas.
+- Configuração de feriados.
+- Registro de ponto.
+- Histórico de jornada.
+- Solicitação e análise de ajustes.
+- Dashboard com indicadores gerenciais.
+
+## Entidades Principais
+
+- Cliente
+- Empresa
+- Usuário
+- Jornada
+- Feriado
+- Registro de Ponto
+- Solicitação de Ajuste
+- Ajuste de Ponto
+
+## Arquitetura De Pastas
+
+```text
+src/
+  api/                 lógica interna de backend e domínio
+  assets/              recursos estáticos internos
+  components/
+    pages/             componentes de página
+    structure/         layout, navegação e estrutura da aplicação
+  hooks/               hooks globais
+  pages/               rotas do Pages Router do Next.js
+    api/               rotas HTTP de backend do Next.js
+  services/            consumo de rotas e integrações
+  styles/              estilos globais e design system
+  utils/               utilitários globais
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Design System
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+O projeto usa Tailwind CSS v4 com tokens declarados em `src/styles/design-system.css`.
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+Principais famílias de tokens:
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+- `brand`: ações primárias e foco.
+- `navy`: navegação, sidebar e textos fortes.
+- `surface`: fundos de página, cards, overlays e áreas neutras.
+- `content`: textos primários, secundários, discretos e inversos.
+- `border`: bordas sutis, padrão, fortes e semânticas.
+- `success`, `warning`, `danger`, `info`: estados operacionais.
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Exemplo:
 
-## Learn More
+```tsx
+<button className="bg-brand-600 text-content-inverse hover:bg-brand-700">
+  Registrar ponto
+</button>
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+```bash
+pnpm run dev
+pnpm run build
+pnpm run lint
+pnpm run typecheck
+pnpm run format
+pnpm run format:check
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Diretrizes Técnicas
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+- Priorizar simplicidade e clareza de domínio.
+- Separar responsabilidades sem excesso de abstração.
+- Manter nomes consistentes com o negócio de ponto eletrônico.
+- Preservar rastreabilidade em ajustes de ponto.
+- Evitar edição direta de registros já criados.
+- Favorecer código legível, testável e adequado para evolução acadêmica e prática.
