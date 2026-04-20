@@ -3,6 +3,7 @@ import React from "react"
 
 // Assets
 import ClockIcon from "@/assets/icons/clock.svg"
+import LockIcon from "@/assets/icons/lock.svg"
 
 // Components
 import { Button } from "@/components/structure/Button"
@@ -17,7 +18,9 @@ interface Props {
   onBackToLoginClick?: () => void
 }
 
-export const ReplacePasswordForm: React.FC<Props> = ({ onBackToLoginClick }) => {
+export const ReplacePasswordForm: React.FC<Props> = ({
+  onBackToLoginClick,
+}) => {
   // Hooks
   const { credential, handleCredentialChange } = useReplacePassword()
 
@@ -34,7 +37,7 @@ export const ReplacePasswordForm: React.FC<Props> = ({ onBackToLoginClick }) => 
       onSubmit={handleSubmit}
     >
       <div className="mb-8 flex flex-col items-center text-center">
-        <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse shadow-[0_10px_24px_rgba(37,99,235,0.28)]">
+        <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse ">
           <Icon src={ClockIcon} size="1.25rem" />
         </div>
 
@@ -50,6 +53,7 @@ export const ReplacePasswordForm: React.FC<Props> = ({ onBackToLoginClick }) => 
         <Input
           title="nova senha"
           type="password"
+          icon={LockIcon}
           value={credential.password}
           placeholder="Informe sua nova senha"
           onChange={(v) => handleCredentialChange("password", v)}
@@ -58,6 +62,7 @@ export const ReplacePasswordForm: React.FC<Props> = ({ onBackToLoginClick }) => 
         <Input
           title="confirmar senha"
           type="password"
+          icon={LockIcon}
           value={credential.confirmPassword}
           placeholder="Confirme sua nova senha"
           onChange={(v) => handleCredentialChange("confirmPassword", v)}

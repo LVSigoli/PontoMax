@@ -3,6 +3,7 @@ import React from "react"
 
 // Assets
 import ClockIcon from "@/assets/icons/clock.svg"
+import MailIcon from "@/assets/icons/mail.svg"
 
 // Components
 import { Button } from "@/components/structure/Button"
@@ -36,7 +37,7 @@ export const RecoverPasswordForm: React.FC<Props> = ({
       onSubmit={handleSubmit}
     >
       <div className="mb-8 flex flex-col items-center text-center">
-        <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse shadow-[0_10px_24px_rgba(37,99,235,0.28)]">
+        <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse">
           <Icon src={ClockIcon} size="1.25rem" />
         </div>
 
@@ -51,6 +52,7 @@ export const RecoverPasswordForm: React.FC<Props> = ({
       <div className="space-y-4">
         <Input
           title="email"
+          icon={MailIcon}
           value={credential.email}
           placeholder="seu@email.com.br"
           onChange={(v) => handleCredentialChange("email", v)}
