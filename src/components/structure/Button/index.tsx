@@ -11,6 +11,7 @@ export const Button: React.FC<Props> = ({
   value,
   disabled,
   className = "",
+  color = "brand",
   fitWidth = false,
   loading = false,
   type = "button",
@@ -27,7 +28,7 @@ export const Button: React.FC<Props> = ({
       type={type}
       disabled={isDisabled}
       onClick={onClick}
-      className={`${BUTTON_BASE_CLASS} ${BUTTON_VARIANTS[variant]} ${widthClass} ${className}`}
+      className={`${BUTTON_BASE_CLASS} ${BUTTON_VARIANTS[color][variant]} ${widthClass} ${className}`}
     >
       {loading ? (
         <span
@@ -41,4 +42,4 @@ export const Button: React.FC<Props> = ({
   )
 }
 
-export type { ButtonVariant } from "./types"
+export type { ButtonColor, ButtonVariant } from "./types"

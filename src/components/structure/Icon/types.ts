@@ -4,5 +4,5 @@ export interface Props {
   src: string | StaticImageData
   size?: string
   alt?: string
-  placement?: "start" | "end"
+  placement?: "start" | "end" | "center"
 }

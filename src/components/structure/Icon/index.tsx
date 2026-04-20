@@ -11,7 +11,11 @@ export const Icon: React.FC<Props> = ({
   size = "1rem",
   placement = "start",
 }) => {
-  const placementClass = placement === "end" ? "right-3" : "left-3"
+  const placementClass = {
+    center: "left-1/2 -translate-x-1/2",
+    end: "right-3",
+    start: "left-3",
+  }[placement]
 
   return (
     <Image

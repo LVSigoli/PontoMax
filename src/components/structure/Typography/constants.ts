@@ -59,5 +59,5 @@ export const TYPOGRAPHY_VARIANTS: Record<TypographyVariant, VariantConfig> = {
 export const TYPOGRAPHY_COLORS: Record<TypographyColor, string> = {
   primary: "text-content-primary",
   secondary: "text-content-secondary",
-  white: "text-content-invers",
+  white: "text-content-inverse",
 }
