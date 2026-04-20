@@ -8,6 +8,7 @@ import { Icon } from "../Icon"
 import { MASK } from "@/services/maskModule"
 
 // Types
+import { Typography } from "../Typography"
 import { Props } from "./types"
 
 export const Input: React.FC<Props> = ({
@@ -50,9 +51,7 @@ export const Input: React.FC<Props> = ({
 
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-content-secondary">
-        {title}
-      </span>
+      <Typography variant="b2" value={title} />
 
       <span className="relative block">
         {renderStartIcon()}

@@ -42,14 +42,14 @@ export const Login: React.FC = () => {
 
             <div className="space-y-4">
               <Input
-                title="E-mail"
+                title="email"
                 value={credential.email}
                 placeholder="seu@email.com.br"
                 onChange={(v) => handleCredentialChange("email", v)}
               />
 
               <Input
-                title="Senha"
+                title="senha"
                 value={credential.passWord}
                 placeholder="Informe sua senha"
                 onChange={(v) => handleCredentialChange("password", v)}
