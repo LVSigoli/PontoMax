@@ -1,37 +1,50 @@
 // External Libraries
 import React from "react"
 
+// Assets
+import ClockIcon from "@/assets/icons/clock.svg"
+
 // Components
 import { Button } from "@/components/structure/Button"
 import { Icon } from "@/components/structure/Icon"
 import { Input } from "@/components/structure/Input"
 import { Typography } from "@/components/structure/Typography"
 
-// Assets
-import ClockIcon from "@/assets/icons/clock.svg"
-
 // Hooks
-import { useLogin } from "./hooks"
+import { useRecoverPassword } from "./hooks"
 
-// Types
-import { Props } from "./types"
+interface Props {
+  onBackToLoginClick?: () => void
+}
 
-export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
+export const RecoverPasswordForm: React.FC<Props> = ({
+  onBackToLoginClick,
+}) => {
   // Hooks
-  const { credential, handleCredentialChange } = useLogin()
+  const { credential, handleCredentialChange } = useRecoverPassword()
+
+  // Functions
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+    event.preventDefault()
+    console.log("recover password", credential)
+  }
 
   return (
-    <form className="w-full max-w-90" aria-labelledby="login-title">
+    <form
+      className="w-full max-w-90"
+      aria-labelledby="recover-password-title"
+      onSubmit={handleSubmit}
+    >
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse shadow-[0_10px_24px_rgba(37,99,235,0.28)]">
           <Icon src={ClockIcon} size="1.25rem" />
         </div>
 
-        <Typography variant="b1" fontWeight="bold" value="PontoMax" />
+        <Typography variant="b1" fontWeight="bold" value="Recuperar senha" />
 
         <Typography
           variant="b2"
-          value="Sistema de Gestão de Ponto Eletrônico"
+          value="Informe seu e-mail para receber as instruções de recuperação."
         />
       </div>
 
@@ -42,27 +55,20 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
           placeholder="seu@email.com.br"
           onChange={(v) => handleCredentialChange("email", v)}
         />
-
-        <Input
-          title="senha"
-          value={credential.password}
-          placeholder="Informe sua senha"
-          onChange={(v) => handleCredentialChange("password", v)}
-        />
       </div>
 
       <Button
         fitWidth
-        variant="text"
-        value="Esqueci minha senha"
-        onClick={onForgotPasswordClick}
+        type="submit"
+        value="Enviar instruções"
+        className="mt-7"
       />
 
       <Button
         fitWidth
-        type="submit"
-        value="Enviar"
-        onClick={() => console.log("oi submit")}
+        variant="text"
+        value="Voltar para login"
+        onClick={onBackToLoginClick}
       />
     </form>
   )

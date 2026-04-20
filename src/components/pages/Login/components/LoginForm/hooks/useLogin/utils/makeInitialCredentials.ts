@@ -1,3 +1,3 @@
 export function makeInitialCredential() {
-  return { email: "", passWord: "" }
+  return { email: "", password: "" }
 }

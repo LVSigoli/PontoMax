@@ -12,8 +12,11 @@ export function useLogin() {
   const [credential, setCredential] = useState(makeInitialCredential)
 
   // Functions
-  function handleCredentialChange(key: keyof Credential, value: unknown) {
-    setCredential({ ...credential, [key]: value })
+  function handleCredentialChange(key: keyof Credential, value: string) {
+    setCredential((currentCredential) => ({
+      ...currentCredential,
+      [key]: value,
+    }))
   }
 
   return { credential, handleCredentialChange }

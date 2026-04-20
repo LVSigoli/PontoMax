@@ -1,0 +1,1 @@
+export { makeInitialRecoverPasswordCredential } from "./makeInitialRecoverPasswordCredential"

@@ -1,0 +1,1 @@
+export { makeInitialReplacePasswordCredential } from "./makeInitialReplacePasswordCredential"

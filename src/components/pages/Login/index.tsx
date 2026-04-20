@@ -4,11 +4,25 @@ import React from "react"
 // Components
 import { Banner } from "./components/Banner"
 import { LoginForm } from "./components/LoginForm"
+import { RecoverPasswordForm } from "./components/RecoverPasswordForm"
+import { ReplacePasswordForm } from "./components/ReplacePasswordForm"
+import { useLoginPage } from "./hooks/useLoginPage"
 
 export const Login: React.FC = () => {
+  // Hooks
+  const { view, handleForgotPasswordClick, handleLoginClick } = useLoginPage()
+
   // Functions
   function renderForm() {
-    return <LoginForm />
+    if (view === "forgot-password") {
+      return <RecoverPasswordForm onBackToLoginClick={handleLoginClick} />
+    }
+
+    if (view === "replace-password") {
+      return <ReplacePasswordForm onBackToLoginClick={handleLoginClick} />
+    }
+
+    return <LoginForm onForgotPasswordClick={handleForgotPasswordClick} />
   }
 
   return (
