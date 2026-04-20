@@ -69,5 +69,3 @@ export const SidePanel = forwardRef<SidePanelMethods, SidePanelProps>(
 )
 
 SidePanel.displayName = "SidePanel"
-
-export type { SidePanelMethods, SidePanelProps } from "./types"

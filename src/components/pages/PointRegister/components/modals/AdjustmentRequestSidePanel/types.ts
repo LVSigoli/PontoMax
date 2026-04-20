@@ -1,5 +1,4 @@
-import type { SidePanelMethods } from "@/components/structure/SidePanel"
-
+import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
 import type { PointRecord, PointRecordType } from "../../../types"
 
 export type AdjustmentRequestSidePanelMethods = SidePanelMethods

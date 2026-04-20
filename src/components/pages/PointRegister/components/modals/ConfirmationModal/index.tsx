@@ -70,5 +70,3 @@ export const ConfirmationModal = forwardRef<
 })
 
 ConfirmationModal.displayName = "ConfirmationModal"
-
-export type { ConfirmationModalMethods } from "./types"

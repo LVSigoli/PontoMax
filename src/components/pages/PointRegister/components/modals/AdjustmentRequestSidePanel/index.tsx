@@ -3,34 +3,25 @@ import { forwardRef, useImperativeHandle, useRef } from "react"
 
 // Components
 import { Button } from "@/components/structure/Button"
-import {
-  SidePanel,
-  type SidePanelMethods,
-} from "@/components/structure/SidePanel"
-import {
-  Table,
-  type TableAction,
-  type TableRowData,
-} from "@/components/structure/Table"
+import { SidePanel } from "@/components/structure/SidePanel"
+import { Table } from "@/components/structure/Table"
 import { Typography } from "@/components/structure/Typography"
 
+// Assets
+import PlusIcon from "@/assets/icons/plus.svg"
+
+// Utils
+import { ADJUSTMENT_ACTIONS, POINT_TYPES } from "./constants"
+
 // Types
+import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
+import type { TableRowData } from "@/components/structure/Table/types"
+import { TextArea } from "@/components/structure/TextArea"
 import type { PointRecord } from "../../../types"
 import type {
   AdjustmentRequestSidePanelMethods,
   AdjustmentRequestSidePanelProps,
 } from "./types"
-
-const POINT_TYPES: PointRecord["type"][] = ["Entrada", "Saída"]
-
-const ADJUSTMENT_ACTIONS: TableAction[] = [
-  {
-    id: "remove",
-    label: "Remover",
-    color: "text-danger-700",
-    icon: <span className="text-sm leading-none">×</span>,
-  },
-]
 
 export const AdjustmentRequestSidePanel = forwardRef<
   AdjustmentRequestSidePanelMethods,
@@ -105,9 +96,7 @@ export const AdjustmentRequestSidePanel = forwardRef<
       const recordIndex = tableData.indexOf(item)
       const record = records[recordIndex]
 
-      if (actionId === "remove" && record) {
-        onRecordRemove(record.id)
-      }
+      if (actionId === "remove" && record) onRecordRemove(record.id)
     }
 
     useImperativeHandle(
@@ -137,7 +126,6 @@ export const AdjustmentRequestSidePanel = forwardRef<
 
             <Typography
               variant="b1"
-              className="mt-11"
               value="Solicite o ajuste dos horários necessários"
             />
 
@@ -152,26 +140,20 @@ export const AdjustmentRequestSidePanel = forwardRef<
               onActionClick={handleTableActionClick}
             />
 
-            <button
-              type="button"
-              className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-content-secondary transition hover:text-brand-600"
+            <Button
+              variant="text"
+              icon={PlusIcon}
+              iconPlacement="start"
+              color="primary"
+              value="Adicionar registro"
               onClick={onAddRecord}
-            >
-              <span className="flex size-5 items-start justify-center rounded border border-content-secondary text-base leading-none">
-                +
-              </span>
-              Adicionar registro
-            </button>
+            />
 
-            <label className="mt-7 block">
-              <Typography variant="b2" fontWeight={700} value="Justificativa" />
-              <textarea
-                value={justification}
-                placeholder="Digite sua justificativa..."
-                className="mt-2 min-h-32 w-full resize-none rounded-lg border border-border-default bg-surface-card px-3 py-3 text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-border-focus focus:ring-4 focus:ring-brand-100"
-                onChange={(event) => onJustificationChange(event.target.value)}
-              />
-            </label>
+            <TextArea
+              label="Justificativa"
+              value={justification}
+              onChange={onJustificationChange}
+            />
           </div>
 
           <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
@@ -182,6 +164,7 @@ export const AdjustmentRequestSidePanel = forwardRef<
               variant="outlined"
               onClick={handleCancel}
             />
+
             <Button fitWidth value="Salvar" onClick={handleConfirm} />
           </footer>
         </div>
@@ -191,5 +174,3 @@ export const AdjustmentRequestSidePanel = forwardRef<
 )
 
 AdjustmentRequestSidePanel.displayName = "AdjustmentRequestSidePanel"
-
-export type { AdjustmentRequestSidePanelMethods } from "./types"

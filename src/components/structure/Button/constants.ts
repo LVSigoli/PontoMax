@@ -21,4 +21,11 @@ export const BUTTON_VARIANTS: Record<
       "border border-danger-600 bg-transparent text-danger-700 hover:bg-danger-50",
     text: "border border-transparent bg-transparent px-0 text-danger-700 hover:text-danger-600",
   },
+  primary: {
+    filled:
+      "border border-content-primary bg-content-primary text-content-inverse shadow-[0_12px_24px_rgba(17,24,39,0.18)] hover:bg-navy-800",
+    outlined:
+      "border border-content-primary bg-transparent text-content-primary hover:bg-surface-muted",
+    text: "border border-transparent bg-transparent px-0 text-content-primary hover:text-content-secondary",
+  },
 }

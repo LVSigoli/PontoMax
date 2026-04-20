@@ -4,6 +4,9 @@ import React from "react"
 // Constants
 import { BUTTON_BASE_CLASS, BUTTON_VARIANTS } from "./constants"
 
+// Components
+import { Icon } from "@/components/structure/Icon"
+
 // Types
 import type { Props } from "./types"
 
@@ -13,6 +16,8 @@ export const Button: React.FC<Props> = ({
   className = "",
   color = "brand",
   fitWidth = false,
+  icon,
+  iconPlacement = "start",
   loading = false,
   type = "button",
   variant = "filled",
@@ -21,6 +26,28 @@ export const Button: React.FC<Props> = ({
 }) => {
   const widthClass = fitWidth ? "w-full" : "w-fit"
   const isDisabled = disabled || loading
+  const normalizedIconPlacement =
+    iconPlacement === "right" || iconPlacement === "end" ? "end" : "start"
+  const paddingClass = getButtonPadding()
+
+  // Functions
+  function getButtonPadding() {
+    if (!icon) return ""
+
+    return normalizedIconPlacement === "end" ? "pl-3 pr-10" : "pl-10 pr-3"
+  }
+
+  function renderStartIcon() {
+    if (!icon || normalizedIconPlacement !== "start" || loading) return null
+
+    return <Icon size="1rem" src={icon} placement="start" />
+  }
+
+  function renderEndIcon() {
+    if (!icon || normalizedIconPlacement !== "end" || loading) return null
+
+    return <Icon size="1rem" src={icon} placement="end" />
+  }
 
   return (
     <button
@@ -28,8 +55,10 @@ export const Button: React.FC<Props> = ({
       type={type}
       disabled={isDisabled}
       onClick={onClick}
-      className={`${BUTTON_BASE_CLASS} ${BUTTON_VARIANTS[color][variant]} ${widthClass} ${className}`}
+      className={`${BUTTON_BASE_CLASS} relative ${BUTTON_VARIANTS[color][variant]} ${widthClass} ${paddingClass} ${className}`}
     >
+      {renderStartIcon()}
+
       {loading ? (
         <span
           aria-hidden="true"
@@ -38,8 +67,10 @@ export const Button: React.FC<Props> = ({
       ) : (
         value
       )}
+
+      {renderEndIcon()}
     </button>
   )
 }
 
-export type { ButtonColor, ButtonVariant } from "./types"
+export type { ButtonColor, ButtonIconPlacement, ButtonVariant } from "./types"

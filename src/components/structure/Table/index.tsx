@@ -44,10 +44,3 @@ export const Table = <T extends TableRowData>({
     </div>
   )
 }
-
-export type {
-  TableAction,
-  TableCellData,
-  TableCellType,
-  TableRowData,
-} from "./types"

@@ -2,14 +2,12 @@
 import { forwardRef, useImperativeHandle, useRef } from "react"
 
 // Components
-import {
-  SidePanel,
-  type SidePanelMethods,
-} from "@/components/structure/SidePanel"
+import { SidePanel } from "@/components/structure/SidePanel"
 import { Table } from "@/components/structure/Table"
 import { Typography } from "@/components/structure/Typography"
 
 // Types
+import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
 import type { TableRowData } from "@/components/structure/Table/types"
 import type {
   DayHistorySidePanelMethods,
@@ -102,5 +100,3 @@ export const DayHistorySidePanel = forwardRef<
 })
 
 DayHistorySidePanel.displayName = "DayHistorySidePanel"
-
-export type { DayHistorySidePanelMethods } from "./types"
