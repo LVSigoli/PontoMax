@@ -11,29 +11,45 @@ import type { PointRecord } from "../types"
 import { formatPointDate, formatPointTime } from "../utils"
 
 // Types
+import type { AdjustmentRequestSidePanelMethods } from "../components/modals/AdjustmentRequestSidePanel/types"
 import { ConfirmationModalMethods } from "../components/modals/ConfirmationModal/types"
+import type { DayHistorySidePanelMethods } from "../components/modals/DayHistorySidePanel/types"
 
 export function usePointRegister() {
   // Refs
+  const adjustmentRequestSidePanelRef =
+    useRef<AdjustmentRequestSidePanelMethods>(null)
   const confirmationModalRef = useRef<ConfirmationModalMethods>(null)
+  const dayHistorySidePanelRef = useRef<DayHistorySidePanelMethods>(null)
 
   // States
-  const [now, setNow] = useState(() => new Date())
+  const [now, setNow] = useState<Date | null>(null)
   const [records] = useState<PointRecord[]>(POINT_RECORDS)
   const [currentRecords, setCurrentRecords] = useState<PointRecord[]>(
     POINT_RECORDS.slice(0, 2)
   )
+  const [selectedHistoryRecord, setSelectedHistoryRecord] =
+    useState<PointRecord | null>(null)
+  const [adjustmentRecords, setAdjustmentRecords] = useState<PointRecord[]>([])
+  const [adjustmentJustification, setAdjustmentJustification] = useState("")
 
-  const currentDate = formatPointDate(now)
-  const currentTime = formatPointTime(now)
+  const currentDate = now ? formatPointDate(now) : "--"
+  const currentTime = now ? formatPointTime(now) : "--:--:--"
 
   // Effects
   useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setNow(new Date())
+    }, 0)
+
     const interval = window.setInterval(() => {
       setNow(new Date())
     }, 1000)
 
-    return () => window.clearInterval(interval)
+    return () => {
+      window.clearTimeout(timeout)
+      window.clearInterval(interval)
+    }
   }, [])
 
   // Functions
@@ -57,14 +73,93 @@ export function usePointRegister() {
     confirmationModalRef.current?.open()
   }
 
+  function handleHistoryRecordSelect(record: PointRecord) {
+    setSelectedHistoryRecord(record)
+    dayHistorySidePanelRef.current?.open()
+  }
+
+  function handleAdjustmentRequestOpen(record: PointRecord) {
+    setSelectedHistoryRecord(record)
+    setAdjustmentJustification("")
+    setAdjustmentRecords(records)
+    adjustmentRequestSidePanelRef.current?.open()
+  }
+
+  function handleAdjustmentRecordAdd() {
+    setAdjustmentRecords((currentRecords) => [
+      ...currentRecords,
+      {
+        id: Date.now(),
+        time: "08:00:00",
+        workedHours: "00h 00min",
+        extraHours: "00h 00min",
+        missingHours: "00h 00min",
+        type: getNextPointType(currentRecords),
+        status: "Registrado",
+      },
+    ])
+  }
+
+  function handleAdjustmentRecordRemove(id: number) {
+    setAdjustmentRecords((currentRecords) =>
+      currentRecords.filter((record) => record.id !== id)
+    )
+  }
+
+  function handleAdjustmentRecordTimeChange(id: number, value: string) {
+    setAdjustmentRecords((currentRecords) =>
+      currentRecords.map((record) =>
+        record.id === id ? { ...record, time: `${value}:00` } : record
+      )
+    )
+  }
+
+  function handleAdjustmentRecordTypeChange(
+    id: number,
+    value: PointRecord["type"]
+  ) {
+    setAdjustmentRecords((currentRecords) =>
+      currentRecords.map((record) =>
+        record.id === id ? { ...record, type: value } : record
+      )
+    )
+  }
+
+  function handleAdjustmentRequestCancel() {
+    setAdjustmentJustification("")
+    setAdjustmentRecords([])
+  }
+
+  function handleAdjustmentRequestConfirm() {
+    console.log("adjustment request", {
+      justification: adjustmentJustification,
+      records: adjustmentRecords,
+      selectedRecord: selectedHistoryRecord,
+    })
+  }
+
   return {
     records,
     currentDate,
     currentTime,
     currentRecords,
+    selectedHistoryRecord,
+    adjustmentJustification,
+    adjustmentRecords,
+    adjustmentRequestSidePanelRef,
     confirmationModalRef,
+    dayHistorySidePanelRef,
+    handleAdjustmentRecordAdd,
+    handleAdjustmentRecordRemove,
+    handleAdjustmentRecordTimeChange,
+    handleAdjustmentRecordTypeChange,
+    handleAdjustmentRequestCancel,
+    handleAdjustmentRequestConfirm,
+    handleAdjustmentRequestOpen,
+    setAdjustmentJustification,
     handleRegisterPoint,
     handleConfirmationModalOpen,
+    handleHistoryRecordSelect,
   }
 }
 

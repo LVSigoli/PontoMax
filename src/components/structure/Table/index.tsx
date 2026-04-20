@@ -9,13 +9,16 @@ import type { Props, TableRowData } from "./types"
 import { getTableColumns } from "./utils"
 
 export const Table = <T extends TableRowData>({
+  actions,
+  allowActions = false,
   data,
   emptyMessage,
   className = "",
   minWidth = "720px",
   sideScroll = true,
   getRowKey,
-  onAction,
+  onActionClick,
+  onRowSelect,
 }: Props<T>) => {
   // Constants
   const columns = getTableColumns(data)
@@ -25,18 +28,26 @@ export const Table = <T extends TableRowData>({
   return (
     <div className={`${sideScrollStyles}  ${className}`}>
       <table className="w-full border-collapse" style={{ minWidth }}>
-        <TableHeader columns={columns} />
+        <TableHeader allowActions={allowActions} columns={columns} />
 
         <TableBody
-          columns={columns}
           data={data}
+          actions={actions}
+          columns={columns}
+          allowActions={allowActions}
           emptyMessage={emptyMessage}
           getRowKey={getRowKey}
-          onAction={onAction}
+          onRowSelect={onRowSelect}
+          onActionClick={onActionClick}
         />
       </table>
     </div>
   )
 }
 
-export type { TableCellData, TableCellType, TableRowData } from "./types"
+export type {
+  TableAction,
+  TableCellData,
+  TableCellType,
+  TableRowData,
+} from "./types"

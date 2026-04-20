@@ -5,7 +5,9 @@ import React from "react"
 import { Header } from "@/components/structure/Header"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { CurrentRegisters } from "./components/CurrentRegister"
+import { AdjustmentRequestSidePanel } from "./components/modals/AdjustmentRequestSidePanel"
 import { ConfirmationModal } from "./components/modals/ConfirmationModal"
+import { DayHistorySidePanel } from "./components/modals/DayHistorySidePanel"
 import { PointCard } from "./components/PointCard"
 import { PointHistory } from "./components/PointHistory"
 
@@ -19,9 +21,23 @@ export const PointRegister: React.FC = () => {
     currentDate,
     currentTime,
     currentRecords,
+    selectedHistoryRecord,
+    adjustmentJustification,
+    adjustmentRecords,
+    adjustmentRequestSidePanelRef,
     confirmationModalRef,
+    dayHistorySidePanelRef,
+    handleAdjustmentRecordAdd,
+    handleAdjustmentRecordRemove,
+    handleAdjustmentRecordTimeChange,
+    handleAdjustmentRecordTypeChange,
+    handleAdjustmentRequestCancel,
+    handleAdjustmentRequestConfirm,
+    handleAdjustmentRequestOpen,
     handleRegisterPoint,
     handleConfirmationModalOpen,
+    handleHistoryRecordSelect,
+    setAdjustmentJustification,
   } = usePointRegister()
 
   return (
@@ -46,7 +62,11 @@ export const PointRegister: React.FC = () => {
               <CurrentRegisters records={currentRecords} />
             </div>
 
-            <PointHistory records={records} />
+            <PointHistory
+              records={records}
+              onAdjustmentRequest={handleAdjustmentRequestOpen}
+              onRecordSelect={handleHistoryRecordSelect}
+            />
           </div>
         </section>
       </div>
@@ -55,6 +75,24 @@ export const PointRegister: React.FC = () => {
         ref={confirmationModalRef}
         currentTime={currentTime}
         onConfirm={handleRegisterPoint}
+      />
+
+      <DayHistorySidePanel
+        ref={dayHistorySidePanelRef}
+        record={selectedHistoryRecord}
+      />
+
+      <AdjustmentRequestSidePanel
+        ref={adjustmentRequestSidePanelRef}
+        records={adjustmentRecords}
+        justification={adjustmentJustification}
+        onAddRecord={handleAdjustmentRecordAdd}
+        onCancel={handleAdjustmentRequestCancel}
+        onConfirm={handleAdjustmentRequestConfirm}
+        onJustificationChange={setAdjustmentJustification}
+        onRecordRemove={handleAdjustmentRecordRemove}
+        onRecordTimeChange={handleAdjustmentRecordTimeChange}
+        onRecordTypeChange={handleAdjustmentRecordTypeChange}
       />
     </main>
   )

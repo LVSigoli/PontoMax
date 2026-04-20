@@ -2,14 +2,15 @@
 import React from "react"
 
 // Components
-import { Table, type TableRowData } from "@/components/structure/Table"
+import { Table } from "@/components/structure/Table"
 import { Typography } from "@/components/structure/Typography"
-
-// Types
-import type { PointRecord } from "../../types"
 
 // Utils
 import { getPointStatusClass, getPointTypeClass } from "../../utils"
+
+// Types
+import type { TableRowData } from "@/components/structure/Table/types"
+import type { PointRecord } from "../../types"
 
 interface Props {
   records: PointRecord[]
