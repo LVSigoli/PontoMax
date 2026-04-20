@@ -11,7 +11,7 @@ export type TypographyVariant =
   | "caption"
   | "legal"
 
-export type TypographyColor = "primary" | "secondary"
+export type TypographyColor = "primary" | "secondary" | "white"
 
 export interface Props {
   variant?: TypographyVariant

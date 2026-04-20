@@ -2,7 +2,7 @@
 import React from "react"
 
 // Components
-import { Icon } from "../Icon"
+import { Icon } from "@/components/structure/Icon"
 
 // Services
 import { MASK } from "@/services/maskModule"
