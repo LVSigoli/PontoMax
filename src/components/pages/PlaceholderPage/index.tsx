@@ -15,10 +15,10 @@ export const PlaceholderPage: React.FC<Props> = ({ title, subtitle }) => {
       <div className="flex h-full overflow-hidden">
         <Sidebar />
 
-        <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <Header label={title} subtitle={subtitle} />
+        <section className="min-w-0 flex-1 overflow-y-auto px-5 py-8 sm:px-8 lg:px-10">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+            <Header label={title} subtitle={subtitle} />
 
-          <div className="mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-5 py-6 sm:px-8 lg:px-10">
             <div className="grid max-w-md gap-2 rounded-xl border border-border-subtle bg-surface-card p-6 text-center shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
               <Typography variant="h4" value={title} />
               <Typography

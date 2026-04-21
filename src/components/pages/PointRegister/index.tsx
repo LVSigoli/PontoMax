@@ -36,13 +36,13 @@ export const PointRegister: React.FC = () => {
       <div className="flex h-full overflow-hidden">
         <Sidebar />
 
-        <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <Header
-            label="Regisitro de ponto"
-            subtitle="Registre suas entradas e saídascom acompanhamento diário"
-          />
+        <section className="min-w-0 flex-1 overflow-y-auto px-5 py-8 sm:px-8 lg:px-10">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+            <Header
+              label="Registro de ponto"
+              subtitle="Registre suas entradas e saidas com acompanhamento diario"
+            />
 
-          <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 overflow-y-auto px-5 py-6 sm:px-8 lg:px-10">
             <div className="grid w-full grid-cols-1 gap-4 xl:grid-cols-2">
               <PointCard
                 currentDate={currentDate}

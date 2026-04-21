@@ -1,11 +1,6 @@
 // Components
-import { PlaceholderPage } from "@/components/pages/PlaceholderPage"
+import { Management } from "@/components/pages/Management"
 
 export default function ManagementPage() {
-  return (
-    <PlaceholderPage
-      title="Gerenciamento"
-      subtitle="Gerencie usuarios, permissoes e configuracoes"
-    />
-  )
+  return <Management />
 }

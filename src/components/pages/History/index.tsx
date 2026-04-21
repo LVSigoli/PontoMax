@@ -54,13 +54,13 @@ export const History: React.FC = () => {
       <div className="flex h-full overflow-hidden">
         <Sidebar />
 
-        <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <Header
-            label="Histórico de Solicitações"
-            subtitle="Acompanhe e ajuste suas solicitações"
-          />
+        <section className="min-w-0 flex-1 overflow-y-auto px-5 py-8 sm:px-8 lg:px-10">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+            <Header
+              label="Historico de Solicitacoes"
+              subtitle="Acompanhe e ajuste suas solicitacoes"
+            />
 
-          <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 overflow-y-auto px-5 py-6 sm:px-8 lg:px-10">
             <section className="grid gap-4">
               <Typography
                 variant="h4"
