@@ -1,11 +1,6 @@
 // Components
-import { PlaceholderPage } from "@/components/pages/PlaceholderPage"
+import { Holidays } from "@/components/pages/Holidays"
 
 export default function HolydaysPage() {
-  return (
-    <PlaceholderPage
-      title="Feriados"
-      subtitle="Consulte e configure o calendario de feriados"
-    />
-  )
+  return <Holidays />
 }

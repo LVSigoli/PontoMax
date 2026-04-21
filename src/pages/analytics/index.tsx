@@ -1,11 +1,6 @@
 // Components
-import { PlaceholderPage } from "@/components/pages/PlaceholderPage"
+import { Analytics } from "@/components/pages/Analytics"
 
 export default function AnalyticsPage() {
-  return (
-    <PlaceholderPage
-      title="Analises"
-      subtitle="Acompanhe indicadores e metricas do ponto"
-    />
-  )
+  return <Analytics />
 }

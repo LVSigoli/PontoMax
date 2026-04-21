@@ -91,7 +91,7 @@ export const Select: React.FC<Props> = ({
         type="button"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
-        className={`relative flex h-11 w-full items-center rounded-md border bg-surface-card text-left text-sm font-semibold text-content-primary transition border-border-strongs ${getButtonPadding()} ${buttonClassName}`}
+        className={`relative flex h-11 w-full items-center rounded-md border border-border-default bg-surface-card text-left text-sm font-semibold text-content-primary transition focus:border-border-focus ${getButtonPadding()} ${buttonClassName}`}
         onClick={handleSelectToggle}
       >
         {renderStartIcon()}

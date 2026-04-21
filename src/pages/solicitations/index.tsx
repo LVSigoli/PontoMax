@@ -1,11 +1,6 @@
 // Components
-import { PlaceholderPage } from "@/components/pages/PlaceholderPage"
+import { Solicitations } from "@/components/pages/Solicitations"
 
 export default function SolicitationsPage() {
-  return (
-    <PlaceholderPage
-      title="Ajustes Pendentes"
-      subtitle="Acompanhe solicitacoes aguardando aprovacao"
-    />
-  )
+  return <Solicitations />
 }

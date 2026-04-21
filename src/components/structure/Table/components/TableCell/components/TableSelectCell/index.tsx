@@ -26,7 +26,7 @@ export const TableSelectCell: React.FC<Props> = ({ cell, onChange }) => {
         options={options}
         selectedItem={selectedItem}
         className={cell.className ?? "w-32"}
-        buttonClassName="h-9 border-transparent bg-transparent focus:bg-surface-page"
+        buttonClassName="h-9 focus:bg-surface-page"
         valueClassName={cell.color}
         onSelectionChange={handleSelectionChange}
       />
