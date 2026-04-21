@@ -3,6 +3,7 @@ import { forwardRef, useImperativeHandle, useRef } from "react"
 
 // Components
 import { Button } from "@/components/structure/Button"
+import { Select } from "@/components/structure/Select"
 import { SidePanel } from "@/components/structure/SidePanel"
 import { Table } from "@/components/structure/Table"
 import { Typography } from "@/components/structure/Typography"
@@ -14,6 +15,7 @@ import PlusIcon from "@/assets/icons/plus.svg"
 import { ADJUSTMENT_ACTIONS, POINT_TYPES } from "./constants"
 
 // Types
+import type { SelectionOption } from "@/components/structure/Select/types"
 import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
 import type { TableRowData } from "@/components/structure/Table/types"
 import { TextArea } from "@/components/structure/TextArea"
@@ -44,6 +46,20 @@ export const AdjustmentRequestSidePanel = forwardRef<
     // Refs
     const sidePanelRef = useRef<SidePanelMethods>(null)
 
+    // Functions
+    function handleSelectionChange(
+      recordId: number,
+      selection: SelectionOption[]
+    ) {
+      const selectedType = selection[0]?.value as
+        | PointRecord["type"]
+        | undefined
+
+      if (!selectedType) return
+
+      onRecordTypeChange(recordId, selectedType)
+    }
+
     const tableData = records.map<TableRowData>((record) => ({
       Horario: {
         valor: (
@@ -59,24 +75,20 @@ export const AdjustmentRequestSidePanel = forwardRef<
       },
       Tipo: {
         valor: (
-          <select
-            value={record.type}
-            className={`rounded-md border border-transparent bg-transparent text-sm font-semibold outline-none transition focus:border-border-focus focus:bg-surface-page ${
+          <Select
+            options={POINT_TYPE_OPTIONS}
+            selectedItem={POINT_TYPE_OPTIONS.filter(
+              (option) => option.value === record.type
+            )}
+            className="w-32"
+            buttonClassName="h-9 border-transparent bg-transparent focus:bg-surface-page"
+            valueClassName={
               record.type === "Entrada" ? "text-success-700" : "text-danger-700"
-            }`}
-            onChange={(event) =>
-              onRecordTypeChange(
-                record.id,
-                event.target.value as PointRecord["type"]
-              )
             }
-          >
-            {POINT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+            onSelectionChange={(selection) =>
+              handleSelectionChange(record.id, selection)
+            }
+          />
         ),
       },
     }))
@@ -113,7 +125,7 @@ export const AdjustmentRequestSidePanel = forwardRef<
       <SidePanel
         ref={sidePanelRef}
         widthClassName="max-w-[456px]"
-        className="bg-surface-page"
+        className="bg-surface-page "
       >
         <div className="flex min-h-full flex-col">
           <div className="flex-1 overflow-y-auto px-4 py-7 sm:px-5">
@@ -172,5 +184,10 @@ export const AdjustmentRequestSidePanel = forwardRef<
     )
   }
 )
+
+const POINT_TYPE_OPTIONS: SelectionOption[] = POINT_TYPES.map((type) => ({
+  value: type,
+  label: type,
+}))
 
 AdjustmentRequestSidePanel.displayName = "AdjustmentRequestSidePanel"
