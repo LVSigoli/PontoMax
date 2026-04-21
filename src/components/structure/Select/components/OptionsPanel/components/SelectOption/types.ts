@@ -1,4 +1,4 @@
-import type { SelecttionOption } from "../../types"
+import type { SelecttionOption } from "../../../../types"
 
 export interface Props {
   option: SelecttionOption

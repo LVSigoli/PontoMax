@@ -18,6 +18,13 @@ export interface SelectionOption {
   label: string
 }
 
+export interface OptionsPosition {
+  left: number
+  maxHeight: number
+  top: number
+  width: number
+}
+
 export type SelecttionOption = SelectionOption
 
 type IconPlacement = "start" | "end"

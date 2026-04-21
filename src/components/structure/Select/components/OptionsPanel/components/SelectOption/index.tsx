@@ -7,7 +7,8 @@ export const SelectOption: React.FC<Props> = ({
   selected,
   onClick,
 }) => {
-  function handleOptionClick() {
+  //  Functions
+  function handleClick() {
     onClick(option)
   }
 
@@ -19,7 +20,7 @@ export const SelectOption: React.FC<Props> = ({
       className={`flex min-h-9 w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium transition hover:bg-surface-muted ${
         selected ? "text-brand-700" : "text-content-secondary"
       }`}
-      onClick={handleOptionClick}
+      onClick={handleClick}
     >
       <span className="truncate">{option.label}</span>
 
