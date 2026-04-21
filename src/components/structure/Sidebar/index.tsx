@@ -17,7 +17,9 @@ export const Sidebar: React.FC = () => {
   // Functions
   function renderSidebarItem() {
     return SIDEBAR_ITEMS.map((item) => {
-      const isActive = pathname.includes(item.id)
+      const isActive = item.href
+        ? pathname === item.href
+        : pathname.includes(item.id)
 
       return <SidebarItem key={item.id} isActive={isActive} item={item} />
     })
