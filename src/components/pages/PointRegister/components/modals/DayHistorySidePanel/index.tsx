@@ -24,9 +24,9 @@ export const DayHistorySidePanel = forwardRef<
   const tableData: TableRowData[] = record
     ? [
         {
-          Horario: { valor: record.time },
-          Tipo: { valor: record.type },
-          Status: { valor: record.status, tipo: "badge" },
+          Horario: { value: record.time },
+          Tipo: { value: record.type },
+          Status: { value: record.status, type: "badge" },
         },
       ]
     : []

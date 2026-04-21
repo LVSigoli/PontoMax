@@ -19,15 +19,15 @@ interface Props {
 export const CurrentRegisters: React.FC<Props> = ({ records }) => {
   const tableData = records.map<TableRowData>((record) => ({
     Horário: {
-      valor: record.time,
+      value: record.time,
     },
     Tipo: {
-      valor: record.type,
+      value: record.type,
       color: getPointTypeClass(record.type),
     },
     Status: {
-      valor: record.status,
-      tipo: "badge",
+      value: record.status,
+      type: "badge",
       color: getPointStatusClass(record.status),
     },
   }))

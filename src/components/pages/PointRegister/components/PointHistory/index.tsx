@@ -35,21 +35,21 @@ export const PointHistory: React.FC<Props> = ({
 }) => {
   const tableData = records.map<TableRowData>((record) => ({
     "Horas trabalhadas": {
-      valor: record.workedHours,
+      value: record.workedHours,
     },
     "Horas extras": {
-      valor: record.extraHours,
+      value: record.extraHours,
     },
     "Horas faltantes": {
-      valor: record.missingHours,
+      value: record.missingHours,
     },
     Tipo: {
-      valor: record.type,
+      value: record.type,
       color: getPointTypeClass(record.type),
     },
     Status: {
-      valor: record.status,
-      tipo: "badge",
+      value: record.status,
+      type: "badge",
       color: getPointStatusClass(record.status),
     },
   }))

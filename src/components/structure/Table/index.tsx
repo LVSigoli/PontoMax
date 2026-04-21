@@ -18,6 +18,7 @@ export const Table = <T extends TableRowData>({
   sideScroll = true,
   getRowKey,
   onActionClick,
+  onCellChange,
   onRowSelect,
 }: Props<T>) => {
   // Constants
@@ -39,6 +40,7 @@ export const Table = <T extends TableRowData>({
           getRowKey={getRowKey}
           onRowSelect={onRowSelect}
           onActionClick={onActionClick}
+          onCellChange={onCellChange}
         />
       </table>
     </div>

@@ -21,23 +21,14 @@ export const PointRegister: React.FC = () => {
     currentDate,
     currentTime,
     currentRecords,
-    selectedHistoryRecord,
-    adjustmentJustification,
-    adjustmentRecords,
-    adjustmentRequestSidePanelRef,
     confirmationModalRef,
+    selectedHistoryRecord,
     dayHistorySidePanelRef,
-    handleAdjustmentRecordAdd,
-    handleAdjustmentRecordRemove,
-    handleAdjustmentRecordTimeChange,
-    handleAdjustmentRecordTypeChange,
-    handleAdjustmentRequestCancel,
-    handleAdjustmentRequestConfirm,
-    handleAdjustmentRequestOpen,
+    adjustmentRequestSidePanelRef,
     handleRegisterPoint,
-    handleConfirmationModalOpen,
     handleHistoryRecordSelect,
-    setAdjustmentJustification,
+    handleAdjustmentRequestOpen,
+    handleConfirmationModalOpen,
   } = usePointRegister()
 
   return (
@@ -84,15 +75,7 @@ export const PointRegister: React.FC = () => {
 
       <AdjustmentRequestSidePanel
         ref={adjustmentRequestSidePanelRef}
-        records={adjustmentRecords}
-        justification={adjustmentJustification}
-        onAddRecord={handleAdjustmentRecordAdd}
-        onCancel={handleAdjustmentRequestCancel}
-        onConfirm={handleAdjustmentRequestConfirm}
-        onJustificationChange={setAdjustmentJustification}
-        onRecordRemove={handleAdjustmentRecordRemove}
-        onRecordTimeChange={handleAdjustmentRecordTimeChange}
-        onRecordTypeChange={handleAdjustmentRecordTypeChange}
+        records={records}
       />
     </main>
   )

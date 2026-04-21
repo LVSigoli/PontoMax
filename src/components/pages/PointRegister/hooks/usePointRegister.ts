@@ -30,8 +30,6 @@ export function usePointRegister() {
   )
   const [selectedHistoryRecord, setSelectedHistoryRecord] =
     useState<PointRecord | null>(null)
-  const [adjustmentRecords, setAdjustmentRecords] = useState<PointRecord[]>([])
-  const [adjustmentJustification, setAdjustmentJustification] = useState("")
 
   const currentDate = now ? formatPointDate(now) : "--"
   const currentTime = now ? formatPointTime(now) : "--:--:--"
@@ -80,62 +78,7 @@ export function usePointRegister() {
 
   function handleAdjustmentRequestOpen(record: PointRecord) {
     setSelectedHistoryRecord(record)
-    setAdjustmentJustification("")
-    setAdjustmentRecords(records)
     adjustmentRequestSidePanelRef.current?.open()
-  }
-
-  function handleAdjustmentRecordAdd() {
-    setAdjustmentRecords((currentRecords) => [
-      ...currentRecords,
-      {
-        id: Date.now(),
-        time: "08:00:00",
-        workedHours: "00h 00min",
-        extraHours: "00h 00min",
-        missingHours: "00h 00min",
-        type: getNextPointType(currentRecords),
-        status: "Registrado",
-      },
-    ])
-  }
-
-  function handleAdjustmentRecordRemove(id: number) {
-    setAdjustmentRecords((currentRecords) =>
-      currentRecords.filter((record) => record.id !== id)
-    )
-  }
-
-  function handleAdjustmentRecordTimeChange(id: number, value: string) {
-    setAdjustmentRecords((currentRecords) =>
-      currentRecords.map((record) =>
-        record.id === id ? { ...record, time: `${value}:00` } : record
-      )
-    )
-  }
-
-  function handleAdjustmentRecordTypeChange(
-    id: number,
-    value: PointRecord["type"]
-  ) {
-    setAdjustmentRecords((currentRecords) =>
-      currentRecords.map((record) =>
-        record.id === id ? { ...record, type: value } : record
-      )
-    )
-  }
-
-  function handleAdjustmentRequestCancel() {
-    setAdjustmentJustification("")
-    setAdjustmentRecords([])
-  }
-
-  function handleAdjustmentRequestConfirm() {
-    console.log("adjustment request", {
-      justification: adjustmentJustification,
-      records: adjustmentRecords,
-      selectedRecord: selectedHistoryRecord,
-    })
   }
 
   return {
@@ -144,19 +87,10 @@ export function usePointRegister() {
     currentTime,
     currentRecords,
     selectedHistoryRecord,
-    adjustmentJustification,
-    adjustmentRecords,
     adjustmentRequestSidePanelRef,
     confirmationModalRef,
     dayHistorySidePanelRef,
-    handleAdjustmentRecordAdd,
-    handleAdjustmentRecordRemove,
-    handleAdjustmentRecordTimeChange,
-    handleAdjustmentRecordTypeChange,
-    handleAdjustmentRequestCancel,
-    handleAdjustmentRequestConfirm,
     handleAdjustmentRequestOpen,
-    setAdjustmentJustification,
     handleRegisterPoint,
     handleConfirmationModalOpen,
     handleHistoryRecordSelect,

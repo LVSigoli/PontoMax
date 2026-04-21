@@ -13,6 +13,7 @@ interface Props<T extends TableRowData> extends Pick<
   | "emptyMessage"
   | "getRowKey"
   | "onActionClick"
+  | "onCellChange"
   | "onRowSelect"
 > {
   columns: Array<keyof T>
@@ -27,6 +28,7 @@ export const TableBody = <T extends TableRowData>({
   getRowKey,
   onRowSelect,
   onActionClick,
+  onCellChange,
 }: Props<T>) => {
   const shouldRenderActions = allowActions && actions.length > 0
 
@@ -62,6 +64,7 @@ export const TableBody = <T extends TableRowData>({
                   cell={row[column]}
                   cellKey={column}
                   row={row}
+                  onChange={onCellChange}
                 />
               ) : null}
             </td>
