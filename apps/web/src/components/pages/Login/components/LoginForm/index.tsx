@@ -20,10 +20,16 @@ import { Props } from "./types"
 
 export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
   // Hooks
-  const { credential, handleCredentialChange } = useLogin()
+  const {
+    credential,
+    errorMessage,
+    isSubmitting,
+    handleCredentialChange,
+    handleSubmit,
+  } = useLogin()
 
   return (
-    <form className="w-full max-w-90" aria-labelledby="login-title">
+    <form className="w-full max-w-90" aria-labelledby="login-title" onSubmit={handleSubmit}>
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse">
           <Icon src={ClockIcon} size="1.25rem" />
@@ -33,7 +39,13 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
 
         <Typography
           variant="b2"
-          value="Sistema de Gestão de Ponto Eletrônico"
+          value="Sistema de Gestao de Ponto Eletronico"
+        />
+
+        <Typography
+          className="mt-3 text-center text-content-muted"
+          variant="caption"
+          value="Demo: demo@pontomax.com.br | senha: 123456"
         />
       </div>
 
@@ -49,11 +61,20 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
         <Input
           title="senha"
           icon={LockIcon}
+          type="password"
           value={credential.password}
           placeholder="Informe sua senha"
           onChange={(v) => handleCredentialChange("password", v)}
         />
       </div>
+
+      {errorMessage ? (
+        <Typography
+          className="mt-3 text-center text-feedback-negative"
+          variant="caption"
+          value={errorMessage}
+        />
+      ) : null}
 
       <Button
         fitWidth
@@ -65,8 +86,8 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
       <Button
         fitWidth
         type="submit"
-        value="Enviar"
-        onClick={() => console.log("oi submit")}
+        value={isSubmitting ? "Entrando..." : "Entrar"}
+        loading={isSubmitting}
       />
     </form>
   )

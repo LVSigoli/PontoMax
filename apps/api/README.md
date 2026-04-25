@@ -4,7 +4,7 @@ Backend base em Node.js + TypeScript usando Express.
 
 ## Scripts
 
-- `pnpm --filter ponto-max-api dev`: sobe a API em modo watch
+- `pnpm --filter ponto-max-api dev`: compila e sobe a API localmente
 - `pnpm --filter ponto-max-api build`: gera a pasta `dist`
 - `pnpm --filter ponto-max-api start`: inicia a API compilada
 - `pnpm --filter ponto-max-api typecheck`: valida os tipos
@@ -34,3 +34,8 @@ Backend base em Node.js + TypeScript usando Express.
 2. Em outro terminal, rode `pnpm --filter ponto-max-api smoke:build`
 
 Se quiser testar manualmente, acesse `http://localhost:3333/health`.
+
+## Credenciais demo
+
+- `demo@pontomax.com.br`
+- `123456`

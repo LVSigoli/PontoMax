@@ -1,6 +1,6 @@
-// Components
 import { PointRegister } from "@/components/pages/PointRegister"
+import { withAuthentication } from "@/hooks/withAuthentication"
 
 export default function PointPage() {
-  return <PointRegister />
+  return withAuthentication(<PointRegister />)
 }

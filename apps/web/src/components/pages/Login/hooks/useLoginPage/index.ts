@@ -1,5 +1,9 @@
 // External Libraries
+import { useEffect } from "react"
 import { useRouter } from "next/router"
+
+// Contexts
+import { useAuth } from "@/contexts/AuthContext"
 
 // Types
 import { LoginView } from "./types"
@@ -7,8 +11,17 @@ import { LoginView } from "./types"
 export function useLoginPage() {
   // Hooks
   const router = useRouter()
+  const { user, isValidating } = useAuth()
 
   const view = router.isReady ? getLoginView(router.query.view) : "login"
+
+  useEffect(() => {
+    if (!router.isReady) return
+    if (isValidating) return
+    if (!user) return
+
+    void router.replace("/point")
+  }, [isValidating, router, user])
 
   // Funtions
   function handleForgotPasswordClick() {
