@@ -144,3 +144,30 @@ workSchedulesRouter.patch(
     response.json({ item: journey });
   }),
 );
+
+workSchedulesRouter.delete(
+  '/:journeyId',
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  validateRequest(journeyIdSchema),
+  asyncHandler(async (request, response) => {
+    const journeyId = Number(request.params.journeyId);
+    const currentJourney = await prisma.journey.findUniqueOrThrow({
+      where: { id: journeyId },
+    });
+
+    if (
+      request.authUser!.role !== 'PLATFORM_ADMIN' &&
+      currentJourney.companyId !== request.authUser!.companyId
+    ) {
+      throw new AppError('You do not have permission to remove this journey.', 403);
+    }
+
+    await prisma.journey.delete({
+      where: {
+        id: journeyId,
+      },
+    });
+
+    response.status(204).send();
+  }),
+);

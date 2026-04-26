@@ -206,3 +206,27 @@ usersRouter.get(
     response.json({ item: user });
   }),
 );
+
+usersRouter.delete(
+  '/:userId',
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  validateRequest(userIdSchema),
+  asyncHandler(async (request, response) => {
+    const userId = Number(request.params.userId);
+    const currentUser = await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+    });
+
+    if (request.authUser!.role !== 'PLATFORM_ADMIN' && currentUser.companyId !== request.authUser!.companyId) {
+      throw new AppError('You do not have permission to remove this user.', 403);
+    }
+
+    await prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
+
+    response.status(204).send();
+  }),
+);

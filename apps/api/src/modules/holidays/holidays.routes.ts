@@ -121,3 +121,30 @@ holidaysRouter.patch(
     response.json({ item: holiday });
   }),
 );
+
+holidaysRouter.delete(
+  '/:holidayId',
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  validateRequest(holidayIdSchema),
+  asyncHandler(async (request, response) => {
+    const holidayId = Number(request.params.holidayId);
+    const currentHoliday = await prisma.holiday.findUniqueOrThrow({
+      where: { id: holidayId },
+    });
+
+    if (
+      request.authUser!.role !== 'PLATFORM_ADMIN' &&
+      currentHoliday.companyId !== request.authUser!.companyId
+    ) {
+      throw new AppError('You do not have permission to remove this holiday.', 403);
+    }
+
+    await prisma.holiday.delete({
+      where: {
+        id: holidayId,
+      },
+    });
+
+    response.status(204).send();
+  }),
+);

@@ -5,6 +5,7 @@ import { requireRole } from '../../common/auth/require-role.middleware.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { prisma } from '../../lib/prisma.js';
 import { startOfDay } from '../../common/utils/date.js';
+import { getAnalyticsDashboard } from './analytics.service.js';
 
 export const analyticsRouter = Router();
 
@@ -59,5 +60,14 @@ analyticsRouter.get(
         totalWorkedHours,
       },
     });
+  }),
+);
+
+analyticsRouter.get(
+  '/dashboard',
+  asyncHandler(async (request, response) => {
+    const dashboard = await getAnalyticsDashboard(request.authUser!.companyId);
+
+    response.json(dashboard);
   }),
 );

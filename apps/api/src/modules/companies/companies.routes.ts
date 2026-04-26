@@ -144,3 +144,18 @@ companiesRouter.patch(
     response.json({ item: company });
   }),
 );
+
+companiesRouter.delete(
+  '/:companyId',
+  requireRole('PLATFORM_ADMIN'),
+  validateRequest(companyIdSchema),
+  asyncHandler(async (request, response) => {
+    await prisma.company.delete({
+      where: {
+        id: Number(request.params.companyId),
+      },
+    });
+
+    response.status(204).send();
+  }),
+);
