@@ -1,10 +1,150 @@
+import { TimeEntryKind } from '@prisma/client';
 import { Router } from 'express';
+import { z } from 'zod';
+
+import { authenticate } from '../../common/auth/auth.middleware.js';
+import { requireRole } from '../../common/auth/require-role.middleware.js';
+import { AppError } from '../../common/errors/app-error.js';
+import { asyncHandler } from '../../common/utils/async-handler.js';
+import { endOfDay, startOfDay } from '../../common/utils/date.js';
+import { validateRequest } from '../../common/validation/validate-request.js';
+import { prisma } from '../../lib/prisma.js';
+import {
+  createTimeEntry,
+  serializeTimeEntry,
+  serializeWorkday,
+} from './time-records.service.js';
 
 export const timeRecordsRouter = Router();
 
-timeRecordsRouter.get('/', (_request, response) => {
-  response.json({
-    message: 'Time records module scaffolded.',
-    items: [],
-  });
+const listSchema = z.object({
+  query: z.object({
+    userId: z.coerce.number().int().positive().optional(),
+    from: z.string().date().optional(),
+    to: z.string().date().optional(),
+  }),
 });
+
+const registerSchema = z.object({
+  body: z.object({
+    recordedAt: z.string().datetime().optional(),
+    kind: z.nativeEnum(TimeEntryKind).optional(),
+    timezone: z.string().optional(),
+  }),
+});
+
+timeRecordsRouter.use(authenticate);
+
+timeRecordsRouter.get(
+  '/',
+  validateRequest(listSchema),
+  asyncHandler(async (request, response) => {
+    const requestedUserId = request.query.userId ? Number(request.query.userId) : undefined;
+    const userId = requestedUserId ?? request.authUser!.id;
+
+    if (
+      requestedUserId &&
+      requestedUserId !== request.authUser!.id &&
+      !['PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'].includes(request.authUser!.role)
+    ) {
+      throw new AppError('You do not have permission to access records from another user.', 403);
+    }
+
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+    });
+
+    if (request.authUser!.role !== 'PLATFORM_ADMIN' && user.companyId !== request.authUser!.companyId) {
+      throw new AppError('You do not have permission to access these records.', 403);
+    }
+
+    const workdays = await prisma.workday.findMany({
+      where: {
+        userId,
+        date: {
+          gte: request.query.from ? startOfDay(request.query.from as string) : undefined,
+          lte: request.query.to ? endOfDay(request.query.to as string) : undefined,
+        },
+      },
+      include: {
+        timeEntries: {
+          orderBy: {
+            recordedAt: 'asc',
+          },
+        },
+      },
+      orderBy: {
+        date: 'desc',
+      },
+    });
+
+    response.json({
+      items: workdays.map(serializeWorkday),
+    });
+  }),
+);
+
+timeRecordsRouter.post(
+  '/register',
+  validateRequest(registerSchema),
+  asyncHandler(async (request, response) => {
+    const result = await createTimeEntry({
+      companyId: request.authUser!.companyId,
+      userId: request.authUser!.id,
+      recordedAt: request.body.recordedAt ? new Date(request.body.recordedAt) : new Date(),
+      source: 'WEB',
+      kind: request.body.kind,
+      timezone: request.body.timezone,
+    });
+
+    response.status(201).json({
+      entry: serializeTimeEntry(result.entry),
+      workday: serializeWorkday(result.workday),
+    });
+  }),
+);
+
+timeRecordsRouter.get(
+  '/team/today',
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  asyncHandler(async (request, response) => {
+    const today = startOfDay(new Date());
+    const tomorrow = endOfDay(new Date());
+
+    const workdays = await prisma.workday.findMany({
+      where: {
+        companyId: request.authUser!.companyId,
+        date: {
+          gte: today,
+          lte: tomorrow,
+        },
+      },
+      include: {
+        user: true,
+        timeEntries: {
+          where: {
+            status: 'ACTIVE',
+          },
+          orderBy: {
+            recordedAt: 'asc',
+          },
+        },
+      },
+      orderBy: {
+        user: {
+          fullName: 'asc',
+        },
+      },
+    });
+
+    response.json({
+      items: workdays.map((workday) => ({
+        userId: workday.userId,
+        userName: workday.user.fullName,
+        status: workday.status,
+        workedMinutes: workday.workedMinutes,
+        lastEntryAt: workday.timeEntries.at(-1)?.recordedAt ?? null,
+      })),
+    });
+  }),
+);

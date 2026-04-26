@@ -1,61 +1,297 @@
+import crypto from 'node:crypto';
+
 import { Router } from 'express';
+import { z } from 'zod';
+
+import { AppError } from '../../common/errors/app-error.js';
+import { asyncHandler } from '../../common/utils/async-handler.js';
+import { validateRequest } from '../../common/validation/validate-request.js';
+import { prisma } from '../../lib/prisma.js';
+import { makeSessionResponse } from '../../common/auth/auth-response.js';
+import { hashPassword, verifyPassword } from '../../common/auth/password.service.js';
+import {
+  generateOpaqueToken,
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from '../../common/auth/token.service.js';
+import { authenticate } from '../../common/auth/auth.middleware.js';
+import { durationToMilliseconds } from '../../common/utils/duration.js';
 
 export const authRouter = Router();
 
-const demoUser = {
-  id: 'demo-user',
-  name: 'Lucas Sigoli',
-  email: 'demo@pontomax.com.br',
-  role: 'admin',
-  groups: ['PONTOMAX_ADMIN'],
-};
-
-const demoCredentials = {
-  email: 'demo@pontomax.com.br',
-  password: '123456',
-};
-
-authRouter.post('/login', (request, response) => {
-  const email =
-    typeof request.body?.email === 'string' ? request.body.email.trim().toLowerCase() : '';
-  const password = typeof request.body?.password === 'string' ? request.body.password : '';
-
-  if (!email || !password) {
-    return response.status(400).json({
-      message: 'Email and password are required.',
-    });
-  }
-
-  if (email !== demoCredentials.email || password !== demoCredentials.password) {
-    return response.status(401).json({
-      message: 'Invalid email or password.',
-    });
-  }
-
-  return response.json({
-    accessToken: createToken(`${demoUser.id}:access`),
-    refreshToken: createToken(`${demoUser.id}:refresh`),
-    user: demoUser,
-  });
+const loginSchema = z.object({
+  body: z.object({
+    email: z.string().email(),
+    password: z.string().min(1),
+  }),
 });
 
-authRouter.post('/refresh', (request, response) => {
-  const refreshToken =
-    typeof request.body?.refreshToken === 'string' ? request.body.refreshToken.trim() : '';
-
-  if (!refreshToken) {
-    return response.status(400).json({
-      message: 'Refresh token is required.',
-    });
-  }
-
-  return response.json({
-    accessToken: createToken(`${demoUser.id}:access`),
-    refreshToken,
-    user: demoUser,
-  });
+const refreshSchema = z.object({
+  body: z.object({
+    refreshToken: z.string().min(1),
+  }),
 });
 
-function createToken(value: string) {
-  return Buffer.from(`${value}:${Date.now()}`).toString('base64url');
-}
+const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email(),
+  }),
+});
+
+const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z.string().min(1),
+    password: z.string().min(6),
+  }),
+});
+
+const logoutSchema = z.object({
+  body: z.object({
+    refreshToken: z.string().min(1),
+  }),
+});
+
+authRouter.post(
+  '/login',
+  validateRequest(loginSchema),
+  asyncHandler(async (request, response) => {
+    const email = request.body.email.trim().toLowerCase();
+    const password = request.body.password;
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        company: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      throw new AppError('Invalid email or password.', 401);
+    }
+
+    const isValidPassword = await verifyPassword(password, user.passwordHash);
+
+    if (!isValidPassword) {
+      throw new AppError('Invalid email or password.', 401);
+    }
+
+    const refreshToken = generateOpaqueToken();
+    const refreshTokenExpiresAt = new Date(
+      Date.now() + durationToMilliseconds(process.env.JWT_REFRESH_EXPIRES_IN ?? '7d'),
+    );
+
+    const session = await prisma.authSession.create({
+      data: {
+        userId: user.id,
+        refreshToken,
+        ipAddress: request.ip,
+        userAgent: request.headers['user-agent'],
+        expiresAt: refreshTokenExpiresAt,
+      },
+    });
+
+    const accessToken = signAccessToken({
+      id: user.id,
+      companyId: user.companyId,
+      role: user.role,
+      email: user.email,
+    });
+
+    const signedRefreshToken = signRefreshToken({
+      id: user.id,
+      companyId: user.companyId,
+      role: user.role,
+      email: user.email,
+      sessionId: session.id,
+      sessionToken: refreshToken,
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+      },
+    });
+
+    response.json(
+      makeSessionResponse({
+        accessToken,
+        refreshToken: signedRefreshToken,
+        user,
+      }),
+    );
+  }),
+);
+
+authRouter.post(
+  '/refresh',
+  validateRequest(refreshSchema),
+  asyncHandler(async (request, response) => {
+    const payload = verifyRefreshToken(request.body.refreshToken);
+
+    const session = await prisma.authSession.findUnique({
+      where: {
+        id: payload.sessionId,
+      },
+      include: {
+        user: {
+          include: {
+            company: true,
+          },
+        },
+      },
+    });
+
+    if (!session || session.status !== 'ACTIVE' || session.revokedAt || session.expiresAt < new Date()) {
+      throw new AppError('Refresh token is invalid or expired.', 401);
+    }
+
+    if (session.refreshToken !== payload.sessionToken) {
+      throw new AppError('Refresh token is invalid or expired.', 401);
+    }
+
+    const accessToken = signAccessToken({
+      id: session.user.id,
+      companyId: session.user.companyId,
+      role: session.user.role,
+      email: session.user.email,
+    });
+
+    const nextRefreshToken = signRefreshToken({
+      id: session.user.id,
+      companyId: session.user.companyId,
+      role: session.user.role,
+      email: session.user.email,
+      sessionId: session.id,
+      sessionToken: session.refreshToken,
+    });
+
+    response.json(
+      makeSessionResponse({
+        accessToken,
+        refreshToken: nextRefreshToken,
+        user: session.user,
+      }),
+    );
+  }),
+);
+
+authRouter.post(
+  '/logout',
+  validateRequest(logoutSchema),
+  asyncHandler(async (request, response) => {
+    const payload = verifyRefreshToken(request.body.refreshToken);
+
+    await prisma.authSession.updateMany({
+      where: {
+        id: payload.sessionId,
+        refreshToken: payload.sessionToken,
+        status: 'ACTIVE',
+      },
+      data: {
+        status: 'REVOKED',
+        revokedAt: new Date(),
+      },
+    });
+
+    response.status(204).send();
+  }),
+);
+
+authRouter.get(
+  '/me',
+  authenticate,
+  asyncHandler(async (request, response) => {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: {
+        id: request.authUser!.id,
+      },
+      include: {
+        company: true,
+      },
+    });
+
+    response.json({
+      user: makeSessionResponse({
+        accessToken: '',
+        refreshToken: '',
+        user,
+      }).user,
+    });
+  }),
+);
+
+authRouter.post(
+  '/forgot-password',
+  validateRequest(forgotPasswordSchema),
+  asyncHandler(async (request, response) => {
+    const user = await prisma.user.findUnique({
+      where: {
+        email: request.body.email.trim().toLowerCase(),
+      },
+    });
+
+    if (!user) {
+      response.json({
+        message: 'If the account exists, a reset token has been generated.',
+      });
+      return;
+    }
+
+    const resetToken = generateOpaqueToken();
+    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash,
+        expiresAt: new Date(Date.now() + durationToMilliseconds('1d')),
+      },
+    });
+
+    response.json({
+      message: 'Password reset token generated.',
+      resetToken,
+    });
+  }),
+);
+
+authRouter.post(
+  '/reset-password',
+  validateRequest(resetPasswordSchema),
+  asyncHandler(async (request, response) => {
+    const tokenHash = crypto.createHash('sha256').update(request.body.token).digest('hex');
+
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: {
+        tokenHash,
+      },
+    });
+
+    if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
+      throw new AppError('Password reset token is invalid or expired.', 400);
+    }
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: {
+          id: resetToken.userId,
+        },
+        data: {
+          passwordHash: await hashPassword(request.body.password),
+        },
+      }),
+      prisma.passwordResetToken.update({
+        where: {
+          id: resetToken.id,
+        },
+        data: {
+          usedAt: new Date(),
+        },
+      }),
+    ]);
+
+    response.status(204).send();
+  }),
+);
