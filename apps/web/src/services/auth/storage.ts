@@ -27,6 +27,10 @@ export function getAccessToken() {
   return getAuthSession()?.accessToken ?? null
 }
 
+export function getRefreshToken() {
+  return getAuthSession()?.refreshToken ?? null
+}
+
 export function clearAuthSession() {
   if (typeof window === "undefined") return
 

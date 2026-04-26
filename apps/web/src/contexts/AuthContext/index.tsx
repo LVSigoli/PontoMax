@@ -10,8 +10,11 @@ import React, {
 // Services
 import {
   clearAuthSession,
+  getCurrentUser,
   getAuthSession,
+  getRefreshToken,
   postLogin,
+  postLogout,
   saveAuthSession,
 } from "@/services/auth"
 
@@ -30,9 +33,35 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setSession(getAuthSession())
-    setIsLoading(false)
+    void hydrateSession()
   }, [])
+
+  async function hydrateSession() {
+    const currentSession = getAuthSession()
+
+    if (!currentSession) {
+      setSession(null)
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const user = await getCurrentUser()
+      setSession({
+        ...currentSession,
+        user,
+      })
+      saveAuthSession({
+        ...currentSession,
+        user,
+      })
+    } catch {
+      clearAuthSession()
+      setSession(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   async function login(payload: LoginPayload) {
     const nextSession = await postLogin(payload)
@@ -44,6 +73,11 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
   }
 
   function logout() {
+    const refreshToken = getRefreshToken()
+    if (refreshToken) {
+      void postLogout(refreshToken).catch(() => undefined)
+    }
+
     clearAuthSession()
     setSession(null)
   }

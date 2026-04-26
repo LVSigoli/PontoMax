@@ -21,20 +21,25 @@ interface Props {
 export const ReplacePasswordForm: React.FC<Props> = ({
   onBackToLoginClick,
 }) => {
-  // Hooks
-  const { credential, handleCredentialChange } = useReplacePassword()
+  const {
+    credential,
+    errorMessage,
+    handleCredentialChange,
+    handleSubmit,
+    isSubmitting,
+    successMessage,
+  } = useReplacePassword()
 
-  // Functions
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    console.log("replace password", credential)
+    await handleSubmit()
   }
 
   return (
     <form
       className="w-full max-w-90"
       aria-labelledby="replace-password-title"
-      onSubmit={handleSubmit}
+      onSubmit={handleFormSubmit}
     >
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse ">
@@ -45,7 +50,7 @@ export const ReplacePasswordForm: React.FC<Props> = ({
 
         <Typography
           variant="b2"
-          value="Crie uma nova senha para acessar sua conta com segurança."
+          value="Crie uma nova senha para acessar sua conta com seguranca."
         />
       </div>
 
@@ -56,7 +61,7 @@ export const ReplacePasswordForm: React.FC<Props> = ({
           icon={LockIcon}
           value={credential.password}
           placeholder="Informe sua nova senha"
-          onChange={(v) => handleCredentialChange("password", v)}
+          onChange={(value) => handleCredentialChange("password", value)}
         />
 
         <Input
@@ -65,7 +70,7 @@ export const ReplacePasswordForm: React.FC<Props> = ({
           icon={LockIcon}
           value={credential.confirmPassword}
           placeholder="Confirme sua nova senha"
-          onChange={(v) => handleCredentialChange("confirmPassword", v)}
+          onChange={(value) => handleCredentialChange("confirmPassword", value)}
         />
       </div>
 
@@ -74,7 +79,24 @@ export const ReplacePasswordForm: React.FC<Props> = ({
         type="submit"
         value="Salvar nova senha"
         className="mt-7"
+        loading={isSubmitting}
       />
+
+      {errorMessage ? (
+        <Typography
+          variant="legal"
+          value={errorMessage}
+          className="mt-3 text-danger-700"
+        />
+      ) : null}
+
+      {successMessage ? (
+        <Typography
+          variant="legal"
+          value={successMessage}
+          className="mt-3 text-success-700"
+        />
+      ) : null}
 
       <Button
         fitWidth

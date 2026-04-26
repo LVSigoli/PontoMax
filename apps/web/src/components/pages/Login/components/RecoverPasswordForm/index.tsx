@@ -21,20 +21,25 @@ interface Props {
 export const RecoverPasswordForm: React.FC<Props> = ({
   onBackToLoginClick,
 }) => {
-  // Hooks
-  const { credential, handleCredentialChange } = useRecoverPassword()
+  const {
+    credential,
+    errorMessage,
+    handleCredentialChange,
+    handleSubmit,
+    isSubmitting,
+    successMessage,
+  } = useRecoverPassword()
 
-  // Functions
-  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+  async function handleFormSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
-    console.log("recover password", credential)
+    await handleSubmit()
   }
 
   return (
     <form
       className="w-full max-w-90"
       aria-labelledby="recover-password-title"
-      onSubmit={handleSubmit}
+      onSubmit={handleFormSubmit}
     >
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse">
@@ -45,7 +50,7 @@ export const RecoverPasswordForm: React.FC<Props> = ({
 
         <Typography
           variant="b2"
-          value="Informe seu e-mail para receber as instruções de recuperação."
+          value="Informe seu e-mail para receber as instrucoes de recuperacao."
         />
       </div>
 
@@ -55,16 +60,33 @@ export const RecoverPasswordForm: React.FC<Props> = ({
           icon={MailIcon}
           value={credential.email}
           placeholder="seu@email.com.br"
-          onChange={(v) => handleCredentialChange("email", v)}
+          onChange={(value) => handleCredentialChange("email", value)}
         />
       </div>
 
       <Button
         fitWidth
         type="submit"
-        value="Enviar instruções"
+        value="Enviar instrucoes"
         className="mt-7"
+        loading={isSubmitting}
       />
+
+      {errorMessage ? (
+        <Typography
+          variant="legal"
+          value={errorMessage}
+          className="mt-3 text-danger-700"
+        />
+      ) : null}
+
+      {successMessage ? (
+        <Typography
+          variant="legal"
+          value={successMessage}
+          className="mt-3 text-success-700"
+        />
+      ) : null}
 
       <Button
         fitWidth

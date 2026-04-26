@@ -1,6 +1,7 @@
 import axios from "axios"
 
 import { clearAuthSession, getAccessToken } from "./auth"
+import { getErrorMessage } from "./utils"
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3333"
@@ -30,6 +31,6 @@ PONTO_MAX_API.interceptors.response.use(
       window.location.href = "/login"
     }
 
-    return Promise.reject(error)
+    return Promise.reject(new Error(getErrorMessage(error, "Nao foi possivel concluir a requisicao.")))
   }
 )

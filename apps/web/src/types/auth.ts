@@ -4,6 +4,8 @@ export interface AuthUser {
   email: string
   role: string
   groups: string[]
+  companyId?: number
+  companyName?: string | null
 }
 
 export interface AuthSession {
