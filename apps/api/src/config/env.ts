@@ -1,6 +1,13 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { config } from 'dotenv';
 
-config();
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirectoryPath = path.dirname(currentFilePath);
+const workspaceEnvPath = path.resolve(currentDirectoryPath, '../../../../.env');
+
+config({ path: workspaceEnvPath });
 
 type NodeEnv = 'development' | 'test' | 'production';
 
