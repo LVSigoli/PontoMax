@@ -21,11 +21,13 @@ export const PointRegister: React.FC = () => {
     currentDate,
     currentTime,
     currentRecords,
+    adjustmentRequestRecords,
     confirmationModalRef,
     selectedHistoryRecord,
     dayHistorySidePanelRef,
     adjustmentRequestSidePanelRef,
     handleRegisterPoint,
+    handleAdjustmentRequestSubmitted,
     handleHistoryRecordSelect,
     handleAdjustmentRequestOpen,
     handleConfirmationModalOpen,
@@ -75,7 +77,8 @@ export const PointRegister: React.FC = () => {
 
       <AdjustmentRequestSidePanel
         ref={adjustmentRequestSidePanelRef}
-        records={records}
+        records={adjustmentRequestRecords}
+        onSubmitted={handleAdjustmentRequestSubmitted}
       />
     </main>
   )

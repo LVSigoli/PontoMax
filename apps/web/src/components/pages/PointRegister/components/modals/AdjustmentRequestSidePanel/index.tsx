@@ -26,8 +26,10 @@ import type {
 export const AdjustmentRequestSidePanel = forwardRef<
   AdjustmentRequestSidePanelMethods,
   AdjustmentRequestSidePanelProps
->(({ records }, ref) => {
+>(({ records, onSubmitted }, ref) => {
   const {
+    errorMessage,
+    isSubmitting,
     form,
     sidePanelRef,
     tableRows,
@@ -41,7 +43,7 @@ export const AdjustmentRequestSidePanel = forwardRef<
       handleTableActionClick,
       handleTableCellChange,
       handleToggle,
-  } = useAdjustmentRequest({ records })
+  } = useAdjustmentRequest({ onSubmitted, records })
 
   useImperativeHandle(
     ref,
@@ -99,6 +101,14 @@ export const AdjustmentRequestSidePanel = forwardRef<
             value={form.justification}
             onChange={handleJustificationChange}
           />
+
+          {errorMessage ? (
+            <Typography
+              variant="legal"
+              value={errorMessage}
+              className="mt-3 text-danger-700"
+            />
+          ) : null}
         </div>
 
         <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
@@ -110,7 +120,12 @@ export const AdjustmentRequestSidePanel = forwardRef<
             onClick={handleCancel}
           />
 
-          <Button fitWidth value="Salvar" onClick={handleConfirm} />
+          <Button
+            fitWidth
+            value="Salvar"
+            loading={isSubmitting}
+            onClick={handleConfirm}
+          />
         </footer>
       </div>
     </SidePanel>

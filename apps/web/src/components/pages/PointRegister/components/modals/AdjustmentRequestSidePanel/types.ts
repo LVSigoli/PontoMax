@@ -5,4 +5,5 @@ export type AdjustmentRequestSidePanelMethods = SidePanelMethods
 
 export interface AdjustmentRequestSidePanelProps {
   records: PointRecord[]
+  onSubmitted?: () => Promise<void> | void
 }

@@ -9,13 +9,19 @@ export interface ManagementTabOption extends TextSwitchOption {
 
 export interface Company {
   id: number
+  clientId?: number
+  legalName?: string
+  tradeName?: string | null
   name: string
   cnpj: string
+  timezone?: string
+  isActive?: boolean
   employees: number
 }
 
 export interface Employee {
   id: number
+  userRole?: string
   name: string
   cpf: string
   email: string
@@ -27,12 +33,19 @@ export interface Employee {
 
 export interface Journey {
   id: number
+  companyId?: number
   name: string
+  description?: string | null
   flexible: boolean
   startTime: string
   endTime: string
   interval: string
   scale: string
+  dailyWorkMinutes?: number
+  weeklyWorkMinutes?: number | null
+  toleranceMinutes?: number
+  nightShift?: boolean
+  isActive?: boolean
   employees: number
 }
 

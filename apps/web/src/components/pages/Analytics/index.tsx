@@ -10,11 +10,12 @@ import { HourBalanceList } from "./components/HourBalanceList"
 import { MetricCard } from "./components/MetricCard"
 import { SolicitationBarChart } from "./components/SolicitationBarChart"
 import { WorkedHoursLineChart } from "./components/WorkedHoursLineChart"
-
-// Constants
-import { ANALYTICS_METRICS } from "./constants"
+import { useAnalytics } from "./hooks/useAnalytics"
 
 export const Analytics: React.FC = () => {
+  const { balances, errorMessage, metrics, solicitationChart, workedHours } =
+    useAnalytics()
+
   function handleExportReport() {
     console.log("export report")
   }
@@ -60,19 +61,27 @@ export const Analytics: React.FC = () => {
                 className="text-xl"
               />
 
+              {errorMessage ? (
+                <Typography
+                  variant="legal"
+                  value={errorMessage}
+                  className="text-danger-700"
+                />
+              ) : null}
+
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                {ANALYTICS_METRICS.map((metric) => (
+                {metrics.map((metric) => (
                   <MetricCard key={metric.type} metric={metric} />
                 ))}
               </div>
             </section>
 
             <section className="grid gap-4 xl:grid-cols-[0.9fr_1.7fr]">
-              <HourBalanceList />
+              <HourBalanceList items={balances} />
 
               <div className="grid gap-4">
-                <SolicitationBarChart />
-                <WorkedHoursLineChart />
+                <SolicitationBarChart items={solicitationChart} />
+                <WorkedHoursLineChart items={workedHours} />
               </div>
             </section>
           </div>

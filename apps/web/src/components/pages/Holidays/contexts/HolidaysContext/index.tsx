@@ -1,49 +1,78 @@
 // External Libraries
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 
-// Constants
-import { INITIAL_HOLIDAYS } from "../../constants"
+// Services
+import {
+  createHoliday,
+  deleteHoliday,
+  getHolidays,
+  updateHoliday,
+} from "@/services/domain"
 
 // Types
 import type { Holiday, HolidayForm } from "../../types"
 import type { HolidaysContextValue, HolidaysProviderProps } from "./types"
+
+// Utils
+import { mapHolidayApiToHoliday, mapHolidayTypeToApi } from "../../utils"
 
 const HolidaysContext = createContext<HolidaysContextValue | null>(null)
 
 export const HolidaysProvider: React.FC<HolidaysProviderProps> = ({
   children,
 }) => {
-  const [holidays, setHolidays] = useState<Holiday[]>(INITIAL_HOLIDAYS)
+  const [holidays, setHolidays] = useState<Holiday[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  function removeHoliday(id: number) {
+  useEffect(() => {
+    void loadHolidays()
+  }, [])
+
+  async function loadHolidays() {
+    try {
+      setIsLoading(true)
+      const items = await getHolidays()
+      setHolidays(items.map(mapHolidayApiToHoliday))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function removeHoliday(id: number) {
+    await deleteHoliday(id)
     setHolidays((currentHolidays) =>
       currentHolidays.filter((holiday) => holiday.id !== id)
     )
   }
 
-  function saveHoliday(holiday: Holiday | null, form: HolidayForm) {
+  async function saveHoliday(holiday: Holiday | null, form: HolidayForm) {
+    const payload = {
+      name: form.name,
+      date: form.date,
+      type: mapHolidayTypeToApi(form.type),
+    }
+
     if (holiday) {
+      const updatedHoliday = await updateHoliday(holiday.id, payload)
       setHolidays((currentHolidays) =>
         currentHolidays.map((currentHoliday) =>
           currentHoliday.id === holiday.id
-            ? { ...currentHoliday, ...form }
+            ? mapHolidayApiToHoliday(updatedHoliday)
             : currentHoliday
         )
       )
       return
     }
 
+    const createdHoliday = await createHoliday(payload)
     setHolidays((currentHolidays) => [
       ...currentHolidays,
-      {
-        id: Date.now(),
-        status: "Ativo",
-        ...form,
-      },
+      mapHolidayApiToHoliday(createdHoliday),
     ])
   }
 
   const value: HolidaysContextValue = {
+    isLoading,
     holidays,
     removeHoliday,
     saveHoliday,

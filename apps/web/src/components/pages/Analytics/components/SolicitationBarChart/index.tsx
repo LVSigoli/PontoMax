@@ -1,12 +1,15 @@
 // Components
 import { Typography } from "@/components/structure/Typography"
 
-// Constants
-import { SOLICITATION_CHART_DATA } from "../../constants"
+import type { SolicitationChartItem } from "../../types"
 
 const MAX_VALUE = 25
 
-export const SolicitationBarChart: React.FC = () => {
+interface Props {
+  items: SolicitationChartItem[]
+}
+
+export const SolicitationBarChart: React.FC<Props> = ({ items }) => {
   return (
     <section className="rounded-xl bg-surface-card px-6 py-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -37,7 +40,7 @@ export const SolicitationBarChart: React.FC = () => {
           </div>
 
           <div className="relative z-10 grid h-full grid-cols-6 items-end gap-5 px-3">
-            {SOLICITATION_CHART_DATA.map((item) => (
+            {items.map((item) => (
               <div key={item.label} className="grid gap-3">
                 <div className="flex h-36 items-end justify-center gap-2">
                   <Bar color="bg-danger-500" value={item.refused} />

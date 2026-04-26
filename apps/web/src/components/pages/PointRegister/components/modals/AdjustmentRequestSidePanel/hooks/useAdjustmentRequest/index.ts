@@ -4,6 +4,10 @@ import { useMemo, useRef, useState } from "react"
 // Constants
 import { POINT_TYPES } from "../../constants"
 
+// Services
+import { createAdjustmentRequest } from "@/services/domain"
+import { getErrorMessage } from "@/services/utils"
+
 // Types
 import type { SelectionOption } from "@/components/structure/Select/types"
 import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
@@ -12,6 +16,7 @@ import type { PointRecord } from "../../../../../types"
 
 interface UseAdjustmentRequestParams {
   records: PointRecord[]
+  onSubmitted?: () => Promise<void> | void
 }
 
 interface AdjustmentRequestForm {
@@ -19,16 +24,18 @@ interface AdjustmentRequestForm {
   records: PointRecord[]
 }
 
-export function useAdjustmentRequest({ records }: UseAdjustmentRequestParams) {
-  // Refs
+export function useAdjustmentRequest({
+  onSubmitted,
+  records,
+}: UseAdjustmentRequestParams) {
   const sidePanelRef = useRef<SidePanelMethods>(null)
 
-  // States
   const [form, setForm] = useState<AdjustmentRequestForm>(() =>
     makeInitialForm(records)
   )
+  const [errorMessage, setErrorMessage] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Constants
   const pointTypeOptions = useMemo<SelectionOption[]>(
     () =>
       POINT_TYPES.map((type) => ({
@@ -53,15 +60,16 @@ export function useAdjustmentRequest({ records }: UseAdjustmentRequestParams) {
     },
   }))
 
-  // Functions
   function handleAddRecord() {
+    setErrorMessage("")
     setForm((currentForm) => ({
       ...currentForm,
       records: [
         ...currentForm.records,
         {
           id: Date.now(),
-          time: "08:00:00",
+          workdayDate: records[0]?.workdayDate,
+          time: "08:00",
           workedHours: "00h 00min",
           extraHours: "00h 00min",
           missingHours: "00h 00min",
@@ -73,13 +81,49 @@ export function useAdjustmentRequest({ records }: UseAdjustmentRequestParams) {
   }
 
   function handleCancel() {
+    setErrorMessage("")
     setForm(makeInitialForm(records))
     sidePanelRef.current?.close()
   }
 
-  function handleConfirm() {
-    console.log("adjustment request", form)
-    sidePanelRef.current?.close()
+  async function handleConfirm() {
+    const workdayDate = records[0]?.workdayDate
+
+    if (isSubmitting || !workdayDate) {
+      return
+    }
+
+    if (!form.justification.trim()) {
+      setErrorMessage("Informe uma justificativa para continuar.")
+      return
+    }
+
+    const adjustmentRecords = buildAdjustmentRecords(records, form.records)
+
+    if (adjustmentRecords.length === 0) {
+      setErrorMessage("Altere ao menos um horario antes de solicitar o ajuste.")
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      setErrorMessage("")
+
+      await createAdjustmentRequest({
+        workdayDate,
+        justification: form.justification.trim(),
+        records: adjustmentRecords,
+      })
+
+      await onSubmitted?.()
+      sidePanelRef.current?.close()
+    } catch (error) {
+      setErrorMessage(
+        getErrorMessage(error, "Nao foi possivel enviar a solicitacao de ajuste.")
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   function handleClose() {
@@ -87,6 +131,7 @@ export function useAdjustmentRequest({ records }: UseAdjustmentRequestParams) {
   }
 
   function handleOpen() {
+    setErrorMessage("")
     setForm(makeInitialForm(records))
     sidePanelRef.current?.open()
   }
@@ -96,6 +141,7 @@ export function useAdjustmentRequest({ records }: UseAdjustmentRequestParams) {
   }
 
   function handleJustificationChange(value: string) {
+    setErrorMessage("")
     setForm((currentForm) => ({
       ...currentForm,
       justification: value,
@@ -107,6 +153,7 @@ export function useAdjustmentRequest({ records }: UseAdjustmentRequestParams) {
   }
 
   function handleRecordRemove(id: number) {
+    setErrorMessage("")
     setForm((currentForm) => ({
       ...currentForm,
       records: currentForm.records.filter((record) => record.id !== id),
@@ -114,15 +161,17 @@ export function useAdjustmentRequest({ records }: UseAdjustmentRequestParams) {
   }
 
   function handleRecordTimeChange(id: number, value: string) {
+    setErrorMessage("")
     setForm((currentForm) => ({
       ...currentForm,
       records: currentForm.records.map((record) =>
-        record.id === id ? { ...record, time: `${value}:00` } : record
+        record.id === id ? { ...record, time: value } : record
       ),
     }))
   }
 
   function handleRecordTypeChange(id: number, value: PointRecord["type"]) {
+    setErrorMessage("")
     setForm((currentForm) => ({
       ...currentForm,
       records: currentForm.records.map((record) =>
@@ -155,6 +204,8 @@ export function useAdjustmentRequest({ records }: UseAdjustmentRequestParams) {
   }
 
   return {
+    errorMessage,
+    isSubmitting,
     form,
     sidePanelRef,
     tableRows,
@@ -182,4 +233,76 @@ function getNextPointType(records: PointRecord[]) {
   return records[records.length - 1]?.type === POINT_TYPES[0]
     ? POINT_TYPES[1]
     : POINT_TYPES[0]
+}
+
+function buildAdjustmentRecords(initialRecords: PointRecord[], currentRecords: PointRecord[]) {
+  const nextRecords: Array<{
+    timeEntryId?: number
+    actionType: "CREATE" | "UPDATE" | "DELETE"
+    targetKind: "ENTRY" | "EXIT"
+    originalRecordedAt?: string
+    newRecordedAt?: string
+  }> = []
+
+  const currentByEntryId = new Map(
+    currentRecords
+      .filter((record) => record.timeEntryId)
+      .map((record) => [record.timeEntryId, record])
+  )
+
+  for (const initialRecord of initialRecords) {
+    if (!initialRecord.timeEntryId || !initialRecord.workdayDate) {
+      continue
+    }
+
+    const currentRecord = currentByEntryId.get(initialRecord.timeEntryId)
+
+    if (!currentRecord) {
+      nextRecords.push({
+        timeEntryId: initialRecord.timeEntryId,
+        actionType: "DELETE",
+        targetKind: initialRecord.type === "Entrada" ? "ENTRY" : "EXIT",
+        originalRecordedAt: initialRecord.recordedAt,
+      })
+      continue
+    }
+
+    const nextRecordedAt = makeDateTime(
+      initialRecord.workdayDate,
+      currentRecord.time
+    )
+    const nextKind = currentRecord.type === "Entrada" ? "ENTRY" : "EXIT"
+
+    if (
+      nextRecordedAt !== initialRecord.recordedAt ||
+      nextKind !== (initialRecord.type === "Entrada" ? "ENTRY" : "EXIT")
+    ) {
+      nextRecords.push({
+        timeEntryId: initialRecord.timeEntryId,
+        actionType: "UPDATE",
+        targetKind: nextKind,
+        originalRecordedAt: initialRecord.recordedAt,
+        newRecordedAt: nextRecordedAt,
+      })
+    }
+  }
+
+  for (const currentRecord of currentRecords) {
+    if (currentRecord.timeEntryId || !currentRecord.workdayDate) {
+      continue
+    }
+
+    nextRecords.push({
+      actionType: "CREATE",
+      targetKind: currentRecord.type === "Entrada" ? "ENTRY" : "EXIT",
+      newRecordedAt: makeDateTime(currentRecord.workdayDate, currentRecord.time),
+    })
+  }
+
+  return nextRecords
+}
+
+function makeDateTime(date: string, time: string) {
+  const normalizedTime = time.length >= 5 ? time.slice(0, 5) : `${time}:00`
+  return new Date(`${date}T${normalizedTime}:00`).toISOString()
 }

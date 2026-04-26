@@ -1,4 +1,5 @@
 import type { Holiday, HolidayForm, HolidayStatus } from "./types"
+import type { HolidayApiItem } from "@/services/domain"
 
 export function formatHolidayDate(value: string) {
   if (!value) return "-"
@@ -21,4 +22,29 @@ export function makeHolidayForm(holiday?: Holiday | null): HolidayForm {
     date: holiday?.date ?? "",
     type: holiday?.type ?? "Nacional",
   }
+}
+
+export function mapHolidayApiToHoliday(holiday: HolidayApiItem): Holiday {
+  return {
+    id: holiday.id,
+    companyId: holiday.companyId,
+    name: holiday.name,
+    date: holiday.date.slice(0, 10),
+    type: mapHolidayTypeFromApi(holiday.type),
+    status: holiday.isActive ? "Ativo" : "Inativo",
+  }
+}
+
+export function mapHolidayTypeToApi(type: HolidayForm["type"]): HolidayApiItem["type"] {
+  if (type === "Nacional") return "NATIONAL"
+  if (type === "Municipal") return "MUNICIPAL"
+
+  return "STATE"
+}
+
+function mapHolidayTypeFromApi(type: HolidayApiItem["type"]) {
+  if (type === "NATIONAL") return "Nacional"
+  if (type === "MUNICIPAL") return "Municipal"
+
+  return "Estadual"
 }

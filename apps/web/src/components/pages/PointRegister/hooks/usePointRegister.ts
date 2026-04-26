@@ -1,14 +1,18 @@
 // External Libraries
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
-// Constants
-import { POINT_RECORDS } from "../constants"
+// Services
+import { getTimeRecords, registerTimeRecord } from "@/services/domain"
 
 // Types
 import type { PointRecord } from "../types"
 
 // Utils
-import { formatPointDate, formatPointTime } from "../utils"
+import {
+  formatPointDate,
+  formatPointTime,
+  mapWorkdayToPointRecords,
+} from "../utils"
 
 // Types
 import type { AdjustmentRequestSidePanelMethods } from "../components/modals/AdjustmentRequestSidePanel/types"
@@ -16,25 +20,31 @@ import { ConfirmationModalMethods } from "../components/modals/ConfirmationModal
 import type { DayHistorySidePanelMethods } from "../components/modals/DayHistorySidePanel/types"
 
 export function usePointRegister() {
-  // Refs
   const adjustmentRequestSidePanelRef =
     useRef<AdjustmentRequestSidePanelMethods>(null)
   const confirmationModalRef = useRef<ConfirmationModalMethods>(null)
   const dayHistorySidePanelRef = useRef<DayHistorySidePanelMethods>(null)
 
-  // States
   const [now, setNow] = useState<Date | null>(null)
-  const [records] = useState<PointRecord[]>(POINT_RECORDS)
-  const [currentRecords, setCurrentRecords] = useState<PointRecord[]>(
-    POINT_RECORDS.slice(0, 2)
-  )
+  const [records, setRecords] = useState<PointRecord[]>([])
   const [selectedHistoryRecord, setSelectedHistoryRecord] =
     useState<PointRecord | null>(null)
+  const [adjustmentRequestRecords, setAdjustmentRequestRecords] = useState<
+    PointRecord[]
+  >([])
 
   const currentDate = now ? formatPointDate(now) : "--"
   const currentTime = now ? formatPointTime(now) : "--:--:--"
+  const todayKey = useMemo(
+    () => (now ?? new Date()).toISOString().slice(0, 10),
+    [now]
+  )
 
-  // Effects
+  const currentRecords = useMemo(
+    () => records.filter((record) => record.workdayDate === todayKey),
+    [records, todayKey]
+  )
+
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setNow(new Date())
@@ -50,35 +60,41 @@ export function usePointRegister() {
     }
   }, [])
 
-  // Functions
-  function handleRegisterPoint() {
-    setCurrentRecords((currentRecords) => [
-      {
-        id: Date.now(),
-        time: currentTime,
-        workedHours: "00h 00min",
-        extraHours: "00h 00min",
-        missingHours: "00h 00min",
-        type: getNextPointType(currentRecords),
-        status: "Registrado",
-      },
-      ...currentRecords,
-    ])
+  useEffect(() => {
+    void loadRecords()
+  }, [])
+
+  async function loadRecords() {
+    const workdays = await getTimeRecords()
+    setRecords(workdays.flatMap(mapWorkdayToPointRecords))
   }
 
-  // Functions
+  async function handleRegisterPoint() {
+    await registerTimeRecord()
+    await loadRecords()
+  }
+
   function handleConfirmationModalOpen() {
     confirmationModalRef.current?.open()
   }
 
-  function handleHistoryRecordSelect(record: PointRecord) {
+  function handleHistoryRecordSelect(record: PointRecord | null) {
+    if (!record) return
+
     setSelectedHistoryRecord(record)
     dayHistorySidePanelRef.current?.open()
   }
 
   function handleAdjustmentRequestOpen(record: PointRecord) {
     setSelectedHistoryRecord(record)
+    setAdjustmentRequestRecords(
+      records.filter((item) => item.workdayDate === record.workdayDate)
+    )
     adjustmentRequestSidePanelRef.current?.open()
+  }
+
+  async function handleAdjustmentRequestSubmitted() {
+    await loadRecords()
   }
 
   return {
@@ -86,17 +102,15 @@ export function usePointRegister() {
     currentDate,
     currentTime,
     currentRecords,
+    adjustmentRequestRecords,
     selectedHistoryRecord,
     adjustmentRequestSidePanelRef,
     confirmationModalRef,
     dayHistorySidePanelRef,
     handleAdjustmentRequestOpen,
+    handleAdjustmentRequestSubmitted,
     handleRegisterPoint,
     handleConfirmationModalOpen,
     handleHistoryRecordSelect,
   }
-}
-
-function getNextPointType(records: PointRecord[]) {
-  return records[0]?.type === "Entrada" ? "Saída" : "Entrada"
 }

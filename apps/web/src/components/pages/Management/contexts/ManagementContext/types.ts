@@ -8,15 +8,16 @@ import type {
 } from "../../types"
 
 export interface ManagementContextValue {
+  isLoading: boolean
   companies: Company[]
   employees: Employee[]
   journeys: Journey[]
-  removeEntity: (view: ManagementTabId, id: number) => void
+  removeEntity: (view: ManagementTabId, id: number) => Promise<void>
   saveEntity: (
     view: ManagementTabId,
     entity: ManagementEntity | null,
     form: unknown
-  ) => void
+  ) => Promise<void>
 }
 
 export interface ManagementProviderProps {

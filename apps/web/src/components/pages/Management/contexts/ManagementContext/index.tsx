@@ -1,12 +1,21 @@
 // External Libraries
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 
-// Constants
+// Services
 import {
-  INITIAL_COMPANIES,
-  INITIAL_EMPLOYEES,
-  INITIAL_JOURNEYS,
-} from "../../constants"
+  createCompany,
+  createJourney,
+  createUser,
+  deleteCompany,
+  deleteJourney,
+  deleteUser,
+  getCompanies,
+  getJourneys,
+  getUsers,
+  updateCompany,
+  updateJourney,
+  updateUser,
+} from "@/services/domain"
 
 // Types
 import type {
@@ -21,17 +30,51 @@ import type {
 } from "../../types"
 import type { ManagementContextValue, ManagementProviderProps } from "./types"
 
+// Utils
+import {
+  buildCompanyPayload,
+  buildEmployeePayload,
+  buildJourneyPayload,
+  mapCompanyApiToCompany,
+  mapJourneyApiToJourney,
+  mapUserApiToEmployee,
+} from "../../utils"
+
 const ManagementContext = createContext<ManagementContextValue | null>(null)
 
 export const ManagementProvider: React.FC<ManagementProviderProps> = ({
   children,
 }) => {
-  const [companies, setCompanies] = useState<Company[]>(INITIAL_COMPANIES)
-  const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES)
-  const [journeys, setJourneys] = useState<Journey[]>(INITIAL_JOURNEYS)
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [journeys, setJourneys] = useState<Journey[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  function removeEntity(view: ManagementTabId, id: number) {
+  useEffect(() => {
+    void loadManagementData()
+  }, [])
+
+  async function loadManagementData() {
+    try {
+      setIsLoading(true)
+
+      const [companyItems, employeeItems, journeyItems] = await Promise.all([
+        getCompanies(),
+        getUsers(),
+        getJourneys(),
+      ])
+
+      setCompanies(companyItems.map(mapCompanyApiToCompany))
+      setEmployees(employeeItems.map(mapUserApiToEmployee))
+      setJourneys(journeyItems.map(mapJourneyApiToJourney))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function removeEntity(view: ManagementTabId, id: number) {
     if (view === "companies") {
+      await deleteCompany(id)
       setCompanies((currentCompanies) =>
         currentCompanies.filter((company) => company.id !== id)
       )
@@ -39,95 +82,103 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
     }
 
     if (view === "employees") {
+      await deleteUser(id)
       setEmployees((currentEmployees) =>
         currentEmployees.filter((employee) => employee.id !== id)
       )
       return
     }
 
+    await deleteJourney(id)
     setJourneys((currentJourneys) =>
       currentJourneys.filter((journey) => journey.id !== id)
     )
   }
 
-  function saveEntity(
+  async function saveEntity(
     view: ManagementTabId,
     entity: ManagementEntity | null,
     form: unknown
   ) {
     if (view === "companies") {
-      saveCompany(entity as Company | null, form as CompanyForm)
+      await saveCompany(entity as Company | null, form as CompanyForm)
       return
     }
 
     if (view === "employees") {
-      saveEmployee(entity as Employee | null, form as EmployeeForm)
+      await saveEmployee(entity as Employee | null, form as EmployeeForm)
       return
     }
 
-    saveJourney(entity as Journey | null, form as JourneyForm)
+    await saveJourney(entity as Journey | null, form as JourneyForm)
   }
 
-  function saveCompany(entity: Company | null, form: CompanyForm) {
+  async function saveCompany(entity: Company | null, form: CompanyForm) {
+    const resolvedClientId = form.clientId ?? companies[0]?.clientId ?? 1
+    const payload = buildCompanyPayload({
+      ...form,
+      clientId: resolvedClientId,
+    })
+
     if (entity) {
+      const updatedCompany = await updateCompany(entity.id, payload)
       setCompanies((currentCompanies) =>
         currentCompanies.map((company) =>
-          company.id === entity.id ? { ...company, ...form } : company
+          company.id === entity.id ? mapCompanyApiToCompany(updatedCompany) : company
         )
       )
       return
     }
 
+    const createdCompany = await createCompany(payload)
     setCompanies((currentCompanies) => [
       ...currentCompanies,
-      {
-        id: Date.now(),
-        employees: 0,
-        ...form,
-      },
+      mapCompanyApiToCompany(createdCompany),
     ])
   }
 
-  function saveEmployee(entity: Employee | null, form: EmployeeForm) {
+  async function saveEmployee(entity: Employee | null, form: EmployeeForm) {
+    const payload = buildEmployeePayload(form)
+
     if (entity) {
+      const updatedEmployee = await updateUser(entity.id, payload)
       setEmployees((currentEmployees) =>
         currentEmployees.map((employee) =>
-          employee.id === entity.id ? { ...employee, ...form } : employee
+          employee.id === entity.id ? mapUserApiToEmployee(updatedEmployee) : employee
         )
       )
       return
     }
 
+    const createdEmployee = await createUser(payload)
     setEmployees((currentEmployees) => [
       ...currentEmployees,
-      {
-        id: Date.now(),
-        ...form,
-      },
+      mapUserApiToEmployee(createdEmployee),
     ])
   }
 
-  function saveJourney(entity: Journey | null, form: JourneyForm) {
+  async function saveJourney(entity: Journey | null, form: JourneyForm) {
+    const payload = buildJourneyPayload(form)
+
     if (entity) {
+      const updatedJourney = await updateJourney(entity.id, payload)
       setJourneys((currentJourneys) =>
         currentJourneys.map((journey) =>
-          journey.id === entity.id ? { ...journey, ...form } : journey
+          journey.id === entity.id ? mapJourneyApiToJourney(updatedJourney) : journey
         )
       )
       return
     }
 
+    const createdJourney = await createJourney(payload)
     setJourneys((currentJourneys) => [
       ...currentJourneys,
-      {
-        id: Date.now(),
-        employees: 0,
-        ...form,
-      },
+      mapJourneyApiToJourney(createdJourney),
     ])
   }
 
   const value: ManagementContextValue = {
+    isLoading,
     companies,
     employees,
     journeys,

@@ -1,5 +1,10 @@
 import type { SelectionOption } from "@/components/structure/Select/types"
 import type {
+  CompanyApiItem,
+  JourneyApiItem,
+  UserApiItem,
+} from "@/services/domain"
+import type {
   Company,
   CompanyForm,
   Employee,
@@ -11,8 +16,13 @@ import type {
 
 export function makeCompanyForm(company?: Company): CompanyForm {
   return {
+    clientId: company?.clientId ?? 0,
+    legalName: company?.legalName ?? company?.name ?? "",
+    tradeName: company?.tradeName ?? "",
     name: company?.name ?? "",
     cnpj: company?.cnpj ?? "",
+    timezone: company?.timezone ?? "America/Sao_Paulo",
+    isActive: company?.isActive ?? true,
   }
 }
 
@@ -22,6 +32,7 @@ export function makeEmployeeForm(
   employee?: Employee
 ): EmployeeForm {
   return {
+    userRole: employee?.userRole ?? "EMPLOYEE",
     name: employee?.name ?? "",
     cpf: employee?.cpf ?? "",
     email: employee?.email ?? "",
@@ -35,11 +46,18 @@ export function makeEmployeeForm(
 export function makeJourneyForm(journey?: Journey): JourneyForm {
   return {
     name: journey?.name ?? "",
+    description: journey?.description ?? "",
     flexible: journey?.flexible ?? false,
     startTime: journey?.startTime ?? "",
     endTime: journey?.endTime ?? "",
     interval: journey?.interval ?? "",
     scale: journey?.scale ?? "5X2",
+    companyId: journey?.companyId ?? 0,
+    dailyWorkMinutes: journey?.dailyWorkMinutes ?? 0,
+    weeklyWorkMinutes: journey?.weeklyWorkMinutes ?? undefined,
+    toleranceMinutes: journey?.toleranceMinutes ?? 10,
+    nightShift: journey?.nightShift ?? false,
+    isActive: journey?.isActive ?? true,
   }
 }
 
@@ -77,4 +95,141 @@ export function getEntityLabel(tab: ManagementTabId) {
   if (tab === "employees") return "funcionario"
 
   return "jornada"
+}
+
+export function mapCompanyApiToCompany(company: CompanyApiItem): Company {
+  return {
+    id: company.id,
+    clientId: company.clientId,
+    legalName: company.legalName,
+    tradeName: company.tradeName,
+    name: company.name,
+    cnpj: company.cnpj,
+    timezone: company.timezone,
+    isActive: company.isActive,
+    employees: company.employees,
+  }
+}
+
+export function mapUserApiToEmployee(user: UserApiItem): Employee {
+  return {
+    id: user.id,
+    userRole: user.role,
+    name: user.fullName,
+    cpf: user.cpf,
+    email: user.email,
+    role: user.position ?? user.role,
+    companyId: user.companyId,
+    journeyId: user.journeyId ?? 0,
+    managerAccess: user.role === "MANAGER" || user.role === "CLIENT_ADMIN",
+  }
+}
+
+export function mapJourneyApiToJourney(journey: JourneyApiItem): Journey {
+  const startTime = formatApiTime(journey.expectedEntryTime)
+  const endTime = formatApiTime(journey.expectedExitTime)
+
+  return {
+    id: journey.id,
+    companyId: journey.companyId,
+    name: journey.name,
+    description: journey.description,
+    flexible: journey.flexibleSchedule,
+    startTime,
+    endTime,
+    interval: minutesToClock(journey.breakMinutes),
+    scale: journey.scaleCode,
+    dailyWorkMinutes: journey.dailyWorkMinutes,
+    weeklyWorkMinutes: journey.weeklyWorkMinutes ?? undefined,
+    toleranceMinutes: journey.toleranceMinutes,
+    nightShift: journey.nightShift,
+    isActive: journey.isActive,
+    employees: journey.employees,
+  }
+}
+
+export function buildCompanyPayload(form: CompanyForm & { clientId: number }) {
+  return {
+    clientId: form.clientId,
+    legalName: form.legalName || form.name,
+    tradeName: form.tradeName || form.name,
+    name: form.name,
+    cnpj: form.cnpj,
+    timezone: form.timezone || "America/Sao_Paulo",
+    isActive: form.isActive,
+  }
+}
+
+export function buildEmployeePayload(form: EmployeeForm) {
+  return {
+    companyId: form.companyId,
+    fullName: form.name,
+    email: form.email,
+    cpf: form.cpf,
+    position: form.role,
+    role: form.managerAccess ? "MANAGER" : "EMPLOYEE",
+    journeyId: form.journeyId || undefined,
+    journeyValidFrom: new Date().toISOString().slice(0, 10),
+  }
+}
+
+export function buildJourneyPayload(form: JourneyForm) {
+  const dailyWorkMinutes =
+    form.dailyWorkMinutes && form.dailyWorkMinutes > 0
+      ? form.dailyWorkMinutes
+      : calculateJourneyWorkMinutes(form.startTime, form.endTime, form.interval)
+
+  return {
+    companyId: form.companyId || undefined,
+    name: form.name,
+    description: form.description || undefined,
+    scaleCode: form.scale,
+    flexibleSchedule: form.flexible,
+    dailyWorkMinutes,
+    weeklyWorkMinutes: form.weeklyWorkMinutes ?? undefined,
+    expectedEntryTime: form.startTime || undefined,
+    expectedExitTime: form.endTime || undefined,
+    breakMinutes: clockToMinutes(form.interval),
+    toleranceMinutes: form.toleranceMinutes ?? 10,
+    nightShift: form.nightShift ?? false,
+    isActive: form.isActive ?? true,
+  }
+}
+
+function formatApiTime(value?: string | null) {
+  if (!value) return ""
+
+  const [datePart, timePart] = value.split("T")
+  if (timePart) {
+    return timePart.slice(0, 5)
+  }
+
+  return datePart.slice(0, 5)
+}
+
+function minutesToClock(value: number) {
+  const hours = Math.floor(value / 60)
+  const minutes = value % 60
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`
+}
+
+function clockToMinutes(value: string) {
+  if (!value) return 0
+
+  const [hours = "0", minutes = "0"] = value.split(":")
+
+  return Number(hours) * 60 + Number(minutes)
+}
+
+function calculateJourneyWorkMinutes(startTime: string, endTime: string, interval: string) {
+  if (!startTime || !endTime) return 0
+
+  const start = clockToMinutes(startTime)
+  const end = clockToMinutes(endTime)
+  const breakMinutes = clockToMinutes(interval)
+
+  const total = end >= start ? end - start : 24 * 60 - start + end
+
+  return Math.max(0, total - breakMinutes)
 }

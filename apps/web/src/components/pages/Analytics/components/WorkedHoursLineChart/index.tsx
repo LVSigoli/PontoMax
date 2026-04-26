@@ -1,8 +1,7 @@
 // Components
 import { Typography } from "@/components/structure/Typography"
 
-// Constants
-import { WORKED_HOURS_DATA } from "../../constants"
+import type { WorkedHoursItem } from "../../types"
 
 const WIDTH = 640
 const HEIGHT = 150
@@ -10,9 +9,16 @@ const TOP_PADDING = 14
 const BOTTOM_PADDING = 18
 const MAX_HOURS = 10
 
-export const WorkedHoursLineChart: React.FC = () => {
-  const points = WORKED_HOURS_DATA.map((item, index) => {
-    const x = (index / (WORKED_HOURS_DATA.length - 1)) * WIDTH
+interface Props {
+  items: WorkedHoursItem[]
+}
+
+export const WorkedHoursLineChart: React.FC<Props> = ({ items }) => {
+  const safeItems = items.length > 0 ? items : [{ label: "-", hours: 0 }]
+
+  const points = safeItems.map((item, index) => {
+    const x =
+      safeItems.length === 1 ? WIDTH / 2 : (index / (safeItems.length - 1)) * WIDTH
     const y =
       TOP_PADDING +
       (1 - item.hours / MAX_HOURS) * (HEIGHT - TOP_PADDING - BOTTOM_PADDING)

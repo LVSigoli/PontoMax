@@ -3,6 +3,7 @@ export type HolidayStatus = "Ativo" | "Inativo"
 
 export interface Holiday {
   id: number
+  companyId?: number
   name: string
   date: string
   type: HolidayType
