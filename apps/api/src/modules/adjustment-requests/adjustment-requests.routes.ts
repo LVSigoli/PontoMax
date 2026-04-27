@@ -1,9 +1,14 @@
-import { AdjustmentActionType, AdjustmentRequestStatus, TimeEntryKind } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../common/auth/auth.middleware.js';
 import { requireRole } from '../../common/auth/require-role.middleware.js';
+import {
+  ADJUSTMENT_ACTION_TYPES,
+  ADJUSTMENT_REQUEST_STATUSES,
+  type AdjustmentRequestStatus,
+  TIME_ENTRY_KINDS,
+} from '../../common/constants/domain-enums.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { endOfDay, getDateOnly, startOfDay } from '../../common/utils/date.js';
@@ -21,8 +26,8 @@ const requestSchema = z.object({
       .array(
         z.object({
           timeEntryId: z.coerce.number().int().positive().optional(),
-          actionType: z.nativeEnum(AdjustmentActionType),
-          targetKind: z.nativeEnum(TimeEntryKind),
+          actionType: z.enum(ADJUSTMENT_ACTION_TYPES),
+          targetKind: z.enum(TIME_ENTRY_KINDS),
           originalRecordedAt: z.string().datetime().optional(),
           newRecordedAt: z.string().datetime().optional(),
           reason: z.string().optional(),
@@ -36,7 +41,7 @@ type CreateAdjustmentRequestBody = z.infer<typeof requestSchema>['body'];
 
 const listSchema = z.object({
   query: z.object({
-    status: z.nativeEnum(AdjustmentRequestStatus).optional(),
+    status: z.enum(ADJUSTMENT_REQUEST_STATUSES).optional(),
     userId: z.coerce.number().int().positive().optional(),
     from: z.string().date().optional(),
     to: z.string().date().optional(),

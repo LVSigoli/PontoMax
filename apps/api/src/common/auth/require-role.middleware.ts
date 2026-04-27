@@ -1,6 +1,6 @@
-import type { UserRole } from '@prisma/client';
 import type { NextFunction, Request, Response } from 'express';
 
+import type { UserRole } from '../constants/domain-enums.js';
 import { AppError } from '../errors/app-error.js';
 
 export function requireRole(...roles: UserRole[]) {

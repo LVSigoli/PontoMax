@@ -1,9 +1,13 @@
-import type { Company, User, UserRole } from '@prisma/client';
+import type { Company, User } from '@prisma/client';
 
-export function mapRoleToGroups(role: UserRole) {
-  if (role === 'PLATFORM_ADMIN') return ['PLATFORM_ADMIN', 'PONTOMAX_ADMIN'];
-  if (role === 'CLIENT_ADMIN') return ['CLIENT_ADMIN', 'COMPANY_ADMIN'];
-  if (role === 'MANAGER') return ['MANAGER'];
+import { toUserRole } from '../constants/domain-enums.js';
+
+export function mapRoleToGroups(role: string) {
+  const safeRole = toUserRole(role);
+
+  if (safeRole === 'PLATFORM_ADMIN') return ['PLATFORM_ADMIN', 'PONTOMAX_ADMIN'];
+  if (safeRole === 'CLIENT_ADMIN') return ['CLIENT_ADMIN', 'COMPANY_ADMIN'];
+  if (safeRole === 'MANAGER') return ['MANAGER'];
   return ['EMPLOYEE'];
 }
 

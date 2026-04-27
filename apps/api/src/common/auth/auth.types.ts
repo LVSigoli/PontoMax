@@ -1,4 +1,4 @@
-import type { UserRole } from '@prisma/client';
+import type { UserRole } from '../constants/domain-enums.js';
 
 export interface AuthUser {
   id: number;

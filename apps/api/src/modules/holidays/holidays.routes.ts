@@ -1,9 +1,9 @@
-import { HolidayType } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../common/auth/auth.middleware.js';
 import { requireRole } from '../../common/auth/require-role.middleware.js';
+import { HOLIDAY_TYPES } from '../../common/constants/domain-enums.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { getDateOnly } from '../../common/utils/date.js';
@@ -25,7 +25,7 @@ const holidaySchema = z.object({
     companyId: z.coerce.number().int().positive().optional(),
     name: z.string().min(2),
     date: z.string().date(),
-    type: z.nativeEnum(HolidayType),
+    type: z.enum(HOLIDAY_TYPES),
     isActive: z.boolean().optional(),
   }),
 });

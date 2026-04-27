@@ -16,6 +16,7 @@ import {
   verifyRefreshToken,
 } from '../../common/auth/token.service.js';
 import { authenticate } from '../../common/auth/auth.middleware.js';
+import { toUserRole } from '../../common/constants/domain-enums.js';
 import { durationToMilliseconds } from '../../common/utils/duration.js';
 
 export const authRouter = Router();
@@ -94,14 +95,14 @@ authRouter.post(
     const accessToken = signAccessToken({
       id: user.id,
       companyId: user.companyId,
-      role: user.role,
+      role: toUserRole(user.role),
       email: user.email,
     });
 
     const signedRefreshToken = signRefreshToken({
       id: user.id,
       companyId: user.companyId,
-      role: user.role,
+      role: toUserRole(user.role),
       email: user.email,
       sessionId: session.id,
       sessionToken: refreshToken,
@@ -154,14 +155,14 @@ authRouter.post(
     const accessToken = signAccessToken({
       id: session.user.id,
       companyId: session.user.companyId,
-      role: session.user.role,
+      role: toUserRole(session.user.role),
       email: session.user.email,
     });
 
     const nextRefreshToken = signRefreshToken({
       id: session.user.id,
       companyId: session.user.companyId,
-      role: session.user.role,
+      role: toUserRole(session.user.role),
       email: session.user.email,
       sessionId: session.id,
       sessionToken: session.refreshToken,

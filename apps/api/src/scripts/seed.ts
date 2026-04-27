@@ -1,6 +1,5 @@
-import { UserRole } from '@prisma/client';
-
 import { hashPassword } from '../common/auth/password.service.js';
+import { USER_ROLES } from '../common/constants/domain-enums.js';
 import { parseTimeStringToDate } from '../common/utils/date.js';
 import { prisma } from '../lib/prisma.js';
 
@@ -67,7 +66,7 @@ async function main() {
     },
     update: {
       companyId: company.id,
-      role: UserRole.PLATFORM_ADMIN,
+      role: USER_ROLES[0],
       passwordHash: await hashPassword('123456'),
     },
     create: {
@@ -77,7 +76,7 @@ async function main() {
       email: 'demo@pontomax.com.br',
       cpf: '000.000.000-00',
       passwordHash: await hashPassword('123456'),
-      role: UserRole.PLATFORM_ADMIN,
+      role: USER_ROLES[0],
       position: 'Administrador',
     },
   });

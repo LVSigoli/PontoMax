@@ -1,10 +1,10 @@
-import { UserRole } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../common/auth/auth.middleware.js';
 import { requireRole } from '../../common/auth/require-role.middleware.js';
 import { hashPassword } from '../../common/auth/password.service.js';
+import { USER_ROLES } from '../../common/constants/domain-enums.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { getRequestCompanyId } from '../../common/utils/company-scope.js';
@@ -28,7 +28,7 @@ const userSchema = z.object({
     email: z.string().email(),
     cpf: z.string().min(11),
     password: z.string().min(6).optional(),
-    role: z.nativeEnum(UserRole),
+    role: z.enum(USER_ROLES),
     position: z.string().optional(),
     isActive: z.boolean().optional(),
     journeyId: z.coerce.number().int().positive().optional(),

@@ -1,4 +1,4 @@
-import type { TimeEntryKind } from '@prisma/client';
+import type { TimeEntryKind } from '../constants/domain-enums.js';
 
 export interface TimeEntryLike {
   kind: TimeEntryKind;

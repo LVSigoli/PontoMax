@@ -1,5 +1,6 @@
-import { Home } from "@/components/pages/Home"
+import { PointRegister } from "@/components/pages/PointRegister"
+import { withAuthentication } from "@/hooks/withAuthentication"
 
 export default function IndexPage() {
-  return <Home />
+  return withAuthentication(<PointRegister />)
 }

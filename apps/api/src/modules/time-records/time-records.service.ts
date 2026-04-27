@@ -1,5 +1,10 @@
-import type { Prisma, TimeEntry, TimeEntryKind, Workday } from '@prisma/client';
+import type { TimeEntry, Workday } from '@prisma/client';
 
+import {
+  toTimeEntryKind,
+  type TimeEntryKind,
+  type TimeEntrySource,
+} from '../../common/constants/domain-enums.js';
 import { prisma } from '../../lib/prisma.js';
 import { calculateWorkedMinutes } from '../../common/utils/time-records.js';
 import { getDateOnly } from '../../common/utils/date.js';
@@ -88,7 +93,12 @@ export async function recalculateWorkday(workdayId: number) {
     },
   });
 
-  const workedMinutes = calculateWorkedMinutes(workday.timeEntries);
+  const workedMinutes = calculateWorkedMinutes(
+    workday.timeEntries.map((entry) => ({
+      kind: toTimeEntryKind(entry.kind),
+      recordedAt: entry.recordedAt,
+    })),
+  );
   const overtimeMinutes = Math.max(0, workedMinutes - workday.scheduledMinutes);
   const missingMinutes = Math.max(0, workday.scheduledMinutes - workedMinutes);
   const status = mapWorkedStatus({
@@ -119,7 +129,7 @@ export async function createTimeEntry(params: {
   companyId: number;
   userId: number;
   recordedAt: Date;
-  source: Prisma.EnumTimeEntrySourceFieldUpdateOperationsInput['set'] | TimeEntry['source'];
+  source: TimeEntrySource;
   kind?: TimeEntryKind;
   timezone?: string;
 }) {

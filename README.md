@@ -1,102 +1,67 @@
 # PontoMax
 
-PontoMax é uma aplicação web para registro e gestão de ponto eletrônico em pequenas e médias empresas. O sistema foi pensado para reduzir controles manuais, melhorar a confiabilidade dos registros e oferecer uma visão gerencial clara sobre jornadas, horas extras, feriados, escalas e solicitações de ajuste.
+PontoMax e uma aplicacao web para registro e gestao de ponto eletronico em pequenas e medias empresas. O sistema foi pensado para reduzir controles manuais, melhorar a confiabilidade dos registros e oferecer uma visao gerencial clara sobre jornadas, horas extras, feriados, escalas e solicitacoes de ajuste.
 
 ## Objetivo
 
-O produto atende empresas que precisam controlar a jornada de seus colaboradores de forma simples, confiável e flexível. A experiência principal deve ser rápida para o funcionário registrar ponto e robusta para gestores acompanharem inconsistências, solicitações e indicadores operacionais.
+O produto atende empresas que precisam controlar a jornada de seus colaboradores de forma simples, confiavel e flexivel. A experiencia principal deve ser rapida para o funcionario registrar ponto e robusta para gestores acompanharem inconsistencias, solicitacoes e indicadores operacionais.
 
-## Contexto De Domínio
+## Contexto De Dominio
 
-O PontoMax é multiempresa. Um cliente contratante pode possuir uma ou mais empresas no sistema, e cada empresa mantém seus próprios usuários, jornadas, feriados e registros.
+O PontoMax e multiempresa. Um cliente contratante pode possuir uma ou mais empresas no sistema, e cada empresa mantem seus proprios usuarios, jornadas, feriados e registros.
 
 Perfis principais:
 
-- Funcionário: registra ponto, consulta histórico e solicita ajustes.
-- Gerente: analisa solicitações de ajuste, aprovando ou recusando correções.
-- Cliente: representa o contratante do serviço e pode agrupar múltiplas empresas.
+- Funcionario: registra ponto, consulta historico e solicita ajustes.
+- Gerente: analisa solicitacoes de ajuste, aprovando ou recusando correcoes.
+- Cliente: representa o contratante do servico e pode agrupar multiplas empresas.
 
-## Regras De Negócio
+## Regras De Negocio
 
-- Uma empresa pode possuir vários usuários.
-- Um usuário pertence a apenas uma empresa.
-- Um usuário segue uma jornada.
-- Uma jornada pode estar associada a vários usuários.
-- Uma empresa pode possuir vários feriados cadastrados.
-- Um usuário pode registrar vários pontos.
-- Um usuário pode criar várias solicitações de ajuste.
-- Usuários gerenciais podem analisar solicitações de ajuste.
-- Registros de ponto não devem ser editados diretamente.
-- Alterações devem ocorrer apenas via solicitação de ajuste.
-- Feriados e dias não úteis podem impactar o cálculo de horas extras.
-- O sistema deve preservar integridade, auditoria e histórico das operações.
+- Uma empresa pode possuir varios usuarios.
+- Um usuario pertence a apenas uma empresa.
+- Um usuario segue uma jornada.
+- Uma jornada pode estar associada a varios usuarios.
+- Uma empresa pode possuir varios feriados cadastrados.
+- Um usuario pode registrar varios pontos.
+- Um usuario pode criar varias solicitacoes de ajuste.
+- Usuarios gerenciais podem analisar solicitacoes de ajuste.
+- Registros de ponto nao devem ser editados diretamente.
+- Alteracoes devem ocorrer apenas via solicitacao de ajuste.
+- Feriados e dias nao uteis podem impactar o calculo de horas extras.
+- O sistema deve preservar integridade, auditoria e historico das operacoes.
 
-## Módulos
+## Modulos
 
-- Autenticação e recuperação de senha.
-- Gestão de clientes.
-- Gestão de empresas.
-- Gestão de usuários.
-- Configuração de jornadas.
-- Configuração de feriados.
+- Autenticacao e recuperacao de senha.
+- Gestao de clientes.
+- Gestao de empresas.
+- Gestao de usuarios.
+- Configuracao de jornadas.
+- Configuracao de feriados.
 - Registro de ponto.
-- Histórico de jornada.
-- Solicitação e análise de ajustes.
+- Historico de jornada.
+- Solicitacao e analise de ajustes.
 - Dashboard com indicadores gerenciais.
 
 ## Entidades Principais
 
 - Cliente
 - Empresa
-- Usuário
+- Usuario
 - Jornada
 - Feriado
 - Registro de Ponto
-- Solicitação de Ajuste
+- Solicitacao de Ajuste
 - Ajuste de Ponto
-
-## Arquitetura De Pastas
-
-```text
-src/
-  api/                 lógica interna de backend e domínio
-  assets/              recursos estáticos internos
-  components/
-    pages/             componentes de página
-    structure/         layout, navegação e estrutura da aplicação
-  hooks/               hooks globais
-  pages/               rotas do Pages Router do Next.js
-    api/               rotas HTTP de backend do Next.js
-  services/            consumo de rotas e integrações
-  styles/              estilos globais e design system
-  utils/               utilitários globais
-```
-
-## Design System
-
-O projeto usa Tailwind CSS v4 com tokens declarados em `src/styles/design-system.css`.
-
-Principais famílias de tokens:
-
-- `brand`: ações primárias e foco.
-- `navy`: navegação, sidebar e textos fortes.
-- `surface`: fundos de página, cards, overlays e áreas neutras.
-- `content`: textos primários, secundários, discretos e inversos.
-- `border`: bordas sutis, padrão, fortes e semânticas.
-- `success`, `warning`, `danger`, `info`: estados operacionais.
-
-Exemplo:
-
-```tsx
-<button className="bg-brand-600 text-content-inverse hover:bg-brand-700">
-  Registrar ponto
-</button>
-```
 
 ## Scripts
 
 ```bash
-pnpm run dev
+pnpm run db:prepare
+pnpm run dev:api
+pnpm run dev:backend
+pnpm run dev:http
 pnpm run build
 pnpm run lint
 pnpm run typecheck
@@ -104,11 +69,40 @@ pnpm run format
 pnpm run format:check
 ```
 
-## Diretrizes Técnicas
+## Banco Local
 
-- Priorizar simplicidade e clareza de domínio.
-- Separar responsabilidades sem excesso de abstração.
-- Manter nomes consistentes com o negócio de ponto eletrônico.
+O projeto agora roda localmente com `SQLite`, sem instalar banco separado.
+
+Fluxo recomendado:
+
+```bash
+pnpm run db:prepare
+pnpm run dev:api
+```
+
+Ou, se preferir fazer tudo em um comando:
+
+```bash
+pnpm run dev:backend
+```
+
+Detalhes do setup:
+
+- banco padrao: `SQLite`
+- arquivo do banco: `prisma/dev.db`
+- `DATABASE_URL` e opcional; se voce nao definir nada, o projeto usa `file:./dev.db`
+- `pnpm run db:prepare`: sincroniza o schema no SQLite e roda a seed demo
+
+## Credenciais Demo
+
+- `demo@pontomax.com.br`
+- `123456`
+
+## Diretrizes Tecnicas
+
+- Priorizar simplicidade e clareza de dominio.
+- Separar responsabilidades sem excesso de abstracao.
+- Manter nomes consistentes com o negocio de ponto eletronico.
 - Preservar rastreabilidade em ajustes de ponto.
-- Evitar edição direta de registros já criados.
-- Favorecer código legível, testável e adequado para evolução acadêmica e prática.
+- Evitar edicao direta de registros ja criados.
+- Favorecer codigo legivel, testavel e adequado para evolucao academica e pratica.

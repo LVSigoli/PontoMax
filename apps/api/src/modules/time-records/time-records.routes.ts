@@ -1,9 +1,9 @@
-import { TimeEntryKind } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../common/auth/auth.middleware.js';
 import { requireRole } from '../../common/auth/require-role.middleware.js';
+import { TIME_ENTRY_KINDS } from '../../common/constants/domain-enums.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { endOfDay, startOfDay } from '../../common/utils/date.js';
@@ -28,7 +28,7 @@ const listSchema = z.object({
 const registerSchema = z.object({
   body: z.object({
     recordedAt: z.string().datetime().optional(),
-    kind: z.nativeEnum(TimeEntryKind).optional(),
+    kind: z.enum(TIME_ENTRY_KINDS).optional(),
     timezone: z.string().optional(),
   }),
 });

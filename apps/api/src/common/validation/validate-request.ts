@@ -16,9 +16,17 @@ export function validateRequest(schema: ValidSchema): RequestHandler {
         params?: Request['params'];
       };
 
-      request.body = parsed.body ?? request.body;
-      request.query = parsed.query ?? request.query;
-      request.params = parsed.params ?? request.params;
+      if (parsed.body && typeof parsed.body === 'object') {
+        Object.assign(request.body as Record<string, unknown>, parsed.body);
+      }
+
+      if (parsed.query && typeof parsed.query === 'object') {
+        Object.assign(request.query as Record<string, unknown>, parsed.query);
+      }
+
+      if (parsed.params && typeof parsed.params === 'object') {
+        Object.assign(request.params as Record<string, unknown>, parsed.params);
+      }
 
       next();
     } catch (error) {
