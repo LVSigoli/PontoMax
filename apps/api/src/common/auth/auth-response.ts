@@ -19,6 +19,7 @@ export function makeSessionResponse(params: {
   const { accessToken, refreshToken, user } = params;
 
   return {
+    requiresPasswordChange: false,
     accessToken,
     refreshToken,
     user: {
@@ -29,6 +30,7 @@ export function makeSessionResponse(params: {
       groups: mapRoleToGroups(user.role),
       companyId: user.companyId,
       companyName: user.company?.name ?? null,
+      mustChangePassword: user.mustChangePassword,
     },
   };
 }

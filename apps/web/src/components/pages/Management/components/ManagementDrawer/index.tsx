@@ -195,6 +195,7 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
       }
 
       const journeyForm = form as JourneyFormData
+      const companyOptions = makeCompanyOptions(companies)
 
       return (
         <>
@@ -210,6 +211,13 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
             placeholder="Informe o nome"
             onChange={(value) => handleChange("name", value)}
           />
+
+          {renderSelect({
+            label: "Selecione uma empresa",
+            options: companyOptions,
+            value: String(journeyForm.companyId ?? ""),
+            onChange: (value) => handleChange("companyId", Number(value)),
+          })}
 
           <Picker
             type="time"

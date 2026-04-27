@@ -51,6 +51,7 @@ model User {
   email                     String                  @unique
   cpf                       String                  @unique
   passwordHash              String                  @map("password_hash")
+  mustChangePassword        Boolean                 @default(false) @map("must_change_password")
   role                      String
   position                  String?
   isActive                  Boolean                 @default(true) @map("is_active")

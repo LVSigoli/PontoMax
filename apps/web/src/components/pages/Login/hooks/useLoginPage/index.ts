@@ -1,6 +1,6 @@
 // External Libraries
-import { useEffect } from "react"
 import { useRouter } from "next/router"
+import { useEffect } from "react"
 
 // Contexts
 import { useAuth } from "@/contexts/AuthContext"
@@ -20,7 +20,7 @@ export function useLoginPage() {
     if (isValidating) return
     if (!user) return
 
-    void router.replace("/point")
+    void router.replace("/")
   }, [isValidating, router, user])
 
   // Funtions
@@ -53,16 +53,16 @@ export function useLoginPage() {
     })
   }
 
+  function getLoginView(view: string | string[] | undefined): LoginView {
+    if (view === "forgot-password" || view === "replace-password") return view
+
+    return "login"
+  }
+
   return {
     view,
     handleLoginClick,
     handleForgotPasswordClick,
     handleReplacePasswordClick,
   }
-}
-
-function getLoginView(view: string | string[] | undefined): LoginView {
-  if (view === "forgot-password" || view === "replace-password") return view
-
-  return "login"
 }

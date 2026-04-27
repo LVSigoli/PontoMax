@@ -43,11 +43,14 @@ export function useRecoverPassword() {
       setErrorMessage("")
 
       const response = await postForgotPassword({ email })
-      const extraMessage = response.resetToken
-        ? ` Token de desenvolvimento: ${response.resetToken}`
+      const previewUrl = response.developmentResetUrl
+        ? ` Link de desenvolvimento: ${response.developmentResetUrl}`
+        : ""
+      const previewPath = response.previewPath
+        ? ` Caixa de saida local: ${response.previewPath}`
         : ""
 
-      setSuccessMessage(`${response.message}${extraMessage}`)
+      setSuccessMessage(`${response.message}${previewUrl}${previewPath}`)
     } catch (error) {
       setErrorMessage(
         getErrorMessage(error, "Nao foi possivel solicitar a recuperacao.")

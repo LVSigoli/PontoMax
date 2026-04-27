@@ -8,7 +8,8 @@ export interface ForgotPasswordPayload {
 
 export interface ForgotPasswordResponse {
   message: string
-  resetToken?: string
+  developmentResetUrl?: string
+  previewPath?: string
 }
 
 export interface ResetPasswordPayload {

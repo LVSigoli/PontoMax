@@ -1,5 +1,5 @@
 import { PONTO_MAX_API } from "../api"
-import type { AuthSession, LoginPayload } from "@/types"
+import type { LoginPayload, LoginResponse } from "@/types"
 import type {
   ForgotPasswordPayload,
   ForgotPasswordResponse,
@@ -8,7 +8,7 @@ import type {
 } from "./types"
 
 export async function postLogin(payload: LoginPayload) {
-  const response = await PONTO_MAX_API.post<AuthSession>("auth/login", payload)
+  const response = await PONTO_MAX_API.post<LoginResponse>("auth/login", payload)
   return response.data
 }
 

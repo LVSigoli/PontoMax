@@ -16,7 +16,7 @@ import type {
 
 export function makeCompanyForm(company?: Company): CompanyForm {
   return {
-    clientId: company?.clientId ?? 0,
+    clientId: company?.clientId,
     legalName: company?.legalName ?? company?.name ?? "",
     tradeName: company?.tradeName ?? "",
     name: company?.name ?? "",
@@ -52,7 +52,7 @@ export function makeJourneyForm(journey?: Journey): JourneyForm {
     endTime: journey?.endTime ?? "",
     interval: journey?.interval ?? "",
     scale: journey?.scale ?? "5X2",
-    companyId: journey?.companyId ?? 0,
+    companyId: journey?.companyId,
     dailyWorkMinutes: journey?.dailyWorkMinutes ?? 0,
     weeklyWorkMinutes: journey?.weeklyWorkMinutes ?? undefined,
     toleranceMinutes: journey?.toleranceMinutes ?? 10,
@@ -180,7 +180,10 @@ export function buildJourneyPayload(form: JourneyForm) {
       : calculateJourneyWorkMinutes(form.startTime, form.endTime, form.interval)
 
   return {
-    companyId: form.companyId || undefined,
+    companyId:
+      typeof form.companyId === "number" && form.companyId > 0
+        ? form.companyId
+        : undefined,
     name: form.name,
     description: form.description || undefined,
     scaleCode: form.scale,

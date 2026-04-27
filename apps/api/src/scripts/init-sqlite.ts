@@ -63,6 +63,7 @@ function createSchema(database: DatabaseSync) {
       email TEXT NOT NULL UNIQUE,
       cpf TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
+      must_change_password BOOLEAN NOT NULL DEFAULT 0,
       role TEXT NOT NULL,
       position TEXT,
       is_active BOOLEAN NOT NULL DEFAULT 1,
@@ -264,6 +265,21 @@ function createSchema(database: DatabaseSync) {
   `);
 }
 
+function applyCompatibilityMigrations(database: DatabaseSync) {
+  try {
+    database.exec(`
+      ALTER TABLE users
+      ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0
+    `);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (!message.includes('duplicate column name')) {
+      throw error;
+    }
+  }
+}
+
 function main() {
   const databaseFilePath = resolveDatabaseFilePath();
   fs.mkdirSync(path.dirname(databaseFilePath), { recursive: true });
@@ -272,6 +288,7 @@ function main() {
 
   try {
     createSchema(database);
+    applyCompatibilityMigrations(database);
     console.log(`SQLite database prepared at ${databaseFilePath}`);
   } finally {
     database.close();

@@ -11,6 +11,8 @@ import { getRequestCompanyId } from '../../common/utils/company-scope.js';
 import { validateRequest } from '../../common/validation/validate-request.js';
 import { prisma } from '../../lib/prisma.js';
 import { getDateOnly } from '../../common/utils/date.js';
+import { sendInviteEmail } from '../auth/auth-email.service.js';
+import { issuePasswordResetToken, makePasswordSetupUrl } from '../auth/password-reset.service.js';
 
 export const usersRouter = Router();
 
@@ -104,6 +106,7 @@ usersRouter.post(
   validateRequest(userSchema),
   asyncHandler(async (request, response) => {
     const companyId = getRequestCompanyId(request, request.body.companyId);
+    const temporaryPassword = request.body.password ?? generateTemporaryPassword();
 
     const user = await prisma.user.create({
       data: {
@@ -112,7 +115,8 @@ usersRouter.post(
         fullName: request.body.fullName,
         email: request.body.email.trim().toLowerCase(),
         cpf: request.body.cpf,
-        passwordHash: await hashPassword(request.body.password ?? '123456'),
+        passwordHash: await hashPassword(temporaryPassword),
+        mustChangePassword: true,
         role: request.body.role,
         position: request.body.position,
         isActive: request.body.isActive ?? true,
@@ -130,7 +134,22 @@ usersRouter.post(
       });
     }
 
-    response.status(201).json({ item: user });
+    const resetToken = await issuePasswordResetToken(user.id);
+    const passwordSetupUrl = makePasswordSetupUrl(resetToken);
+    const delivery = await sendInviteEmail({
+      to: user.email,
+      fullName: user.fullName,
+      temporaryPassword,
+      passwordSetupUrl,
+    });
+
+    response.status(201).json({
+      item: user,
+      notification: {
+        channel: delivery.channel,
+        previewPath: delivery.previewPath,
+      },
+    });
   }),
 );
 
@@ -178,6 +197,11 @@ usersRouter.patch(
     response.json({ item: user });
   }),
 );
+
+function generateTemporaryPassword(length = 12) {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+  return Array.from({ length }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+}
 
 usersRouter.get(
   '/:userId',

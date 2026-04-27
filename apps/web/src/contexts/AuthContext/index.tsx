@@ -66,8 +66,10 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
   async function login(payload: LoginPayload) {
     const nextSession = await postLogin(payload)
 
-    saveAuthSession(nextSession)
-    setSession(nextSession)
+    if (!nextSession.requiresPasswordChange) {
+      saveAuthSession(nextSession)
+      setSession(nextSession)
+    }
 
     return nextSession
   }

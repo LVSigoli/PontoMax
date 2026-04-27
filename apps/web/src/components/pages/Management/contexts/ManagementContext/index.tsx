@@ -58,10 +58,15 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
     try {
       setIsLoading(true)
 
-      const [companyItems, employeeItems, journeyItems] = await Promise.all([
-        getCompanies(),
-        getUsers(),
-        getJourneys(),
+      const companyItems = await getCompanies()
+      const selectedCompanyId = companyItems[0]?.id
+      const scopedParams = selectedCompanyId
+        ? { companyId: selectedCompanyId }
+        : undefined
+
+      const [employeeItems, journeyItems] = await Promise.all([
+        getUsers(scopedParams),
+        getJourneys(scopedParams),
       ])
 
       setCompanies(companyItems.map(mapCompanyApiToCompany))
@@ -114,7 +119,10 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
   }
 
   async function saveCompany(entity: Company | null, form: CompanyForm) {
-    const resolvedClientId = form.clientId ?? companies[0]?.clientId ?? 1
+    const resolvedClientId =
+      typeof form.clientId === "number" && form.clientId > 0
+        ? form.clientId
+        : companies[0]?.clientId ?? 1
     const payload = buildCompanyPayload({
       ...form,
       clientId: resolvedClientId,
@@ -158,7 +166,14 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
   }
 
   async function saveJourney(entity: Journey | null, form: JourneyForm) {
-    const payload = buildJourneyPayload(form)
+    const resolvedCompanyId =
+      typeof form.companyId === "number" && form.companyId > 0
+        ? form.companyId
+        : companies[0]?.id
+    const payload = buildJourneyPayload({
+      ...form,
+      companyId: resolvedCompanyId,
+    })
 
     if (entity) {
       const updatedJourney = await updateJourney(entity.id, payload)

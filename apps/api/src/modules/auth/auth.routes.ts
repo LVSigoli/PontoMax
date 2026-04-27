@@ -1,5 +1,3 @@
-import crypto from 'node:crypto';
-
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -18,6 +16,8 @@ import {
 import { authenticate } from '../../common/auth/auth.middleware.js';
 import { toUserRole } from '../../common/constants/domain-enums.js';
 import { durationToMilliseconds } from '../../common/utils/duration.js';
+import { sendPasswordResetEmail } from './auth-email.service.js';
+import { createTokenHash, issuePasswordResetToken, makePasswordSetupUrl } from './password-reset.service.js';
 
 export const authRouter = Router();
 
@@ -75,6 +75,18 @@ authRouter.post(
 
     if (!isValidPassword) {
       throw new AppError('Invalid email or password.', 401);
+    }
+
+    if (user.mustChangePassword) {
+      const resetToken = await issuePasswordResetToken(user.id);
+
+      response.json({
+        requiresPasswordChange: true,
+        message: 'Password change is required before accessing the platform.',
+        email: user.email,
+        resetToken,
+      });
+      return;
     }
 
     const refreshToken = generateOpaqueToken();
@@ -240,20 +252,18 @@ authRouter.post(
       return;
     }
 
-    const resetToken = generateOpaqueToken();
-    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-
-    await prisma.passwordResetToken.create({
-      data: {
-        userId: user.id,
-        tokenHash,
-        expiresAt: new Date(Date.now() + durationToMilliseconds('1d')),
-      },
+    const resetToken = await issuePasswordResetToken(user.id);
+    const passwordSetupUrl = makePasswordSetupUrl(resetToken);
+    const delivery = await sendPasswordResetEmail({
+      to: user.email,
+      fullName: user.fullName,
+      passwordSetupUrl,
     });
 
     response.json({
-      message: 'Password reset token generated.',
-      resetToken,
+      message: 'If the account exists, password reset instructions have been sent.',
+      developmentResetUrl: delivery.channel === 'file' ? passwordSetupUrl : undefined,
+      previewPath: delivery.previewPath,
     });
   }),
 );
@@ -262,7 +272,7 @@ authRouter.post(
   '/reset-password',
   validateRequest(resetPasswordSchema),
   asyncHandler(async (request, response) => {
-    const tokenHash = crypto.createHash('sha256').update(request.body.token).digest('hex');
+    const tokenHash = createTokenHash(request.body.token);
 
     const resetToken = await prisma.passwordResetToken.findUnique({
       where: {
@@ -281,6 +291,7 @@ authRouter.post(
         },
         data: {
           passwordHash: await hashPassword(request.body.password),
+          mustChangePassword: false,
         },
       }),
       prisma.passwordResetToken.update({
@@ -289,6 +300,16 @@ authRouter.post(
         },
         data: {
           usedAt: new Date(),
+        },
+      }),
+      prisma.authSession.updateMany({
+        where: {
+          userId: resetToken.userId,
+          status: 'ACTIVE',
+        },
+        data: {
+          status: 'REVOKED',
+          revokedAt: new Date(),
         },
       }),
     ]);

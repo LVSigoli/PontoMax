@@ -58,8 +58,10 @@ export async function deleteCompany(companyId: number) {
   await PONTO_MAX_API.delete(`companies/${companyId}`)
 }
 
-export async function getUsers() {
-  const response = await PONTO_MAX_API.get<ApiListResponse<UserApiItem>>("users")
+export async function getUsers(params?: { companyId?: number }) {
+  const response = await PONTO_MAX_API.get<ApiListResponse<UserApiItem>>("users", {
+    params,
+  })
   return response.data.items
 }
 
@@ -107,9 +109,13 @@ export async function deleteUser(userId: number) {
   await PONTO_MAX_API.delete(`users/${userId}`)
 }
 
-export async function getJourneys() {
-  const response =
-    await PONTO_MAX_API.get<ApiListResponse<JourneyApiItem>>("work-schedules")
+export async function getJourneys(params?: { companyId?: number }) {
+  const response = await PONTO_MAX_API.get<ApiListResponse<JourneyApiItem>>(
+    "work-schedules",
+    {
+      params,
+    }
+  )
 
   return response.data.items
 }

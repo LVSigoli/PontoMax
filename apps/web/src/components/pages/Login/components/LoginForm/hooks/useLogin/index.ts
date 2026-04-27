@@ -49,8 +49,20 @@ export function useLogin(): UseLoginResult {
       setIsSubmitting(true)
       setErrorMessage("")
 
-      await login({ email, password })
-      await router.push("/point")
+      const response = await login({ email, password })
+
+      if (response.requiresPasswordChange) {
+        await router.push({
+          pathname: "/login",
+          query: {
+            view: "replace-password",
+            token: response.resetToken,
+          },
+        })
+        return
+      }
+
+      await router.push("/")
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Nao foi possivel realizar o login.",
