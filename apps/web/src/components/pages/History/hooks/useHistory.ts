@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react"
 
-import { getAdjustmentRequests, getTimeRecords } from "@/services/domain"
+import {
+  getAdjustmentRequests,
+  getTimeRecordsOverview,
+  type PaginationMeta,
+} from "@/services/domain"
 import {
   formatHoursWithMinutes,
   formatMinutes,
@@ -10,49 +14,53 @@ import {
 
 import type { SolicitationHistoryItem, UserAnalysisItem } from "../types"
 
+const HISTORY_PAGE_SIZE = 10
+
 export function useHistory() {
   const [analysisItems, setAnalysisItems] = useState<UserAnalysisItem[]>([])
   const [historyItems, setHistoryItems] = useState<SolicitationHistoryItem[]>(
     []
   )
   const [errorMessage, setErrorMessage] = useState("")
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    pageSize: HISTORY_PAGE_SIZE,
+    totalItems: 0,
+    totalPages: 0,
+  })
 
   useEffect(() => {
-    void loadHistory()
+    void loadHistory(1)
   }, [])
 
-  async function loadHistory() {
+  async function loadHistory(page: number) {
     try {
       setErrorMessage("")
 
-      const [workdays, adjustments] = await Promise.all([
-        getTimeRecords(),
+      const [overview, adjustments] = await Promise.all([
+        getTimeRecordsOverview({
+          page,
+          pageSize: HISTORY_PAGE_SIZE,
+        }),
         getAdjustmentRequests(),
       ])
 
-      const workedDays = workdays.filter((workday) => workday.workedMinutes > 0).length
-      const balanceMinutes = workdays.reduce(
-        (total, workday) => total + workday.overtimeMinutes - workday.missingMinutes,
-        0
-      )
       const pendingCount = adjustments.filter(
         (adjustment) => adjustment.status === "PENDING"
       ).length
-      const inconsistentCount = workdays.filter(
-        (workday) =>
-          workday.status === "INCONSISTENT" || workday.status === "PENDING_ADJUSTMENT"
-      ).length
+
+      setPagination(overview.meta)
 
       setAnalysisItems([
         {
           label: "Dias trabalhados",
-          data: `${workedDays} dias`,
+          data: `${overview.summary.workedDays} dias`,
           type: "worked-days",
           subtitle: "Quantidade de dias trabalhados no periodo carregado",
         },
         {
           label: "Saldo de horas",
-          data: formatMinutes(balanceMinutes),
+          data: formatMinutes(overview.summary.balanceMinutes),
           type: "hour-balance",
           subtitle: "Total acumulado de horas extras e faltas",
         },
@@ -64,14 +72,14 @@ export function useHistory() {
         },
         {
           label: "Inconsistencias",
-          data: `${inconsistentCount} registros`,
+          data: `${overview.summary.inconsistentCount} registros`,
           type: "issues",
           subtitle: "Casos com falta de registros ou jornadas incompletas",
         },
       ])
 
       setHistoryItems(
-        workdays.map((workday) => ({
+        overview.items.map((workday) => ({
           id: workday.id,
           lastSolicitationTime:
             workday.timeEntries.at(-1)?.recordedAt
@@ -80,7 +88,8 @@ export function useHistory() {
           extraHours: formatHoursWithMinutes(workday.overtimeMinutes),
           missingHours: formatHoursWithMinutes(workday.missingMinutes),
           status:
-            workday.status === "INCONSISTENT" || workday.status === "PENDING_ADJUSTMENT"
+            workday.status === "INCONSISTENT" ||
+            workday.status === "PENDING_ADJUSTMENT"
               ? "Inconsistente"
               : workday.status === "ADJUSTED"
                 ? "Registrado"
@@ -94,9 +103,30 @@ export function useHistory() {
     }
   }
 
+  function handlePreviousPage() {
+    if (pagination.page <= 1) {
+      return
+    }
+
+    const nextPage = pagination.page - 1
+    void loadHistory(nextPage)
+  }
+
+  function handleNextPage() {
+    if (pagination.totalPages === 0 || pagination.page >= pagination.totalPages) {
+      return
+    }
+
+    const nextPage = pagination.page + 1
+    void loadHistory(nextPage)
+  }
+
   return {
     analysisItems,
     errorMessage,
     historyItems,
+    pagination,
+    handlePreviousPage,
+    handleNextPage,
   }
 }

@@ -11,7 +11,7 @@ import { Props } from "./types"
 
 export const PointCard: React.FC<Props> = ({
   currentDate,
-  currentTime,
+  remainingTime,
   workedHours,
   balanceLabel,
   onRegisterPoint,
@@ -34,7 +34,7 @@ export const PointCard: React.FC<Props> = ({
               variant="h4"
               fontWeight={700}
               lineHeight="1"
-              value={currentTime}
+              value={remainingTime}
             />
           </div>
         </div>

@@ -2,6 +2,7 @@
 import React from "react"
 
 // Components
+import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Table } from "@/components/structure/Table"
@@ -19,7 +20,14 @@ import type { TableRowData } from "@/components/structure/Table/types"
 import { getSolicitationStatusClass } from "./utils"
 
 export const History: React.FC = () => {
-  const { analysisItems, errorMessage, historyItems } = useHistory()
+  const {
+    analysisItems,
+    errorMessage,
+    historyItems,
+    pagination,
+    handlePreviousPage,
+    handleNextPage,
+  } = useHistory()
 
   const tableData = historyItems.map<TableRowData>((item) => ({
     "Horario da ultima solicitacao": {
@@ -53,7 +61,7 @@ export const History: React.FC = () => {
       <div className="flex h-full overflow-hidden">
         <Sidebar />
 
-        <section className="min-w-0 flex-1 overflow-y-auto px-5 py-8 sm:px-8 lg:px-10">
+        <section className="min-w-0 flex-1 overflow-y-auto px-5 pt-8 pb-24 sm:px-8 lg:px-10 lg:py-8">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
             <Header
               label="Historico de Solicitacoes"
@@ -83,11 +91,43 @@ export const History: React.FC = () => {
             </section>
 
             <section className="grid gap-3">
-              <Typography
-                variant="h4"
-                value="Historico de solicitacoes"
-                className="text-xl"
-              />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Typography
+                  variant="h4"
+                  value="Historico de solicitacoes"
+                  className="text-xl"
+                />
+
+                <div className="flex items-center gap-3">
+                  <Typography
+                    variant="caption"
+                    value={
+                      pagination.totalPages > 0
+                        ? `Pagina ${pagination.page} de ${pagination.totalPages}`
+                        : "Sem paginas"
+                    }
+                  />
+
+                  <Button
+                    value="Anterior"
+                    variant="outlined"
+                    color="primary"
+                    disabled={pagination.page <= 1}
+                    onClick={handlePreviousPage}
+                  />
+
+                  <Button
+                    value="Proxima"
+                    variant="outlined"
+                    color="primary"
+                    disabled={
+                      pagination.totalPages === 0 ||
+                      pagination.page >= pagination.totalPages
+                    }
+                    onClick={handleNextPage}
+                  />
+                </div>
+              </div>
 
               <Table
                 data={tableData}

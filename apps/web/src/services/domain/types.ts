@@ -2,6 +2,18 @@ export interface ApiListResponse<T> {
   items: T[]
 }
 
+export interface PaginationMeta {
+  page: number
+  pageSize: number
+  totalItems: number
+  totalPages: number
+}
+
+export interface ApiPaginatedResponse<T> {
+  items: T[]
+  meta: PaginationMeta
+}
+
 export interface ApiItemResponse<T> {
   item: T
 }
@@ -91,6 +103,17 @@ export interface WorkdayApiItem {
   nightMinutes: number
   isHoliday: boolean
   timeEntries: TimeEntryApiItem[]
+}
+
+export interface WorkdayOverviewSummaryApiItem {
+  workedDays: number
+  balanceMinutes: number
+  inconsistentCount: number
+}
+
+export interface WorkdayOverviewResponse
+  extends ApiPaginatedResponse<WorkdayApiItem> {
+  summary: WorkdayOverviewSummaryApiItem
 }
 
 export interface RegisterTimeRecordResponse {

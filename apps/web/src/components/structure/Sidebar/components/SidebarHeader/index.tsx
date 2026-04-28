@@ -8,9 +8,25 @@ import { Typography } from "@/components/structure/Typography"
 // Assets
 import ClockIcon from "@/assets/icons/clock.svg"
 
-export const SidebarHeader: React.FC = () => {
+interface Props {
+  className?: string
+  showBorder?: boolean
+}
+
+export const SidebarHeader: React.FC<Props> = ({
+  className = "",
+  showBorder = true,
+}) => {
+  const containerClassName = [
+    showBorder ? "border-b border-border-subtle" : "",
+    "px-6 py-6",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ")
+
   return (
-    <div className="border-b border-border-subtle px-6 py-6">
+    <div className={containerClassName}>
       <div className="flex items-center gap-3">
         <span className=" relative  size-8  rounded-lg bg-brand-600 text-sm font-bold">
           <Icon src={ClockIcon} placement="center" />

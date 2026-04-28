@@ -16,6 +16,7 @@ import type { PointRecord } from "../../../../../types"
 
 interface UseAdjustmentRequestParams {
   records: PointRecord[]
+  workdayDate?: string
   onSubmitted?: () => Promise<void> | void
 }
 
@@ -27,6 +28,7 @@ interface AdjustmentRequestForm {
 export function useAdjustmentRequest({
   onSubmitted,
   records,
+  workdayDate,
 }: UseAdjustmentRequestParams) {
   const sidePanelRef = useRef<SidePanelMethods>(null)
 
@@ -68,15 +70,15 @@ export function useAdjustmentRequest({
   function handleAddRecord() {
     setErrorMessage("")
     setForm((currentForm) => ({
-      ...currentForm,
-      records: [
-        ...currentForm.records,
-        {
-          id: Date.now(),
-          workdayDate: records[0]?.workdayDate,
-          time: "08:00",
-          workedHours: "00h 00min",
-          extraHours: "00h 00min",
+        ...currentForm,
+        records: [
+          ...currentForm.records,
+          {
+            id: Date.now(),
+            workdayDate: workdayDate ?? records[0]?.workdayDate,
+            time: "08:00",
+            workedHours: "00h 00min",
+            extraHours: "00h 00min",
           missingHours: "00h 00min",
           type: getNextPointType(currentForm.records),
           status: "Registrado",
@@ -92,9 +94,10 @@ export function useAdjustmentRequest({
   }
 
   async function handleConfirm() {
-    const workdayDate = records[0]?.workdayDate
+    const effectiveWorkdayDate =
+      workdayDate ?? records[0]?.workdayDate ?? form.records[0]?.workdayDate
 
-    if (isSubmitting || !workdayDate) {
+    if (isSubmitting || !effectiveWorkdayDate) {
       return
     }
 
@@ -115,7 +118,7 @@ export function useAdjustmentRequest({
       }
 
       await createAdjustmentRequest({
-        workdayDate,
+        workdayDate: effectiveWorkdayDate,
         justification: form.justification.trim(),
         records: adjustmentRecords,
       })

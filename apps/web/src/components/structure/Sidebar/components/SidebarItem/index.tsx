@@ -2,7 +2,7 @@ import Link from "next/link"
 
 import { Props } from "./types"
 
-export const SidebarItem: React.FC<Props> = ({ isActive, item }) => {
+export const SidebarItem: React.FC<Props> = ({ isActive, item, onClick }) => {
   // Constants
   const itemStyle = isActive
     ? "bg-brand-50 text-brand-700"
@@ -12,14 +12,14 @@ export const SidebarItem: React.FC<Props> = ({ isActive, item }) => {
 
   if (!item.href) {
     return (
-      <button className={className} type="button">
+      <button className={className} type="button" onClick={onClick}>
         {item.label}
       </button>
     )
   }
 
   return (
-    <Link className={className} href={item.href}>
+    <Link className={className} href={item.href} onClick={onClick}>
       {item.label}
     </Link>
   )

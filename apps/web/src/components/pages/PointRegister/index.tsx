@@ -19,8 +19,10 @@ export const PointRegister: React.FC = () => {
     historyRecords,
     currentDate,
     currentTime,
+    remainingTime,
     workedHours,
     balanceLabel,
+    adjustmentRequestWorkdayDate,
     currentRecords,
     adjustmentRequestRecords,
     confirmationModalRef,
@@ -39,7 +41,7 @@ export const PointRegister: React.FC = () => {
       <div className="flex h-full overflow-hidden">
         <Sidebar />
 
-        <section className="min-w-0 flex-1 overflow-y-auto px-5 py-8 sm:px-8 lg:px-10">
+        <section className="min-w-0 flex-1 overflow-y-auto px-5 pt-8 pb-24 sm:px-8 lg:px-10 lg:py-8">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
             <Header
               label="Registro de ponto"
@@ -49,7 +51,7 @@ export const PointRegister: React.FC = () => {
             <div className="grid w-full grid-cols-1 gap-4 xl:grid-cols-2">
               <PointCard
                 currentDate={currentDate}
-                currentTime={currentTime}
+                remainingTime={remainingTime}
                 workedHours={workedHours}
                 balanceLabel={balanceLabel}
                 onRegisterPoint={handleConfirmationModalOpen}
@@ -81,6 +83,7 @@ export const PointRegister: React.FC = () => {
       <AdjustmentRequestSidePanel
         ref={adjustmentRequestSidePanelRef}
         records={adjustmentRequestRecords}
+        workdayDate={adjustmentRequestWorkdayDate}
         onSubmitted={handleAdjustmentRequestSubmitted}
       />
     </main>

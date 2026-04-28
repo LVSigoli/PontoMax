@@ -5,5 +5,6 @@ export type AdjustmentRequestSidePanelMethods = SidePanelMethods
 
 export interface AdjustmentRequestSidePanelProps {
   records: PointRecord[]
+  workdayDate?: string
   onSubmitted?: () => Promise<void> | void
 }

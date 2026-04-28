@@ -46,7 +46,7 @@ const SolicitationsContent: React.FC = () => {
       <div className="flex h-full overflow-hidden">
         <Sidebar />
 
-        <section className="min-w-0 flex-1 overflow-y-auto px-5 py-8 sm:px-8 lg:px-10">
+        <section className="min-w-0 flex-1 overflow-y-auto px-5 pt-8 pb-24 sm:px-8 lg:px-10 lg:py-8">
           <div className="mx-auto grid w-full max-w-7xl gap-6">
             <Header
               label="Gestao de ajustes"

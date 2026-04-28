@@ -12,6 +12,7 @@ import type {
   TeamTodayApiItem,
   UserApiItem,
   WorkdayApiItem,
+  WorkdayOverviewResponse,
 } from "./types"
 
 export async function getCompanies() {
@@ -224,6 +225,28 @@ export async function getTimeRecords(params?: { from?: string; to?: string }) {
   })
 
   return response.data.items
+}
+
+export async function getTimeRecordsOverview(params?: {
+  page?: number
+  pageSize?: number
+}) {
+  const response = await PONTO_MAX_API.get<WorkdayOverviewResponse>(
+    "time-records/overview",
+    {
+      params,
+    }
+  )
+
+  return response.data
+}
+
+export async function getTodayTimeRecords() {
+  const response = await PONTO_MAX_API.get<ApiItemResponse<WorkdayApiItem>>(
+    "time-records/today"
+  )
+
+  return response.data.item
 }
 
 export async function registerTimeRecord(payload?: {

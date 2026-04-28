@@ -33,14 +33,6 @@ export const formatPointTime = (date: Date) => {
 }
 
 export function getDateKeyFromValue(value: string | Date) {
-  if (typeof value === "string") {
-    const matchedDate = value.match(/^\d{4}-\d{2}-\d{2}/)?.[0]
-
-    if (matchedDate) {
-      return matchedDate
-    }
-  }
-
   const date = value instanceof Date ? value : new Date(value)
 
   if (Number.isNaN(date.getTime())) {
@@ -61,13 +53,23 @@ export function getDateKeyFromValue(value: string | Date) {
   return `${year}-${month}-${day}`
 }
 
+export function getWorkdayDateKey(value: string) {
+  const matchedDate = value.match(/^\d{4}-\d{2}-\d{2}/)?.[0]
+
+  if (matchedDate) {
+    return matchedDate
+  }
+
+  return getDateKeyFromValue(value)
+}
+
 export function formatWorkdayDate(
   value: string,
   options?: {
     withYear?: boolean
   }
 ) {
-  const [year = "", month = "", day = ""] = getDateKeyFromValue(value).split("-")
+  const [year = "", month = "", day = ""] = getWorkdayDateKey(value).split("-")
 
   if (!year || !month || !day) {
     return "--"
@@ -81,7 +83,7 @@ export function formatWorkdayDate(
 }
 
 export function isBusinessDay(value: string) {
-  const [year, month, day] = getDateKeyFromValue(value)
+  const [year, month, day] = getWorkdayDateKey(value)
     .split("-")
     .map(Number)
 

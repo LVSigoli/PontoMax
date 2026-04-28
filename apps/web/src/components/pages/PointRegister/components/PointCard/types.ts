@@ -1,6 +1,6 @@
 export interface Props {
   currentDate: string
-  currentTime: string
+  remainingTime: string
   workedHours: string
   balanceLabel: string
   onRegisterPoint: () => void
