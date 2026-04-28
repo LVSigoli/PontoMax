@@ -1,4 +1,5 @@
 const MINUTES_IN_HOUR = 60;
+const DEFAULT_TIMEZONE = 'America/Sao_Paulo';
 
 export function parseTimeToMinutes(value: string) {
   const [hours, minutes] = value.split(':').map(Number);
@@ -23,9 +24,29 @@ export function minutesToTime(value: number) {
   return `${hours}:${minutes}`;
 }
 
-export function getDateOnly(value: Date | string) {
+export function getDateOnly(value: Date | string, timeZone = DEFAULT_TIMEZONE) {
+  if (typeof value === 'string') {
+    const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (dateOnlyMatch) {
+      const [, year, month, day] = dateOnlyMatch;
+      return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    }
+  }
+
   const date = new Date(value);
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = formatter.formatToParts(date);
+  const year = Number(parts.find((part) => part.type === 'year')?.value ?? date.getUTCFullYear());
+  const month = Number(parts.find((part) => part.type === 'month')?.value ?? date.getUTCMonth() + 1);
+  const day = Number(parts.find((part) => part.type === 'day')?.value ?? date.getUTCDate());
+
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 export function startOfDay(value: Date | string) {

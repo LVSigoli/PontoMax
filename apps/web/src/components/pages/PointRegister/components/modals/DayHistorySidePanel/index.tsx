@@ -5,6 +5,7 @@ import { forwardRef, useImperativeHandle, useRef } from "react"
 import { SidePanel } from "@/components/structure/SidePanel"
 import { Table } from "@/components/structure/Table"
 import { Typography } from "@/components/structure/Typography"
+import { formatWorkdayDate } from "../../../utils"
 
 // Types
 import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
@@ -18,17 +19,14 @@ export const DayHistorySidePanel = forwardRef<
   DayHistorySidePanelMethods,
   DayHistorySidePanelProps
 >(({ record }, ref) => {
-  // Refs
   const sidePanelRef = useRef<SidePanelMethods>(null)
 
   const tableData: TableRowData[] = record
-    ? [
-        {
-          Horario: { value: record.time },
-          Tipo: { value: record.type },
-          Status: { value: record.status, type: "badge" },
-        },
-      ]
+    ? record.records.map((item) => ({
+        Horario: { value: item.time },
+        Tipo: { value: item.type },
+        Status: { value: item.status, type: "badge" },
+      }))
     : []
 
   useImperativeHandle(
@@ -51,7 +49,9 @@ export const DayHistorySidePanel = forwardRef<
             className="mt-1"
             value={
               record
-                ? `Registro selecionado as ${record.time}`
+                ? `Resumo de ${formatWorkdayDate(record.workdayDate, {
+                    withYear: true,
+                  })}`
                 : "Selecione um registro para visualizar"
             }
           />

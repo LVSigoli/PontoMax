@@ -15,11 +15,12 @@ import { PointHistory } from "./components/PointHistory"
 import { usePointRegister } from "./hooks"
 
 export const PointRegister: React.FC = () => {
-  // Hooks
   const {
-    records,
+    historyRecords,
     currentDate,
     currentTime,
+    workedHours,
+    balanceLabel,
     currentRecords,
     adjustmentRequestRecords,
     confirmationModalRef,
@@ -49,6 +50,8 @@ export const PointRegister: React.FC = () => {
               <PointCard
                 currentDate={currentDate}
                 currentTime={currentTime}
+                workedHours={workedHours}
+                balanceLabel={balanceLabel}
                 onRegisterPoint={handleConfirmationModalOpen}
               />
 
@@ -56,7 +59,7 @@ export const PointRegister: React.FC = () => {
             </div>
 
             <PointHistory
-              records={records}
+              records={historyRecords}
               onAdjustmentRequest={handleAdjustmentRequestOpen}
               onRecordSelect={handleHistoryRecordSelect}
             />

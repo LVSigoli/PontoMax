@@ -2,16 +2,22 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
 // Services
+import type { WorkdayApiItem } from "@/services/domain"
 import { getTimeRecords, registerTimeRecord } from "@/services/domain"
+import { formatHoursWithMinutes, formatMinutes } from "@/services/utils"
 
 // Types
-import type { PointRecord } from "../types"
+import type { PointRecord, WorkdaySummary } from "../types"
 
 // Utils
 import {
   formatPointDate,
   formatPointTime,
+  getDateKeyFromValue,
+  isBusinessDay,
   mapWorkdayToPointRecords,
+  mapWorkdayToSummary,
+  WORKDAY_TIMEZONE,
 } from "../utils"
 
 // Types
@@ -26,24 +32,53 @@ export function usePointRegister() {
   const dayHistorySidePanelRef = useRef<DayHistorySidePanelMethods>(null)
 
   const [now, setNow] = useState<Date | null>(null)
-  const [records, setRecords] = useState<PointRecord[]>([])
+  const [workdays, setWorkdays] = useState<WorkdayApiItem[]>([])
   const [selectedHistoryRecord, setSelectedHistoryRecord] =
-    useState<PointRecord | null>(null)
+    useState<WorkdaySummary | null>(null)
   const [adjustmentRequestRecords, setAdjustmentRequestRecords] = useState<
     PointRecord[]
   >([])
 
   const currentDate = now ? formatPointDate(now) : "--"
   const currentTime = now ? formatPointTime(now) : "--:--:--"
-  const todayKey = useMemo(
-    () => (now ?? new Date()).toISOString().slice(0, 10),
-    [now]
+  const todayKey = useMemo(() => getDateKeyFromValue(now ?? new Date()), [now])
+
+  const currentWorkday = useMemo(
+    () =>
+      workdays.find((workday) => getDateKeyFromValue(workday.date) === todayKey) ??
+      null,
+    [todayKey, workdays]
   )
 
   const currentRecords = useMemo(
-    () => records.filter((record) => record.workdayDate === todayKey),
-    [records, todayKey]
+    () => (currentWorkday ? mapWorkdayToPointRecords(currentWorkday) : []),
+    [currentWorkday]
   )
+
+  const historyRecords = useMemo(
+    () => makeRecentBusinessSummaries(workdays, todayKey),
+    [todayKey, workdays]
+  )
+
+  const workedHours = useMemo(
+    () => formatHoursWithMinutes(currentWorkday?.workedMinutes ?? 0),
+    [currentWorkday]
+  )
+
+  const balanceLabel = useMemo(() => {
+    if (!currentWorkday) {
+      return "Aguardando registros"
+    }
+
+    const balanceMinutes =
+      currentWorkday.workedMinutes - currentWorkday.scheduledMinutes
+
+    if (balanceMinutes >= 0) {
+      return `Saldo positivo ${formatMinutes(balanceMinutes)}`
+    }
+
+    return `Faltam ${formatMinutes(Math.abs(balanceMinutes))}`
+  }, [currentWorkday])
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -64,13 +99,25 @@ export function usePointRegister() {
     void loadRecords()
   }, [])
 
+  useEffect(() => {
+    if (selectedHistoryRecord) {
+      dayHistorySidePanelRef.current?.open()
+    }
+  }, [selectedHistoryRecord])
+
+  useEffect(() => {
+    if (adjustmentRequestRecords.length > 0) {
+      adjustmentRequestSidePanelRef.current?.open()
+    }
+  }, [adjustmentRequestRecords])
+
   async function loadRecords() {
-    const workdays = await getTimeRecords()
-    setRecords(workdays.flatMap(mapWorkdayToPointRecords))
+    const nextWorkdays = await getTimeRecords()
+    setWorkdays(nextWorkdays)
   }
 
   async function handleRegisterPoint() {
-    await registerTimeRecord()
+    await registerTimeRecord({ timezone: WORKDAY_TIMEZONE })
     await loadRecords()
   }
 
@@ -78,29 +125,28 @@ export function usePointRegister() {
     confirmationModalRef.current?.open()
   }
 
-  function handleHistoryRecordSelect(record: PointRecord | null) {
+  function handleHistoryRecordSelect(record: WorkdaySummary | null) {
     if (!record) return
 
     setSelectedHistoryRecord(record)
-    dayHistorySidePanelRef.current?.open()
   }
 
-  function handleAdjustmentRequestOpen(record: PointRecord) {
+  function handleAdjustmentRequestOpen(record: WorkdaySummary) {
     setSelectedHistoryRecord(record)
-    setAdjustmentRequestRecords(
-      records.filter((item) => item.workdayDate === record.workdayDate)
-    )
-    adjustmentRequestSidePanelRef.current?.open()
+    setAdjustmentRequestRecords(record.records)
   }
 
   async function handleAdjustmentRequestSubmitted() {
     await loadRecords()
+    setAdjustmentRequestRecords([])
   }
 
   return {
-    records,
+    historyRecords,
     currentDate,
     currentTime,
+    workedHours,
+    balanceLabel,
     currentRecords,
     adjustmentRequestRecords,
     selectedHistoryRecord,
@@ -113,4 +159,19 @@ export function usePointRegister() {
     handleConfirmationModalOpen,
     handleHistoryRecordSelect,
   }
+}
+
+function makeRecentBusinessSummaries(
+  workdays: WorkdayApiItem[],
+  todayKey: string
+) {
+  return [...workdays]
+    .filter((workday) => {
+      const workdayKey = getDateKeyFromValue(workday.date)
+
+      return workdayKey < todayKey && isBusinessDay(workday.date)
+    })
+    .sort((left, right) => right.date.localeCompare(left.date))
+    .slice(0, 5)
+    .map(mapWorkdayToSummary)
 }

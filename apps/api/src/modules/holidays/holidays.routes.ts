@@ -7,7 +7,7 @@ import { HOLIDAY_TYPES } from '../../common/constants/domain-enums.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { getDateOnly } from '../../common/utils/date.js';
-import { getRequestCompanyId } from '../../common/utils/company-scope.js';
+import { getOptionalRequestCompanyId, getRequestCompanyId } from '../../common/utils/company-scope.js';
 import { validateRequest } from '../../common/validation/validate-request.js';
 import { prisma } from '../../lib/prisma.js';
 
@@ -46,7 +46,7 @@ holidaysRouter.get(
   '/',
   validateRequest(listSchema),
   asyncHandler(async (request, response) => {
-    const companyId = getRequestCompanyId(
+    const companyId = getOptionalRequestCompanyId(
       request,
       request.query.companyId ? Number(request.query.companyId) : undefined,
     );
@@ -54,7 +54,7 @@ holidaysRouter.get(
 
     const holidays = await prisma.holiday.findMany({
       where: {
-        companyId,
+        companyId: companyId ?? undefined,
         date:
           year === undefined
             ? undefined
@@ -74,7 +74,7 @@ holidaysRouter.get(
 
 holidaysRouter.post(
   '/',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(holidaySchema),
   asyncHandler(async (request, response) => {
     const holiday = await prisma.holiday.create({
@@ -93,7 +93,7 @@ holidaysRouter.post(
 
 holidaysRouter.patch(
   '/:holidayId',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(holidayIdSchema.merge(updateHolidaySchema)),
   asyncHandler(async (request, response) => {
     const holidayId = Number(request.params.holidayId);
@@ -124,7 +124,7 @@ holidaysRouter.patch(
 
 holidaysRouter.delete(
   '/:holidayId',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(holidayIdSchema),
   asyncHandler(async (request, response) => {
     const holidayId = Number(request.params.holidayId);

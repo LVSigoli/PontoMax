@@ -7,7 +7,7 @@ import { hashPassword } from '../../common/auth/password.service.js';
 import { USER_ROLES } from '../../common/constants/domain-enums.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
-import { getRequestCompanyId } from '../../common/utils/company-scope.js';
+import { getOptionalRequestCompanyId, getRequestCompanyId } from '../../common/utils/company-scope.js';
 import { validateRequest } from '../../common/validation/validate-request.js';
 import { prisma } from '../../lib/prisma.js';
 import { getDateOnly } from '../../common/utils/date.js';
@@ -52,17 +52,17 @@ usersRouter.use(authenticate);
 
 usersRouter.get(
   '/',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(listUsersSchema),
   asyncHandler(async (request, response) => {
-    const companyId = getRequestCompanyId(
+    const companyId = getOptionalRequestCompanyId(
       request,
       request.query.companyId ? Number(request.query.companyId) : undefined,
     );
 
     const users = await prisma.user.findMany({
       where: {
-        companyId,
+        companyId: companyId ?? undefined,
       },
       include: {
         company: true,
@@ -102,7 +102,7 @@ usersRouter.get(
 
 usersRouter.post(
   '/',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(userSchema),
   asyncHandler(async (request, response) => {
     const companyId = getRequestCompanyId(request, request.body.companyId);
@@ -124,12 +124,23 @@ usersRouter.post(
     });
 
     if (request.body.journeyId) {
-      await prisma.userJourneyAssignment.create({
-        data: {
+      await prisma.userJourneyAssignment.upsert({
+        create: {
           userId: user.id,
           journeyId: request.body.journeyId,
           createdById: request.authUser!.id,
           validFrom: getDateOnly(request.body.journeyValidFrom ?? new Date()),
+        },
+        update: {
+          journeyId: request.body.journeyId,
+          createdById: request.authUser!.id,
+          validTo: null,
+        },
+        where: {
+          userId_validFrom: {
+            userId: user.id,
+            validFrom: getDateOnly(request.body.journeyValidFrom ?? new Date()),
+          },
         },
       });
     }
@@ -155,7 +166,7 @@ usersRouter.post(
 
 usersRouter.patch(
   '/:userId',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(userIdSchema.merge(updateUserSchema)),
   asyncHandler(async (request, response) => {
     const userId = Number(request.params.userId);
@@ -170,6 +181,7 @@ usersRouter.patch(
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
+        companyId: request.body.companyId,
         employeeCode: request.body.employeeCode,
         fullName: request.body.fullName,
         email: request.body.email?.trim().toLowerCase(),
@@ -184,12 +196,23 @@ usersRouter.patch(
     });
 
     if (request.body.journeyId) {
-      await prisma.userJourneyAssignment.create({
-        data: {
+      await prisma.userJourneyAssignment.upsert({
+        create: {
           userId: user.id,
           journeyId: request.body.journeyId,
           createdById: request.authUser!.id,
           validFrom: getDateOnly(request.body.journeyValidFrom ?? new Date()),
+        },
+        update: {
+          journeyId: request.body.journeyId,
+          createdById: request.authUser!.id,
+          validTo: null,
+        },
+        where: {
+          userId_validFrom: {
+            userId: user.id,
+            validFrom: getDateOnly(request.body.journeyValidFrom ?? new Date()),
+          },
         },
       });
     }
@@ -233,7 +256,7 @@ usersRouter.get(
 
 usersRouter.delete(
   '/:userId',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(userIdSchema),
   asyncHandler(async (request, response) => {
     const userId = Number(request.params.userId);

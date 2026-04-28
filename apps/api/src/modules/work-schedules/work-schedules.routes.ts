@@ -6,7 +6,7 @@ import { requireRole } from '../../common/auth/require-role.middleware.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { parseTimeStringToDate } from '../../common/utils/date.js';
-import { getRequestCompanyId } from '../../common/utils/company-scope.js';
+import { getOptionalRequestCompanyId, getRequestCompanyId } from '../../common/utils/company-scope.js';
 import { validateRequest } from '../../common/validation/validate-request.js';
 import { prisma } from '../../lib/prisma.js';
 
@@ -52,13 +52,13 @@ workSchedulesRouter.get(
   '/',
   validateRequest(listSchema),
   asyncHandler(async (request, response) => {
-    const companyId = getRequestCompanyId(
+    const companyId = getOptionalRequestCompanyId(
       request,
       request.query.companyId ? Number(request.query.companyId) : undefined,
     );
 
     const journeys = await prisma.journey.findMany({
-      where: { companyId },
+      where: { companyId: companyId ?? undefined },
       include: {
         _count: {
           select: {
@@ -82,7 +82,7 @@ workSchedulesRouter.get(
 
 workSchedulesRouter.post(
   '/',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(journeySchema),
   asyncHandler(async (request, response) => {
     const companyId = getRequestCompanyId(request, request.body.companyId);
@@ -111,7 +111,7 @@ workSchedulesRouter.post(
 
 workSchedulesRouter.patch(
   '/:journeyId',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(journeyIdSchema.merge(updateJourneySchema)),
   asyncHandler(async (request, response) => {
     const journeyId = Number(request.params.journeyId);
@@ -147,7 +147,7 @@ workSchedulesRouter.patch(
 
 workSchedulesRouter.delete(
   '/:journeyId',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(journeyIdSchema),
   asyncHandler(async (request, response) => {
     const journeyId = Number(request.params.journeyId);

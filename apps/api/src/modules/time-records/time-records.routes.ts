@@ -7,6 +7,7 @@ import { TIME_ENTRY_KINDS } from '../../common/constants/domain-enums.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { endOfDay, startOfDay } from '../../common/utils/date.js';
+import { getOptionalRequestCompanyId } from '../../common/utils/company-scope.js';
 import { validateRequest } from '../../common/validation/validate-request.js';
 import { prisma } from '../../lib/prisma.js';
 import {
@@ -45,7 +46,7 @@ timeRecordsRouter.get(
     if (
       requestedUserId &&
       requestedUserId !== request.authUser!.id &&
-      !['PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'].includes(request.authUser!.role)
+      !['PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'].includes(request.authUser!.role)
     ) {
       throw new AppError('You do not have permission to access records from another user.', 403);
     }
@@ -94,7 +95,7 @@ timeRecordsRouter.post(
       recordedAt: request.body.recordedAt ? new Date(request.body.recordedAt) : new Date(),
       source: 'WEB',
       kind: request.body.kind,
-      timezone: request.body.timezone,
+      timezone: request.body.timezone ?? 'America/Sao_Paulo',
     });
 
     response.status(201).json({
@@ -106,14 +107,15 @@ timeRecordsRouter.post(
 
 timeRecordsRouter.get(
   '/team/today',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   asyncHandler(async (request, response) => {
     const today = startOfDay(new Date());
     const tomorrow = endOfDay(new Date());
+    const companyId = getOptionalRequestCompanyId(request);
 
     const workdays = await prisma.workday.findMany({
       where: {
-        companyId: request.authUser!.companyId,
+        companyId: companyId ?? undefined,
         date: {
           gte: today,
           lte: tomorrow,

@@ -10,7 +10,7 @@ import { Typography } from "@/components/structure/Typography"
 
 // Utils
 import { Header } from "@/components/structure/Header"
-import { getPointStatusClass, getPointTypeClass } from "../../utils"
+import { formatWorkdayDate, getPointStatusClass } from "../../utils"
 
 // Types
 import type {
@@ -34,6 +34,12 @@ export const PointHistory: React.FC<Props> = ({
   records,
 }) => {
   const tableData = records.map<TableRowData>((record) => ({
+    Data: {
+      value: formatWorkdayDate(record.workdayDate),
+    },
+    Registros: {
+      value: record.recordsCount,
+    },
     "Horas trabalhadas": {
       value: record.workedHours,
     },
@@ -42,10 +48,6 @@ export const PointHistory: React.FC<Props> = ({
     },
     "Horas faltantes": {
       value: record.missingHours,
-    },
-    Tipo: {
-      value: record.type,
-      color: getPointTypeClass(record.type),
     },
     Status: {
       value: record.status,
@@ -75,11 +77,11 @@ export const PointHistory: React.FC<Props> = ({
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <Header
           titleVariant="h4"
-          label="Histórico de ponto"
-          subtitle="Acompanhe seus registros mais recentes"
+          label="Historico de ponto"
+          subtitle="Resumo diario da ultima semana util trabalhada"
         />
 
-        <Typography variant="caption" value={`${records.length} registros`} />
+        <Typography variant="caption" value={`${records.length} dias`} />
       </div>
 
       <Table

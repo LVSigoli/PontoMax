@@ -5,28 +5,30 @@ import { requireRole } from '../../common/auth/require-role.middleware.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { prisma } from '../../lib/prisma.js';
 import { startOfDay } from '../../common/utils/date.js';
+import { getOptionalRequestCompanyId } from '../../common/utils/company-scope.js';
 import { getAnalyticsDashboard } from './analytics.service.js';
 
 export const analyticsRouter = Router();
 
-analyticsRouter.use(authenticate, requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'));
+analyticsRouter.use(authenticate, requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'));
 
 analyticsRouter.get(
   '/overview',
   asyncHandler(async (request, response) => {
     const today = startOfDay(new Date());
+    const companyId = getOptionalRequestCompanyId(request);
 
     const [companyEmployees, todayWorkdays, pendingAdjustments, inconsistentWorkdays] =
       await Promise.all([
         prisma.user.count({
           where: {
-            companyId: request.authUser!.companyId,
+            companyId: companyId ?? undefined,
             isActive: true,
           },
         }),
         prisma.workday.findMany({
           where: {
-            companyId: request.authUser!.companyId,
+            companyId: companyId ?? undefined,
             date: {
               gte: today,
             },
@@ -34,13 +36,13 @@ analyticsRouter.get(
         }),
         prisma.adjustmentRequest.count({
           where: {
-            companyId: request.authUser!.companyId,
+            companyId: companyId ?? undefined,
             status: 'PENDING',
           },
         }),
         prisma.workday.count({
           where: {
-            companyId: request.authUser!.companyId,
+            companyId: companyId ?? undefined,
             status: 'INCONSISTENT',
           },
         }),
@@ -66,7 +68,7 @@ analyticsRouter.get(
 analyticsRouter.get(
   '/dashboard',
   asyncHandler(async (request, response) => {
-    const dashboard = await getAnalyticsDashboard(request.authUser!.companyId);
+    const dashboard = await getAnalyticsDashboard(getOptionalRequestCompanyId(request));
 
     response.json(dashboard);
   }),

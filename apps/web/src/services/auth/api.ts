@@ -1,5 +1,5 @@
 import { PONTO_MAX_API } from "../api"
-import type { LoginPayload, LoginResponse } from "@/types"
+import type { AuthSession, LoginPayload, LoginResponse } from "@/types"
 import type {
   ForgotPasswordPayload,
   ForgotPasswordResponse,
@@ -14,6 +14,13 @@ export async function postLogin(payload: LoginPayload) {
 
 export async function postLogout(refreshToken: string) {
   await PONTO_MAX_API.post("auth/logout", { refreshToken })
+}
+
+export async function postRefresh(refreshToken: string) {
+  const response = await PONTO_MAX_API.post<AuthSession>("auth/refresh", {
+    refreshToken,
+  })
+  return response.data
 }
 
 export async function getCurrentUser() {

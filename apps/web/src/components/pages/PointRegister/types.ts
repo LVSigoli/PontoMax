@@ -1,6 +1,6 @@
 export type PointRecordStatus = "Registrado" | "Pendente" | "Aprovado"
 
-export type PointRecordType = "Entrada" | "Saída"
+export type PointRecordType = "Entrada" | "Saida"
 
 export interface PointRecord {
   id: number
@@ -14,4 +14,15 @@ export interface PointRecord {
   missingHours: string
   type: PointRecordType
   status: PointRecordStatus
+}
+
+export interface WorkdaySummary {
+  id: number
+  workdayDate: string
+  workedHours: string
+  extraHours: string
+  missingHours: string
+  recordsCount: number
+  status: PointRecordStatus
+  records: PointRecord[]
 }

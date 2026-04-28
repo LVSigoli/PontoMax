@@ -6,6 +6,15 @@ export interface ApiItemResponse<T> {
   item: T
 }
 
+export interface NotificationResponse {
+  channel: "resend" | "file"
+  previewPath?: string
+}
+
+export interface ApiItemWithNotificationResponse<T> extends ApiItemResponse<T> {
+  notification?: NotificationResponse
+}
+
 export interface CompanyApiItem {
   id: number
   clientId: number

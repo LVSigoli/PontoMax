@@ -1,4 +1,4 @@
-export const USER_ROLES = ['PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER', 'EMPLOYEE'] as const;
+export const USER_ROLES = ['PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER', 'EMPLOYEE'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const HOLIDAY_TYPES = ['NATIONAL', 'STATE', 'MUNICIPAL', 'COMPANY'] as const;

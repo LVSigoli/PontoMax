@@ -1,5 +1,5 @@
 // External Libraries
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 // Constants
 import { POINT_TYPES } from "../../constants"
@@ -36,6 +36,11 @@ export function useAdjustmentRequest({
   const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  useEffect(() => {
+    setForm(makeInitialForm(records))
+    setErrorMessage("")
+  }, [records])
+
   const pointTypeOptions = useMemo<SelectionOption[]>(
     () =>
       POINT_TYPES.map((type) => ({
@@ -48,7 +53,7 @@ export function useAdjustmentRequest({
   const tableRows = form.records.map<TableRowData>((record) => ({
     Horario: {
       type: "time-picker",
-      value: record.time.slice(0, 5),
+      value: normalizeEditableTime(record.time),
       className: "w-24",
     },
     Tipo: {
@@ -98,16 +103,16 @@ export function useAdjustmentRequest({
       return
     }
 
-    const adjustmentRecords = buildAdjustmentRecords(records, form.records)
-
-    if (adjustmentRecords.length === 0) {
-      setErrorMessage("Altere ao menos um horario antes de solicitar o ajuste.")
-      return
-    }
-
     try {
       setIsSubmitting(true)
       setErrorMessage("")
+
+      const adjustmentRecords = buildAdjustmentRecords(records, form.records)
+
+      if (adjustmentRecords.length === 0) {
+        setErrorMessage("Altere ao menos um horario antes de solicitar o ajuste.")
+        return
+      }
 
       await createAdjustmentRequest({
         workdayDate,
@@ -302,7 +307,25 @@ function buildAdjustmentRecords(initialRecords: PointRecord[], currentRecords: P
   return nextRecords
 }
 
+function normalizeEditableTime(time: string) {
+  const [hours = "00", minutes = "00"] = time.trim().split(":")
+  return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`
+}
+
 function makeDateTime(date: string, time: string) {
-  const normalizedTime = time.length >= 5 ? time.slice(0, 5) : `${time}:00`
-  return new Date(`${date}T${normalizedTime}:00`).toISOString()
+  const [rawHours = "", rawMinutes = ""] = time.trim().split(":")
+  const hours = rawHours.padStart(2, "0")
+  const minutes = rawMinutes.padStart(2, "0")
+
+  if (!/^\d{2}$/.test(hours) || !/^\d{2}$/.test(minutes)) {
+    throw new Error("Informe um horario valido para continuar.")
+  }
+
+  const parsedDate = new Date(`${date}T${hours}:${minutes}:00`)
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    throw new Error("Informe um horario valido para continuar.")
+  }
+
+  return parsedDate.toISOString()
 }

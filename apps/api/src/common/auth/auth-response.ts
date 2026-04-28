@@ -6,7 +6,9 @@ export function mapRoleToGroups(role: string) {
   const safeRole = toUserRole(role);
 
   if (safeRole === 'PLATFORM_ADMIN') return ['PLATFORM_ADMIN', 'PONTOMAX_ADMIN'];
-  if (safeRole === 'CLIENT_ADMIN') return ['CLIENT_ADMIN', 'COMPANY_ADMIN'];
+  if (safeRole === 'CLIENT_ADMIN' || safeRole === 'COMPANY_ADMIN') {
+    return ['CLIENT_ADMIN', 'COMPANY_ADMIN'];
+  }
   if (safeRole === 'MANAGER') return ['MANAGER'];
   return ['EMPLOYEE'];
 }

@@ -121,7 +121,10 @@ export function mapUserApiToEmployee(user: UserApiItem): Employee {
     role: user.position ?? user.role,
     companyId: user.companyId,
     journeyId: user.journeyId ?? 0,
-    managerAccess: user.role === "MANAGER" || user.role === "CLIENT_ADMIN",
+    managerAccess:
+      user.role === "MANAGER" ||
+      user.role === "CLIENT_ADMIN" ||
+      user.role === "COMPANY_ADMIN",
   }
 }
 
@@ -162,12 +165,12 @@ export function buildCompanyPayload(form: CompanyForm & { clientId: number }) {
 
 export function buildEmployeePayload(form: EmployeeForm) {
   return {
-    companyId: form.companyId,
+    companyId: form.companyId || undefined,
     fullName: form.name,
     email: form.email,
     cpf: form.cpf,
     position: form.role,
-    role: form.managerAccess ? "MANAGER" : "EMPLOYEE",
+    role: form.managerAccess ? "COMPANY_ADMIN" : "EMPLOYEE",
     journeyId: form.journeyId || undefined,
     journeyValidFrom: new Date().toISOString().slice(0, 10),
   }

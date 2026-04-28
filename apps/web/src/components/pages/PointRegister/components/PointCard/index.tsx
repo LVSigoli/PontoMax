@@ -12,11 +12,13 @@ import { Props } from "./types"
 export const PointCard: React.FC<Props> = ({
   currentDate,
   currentTime,
+  workedHours,
+  balanceLabel,
   onRegisterPoint,
 }) => {
   return (
     <section className="rounded-2xl border border-border-subtle bg-surface-card p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-      <div className="flex-col gap-8 flex justify-between p-0">
+      <div className="flex flex-col justify-between gap-8 p-0">
         <div className="flex flex-col justify-start gap-1">
           <Typography variant="h4" value="Registro de ponto" />
           <Typography variant="b2" className="mt-1" value={currentDate} />

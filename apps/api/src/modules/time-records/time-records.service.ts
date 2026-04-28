@@ -31,8 +31,9 @@ export async function ensureWorkday(params: {
   companyId: number;
   userId: number;
   date: Date;
+  timezone?: string;
 }) {
-  const date = getDateOnly(params.date);
+  const date = getDateOnly(params.date, params.timezone);
   const assignment = await prisma.userJourneyAssignment.findFirst({
     where: {
       userId: params.userId,
@@ -137,6 +138,7 @@ export async function createTimeEntry(params: {
     companyId: params.companyId,
     userId: params.userId,
     date: params.recordedAt,
+    timezone: params.timezone,
   });
 
   const existingActiveEntries = await prisma.timeEntry.findMany({

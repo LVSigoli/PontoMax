@@ -16,7 +16,7 @@ export const POINT_RECORDS: PointRecord[] = [
     workedHours: "08h 00min",
     extraHours: "00h 30min",
     missingHours: "00h 00min",
-    type: "Saída",
+    type: "Saida",
     status: "Registrado",
   },
   {
@@ -34,7 +34,7 @@ export const POINT_RECORDS: PointRecord[] = [
     workedHours: "08h 00min",
     extraHours: "00h 00min",
     missingHours: "00h 00min",
-    type: "Saída",
+    type: "Saida",
     status: "Aprovado",
   },
 ]

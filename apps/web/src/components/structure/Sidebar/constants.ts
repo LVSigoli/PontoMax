@@ -5,7 +5,7 @@ export const SIDEBAR_ITEMS: NavigationItem[] = [
     id: "point",
     label: "Ponto",
     icon: "point",
-    href: "/point",
+    href: "/",
   },
   {
     id: "history",

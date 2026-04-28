@@ -139,9 +139,30 @@ companiesRouter.patch(
     const company = await prisma.company.update({
       where: { id: companyId },
       data: request.body,
+      include: {
+        client: true,
+        _count: {
+          select: {
+            users: true,
+          },
+        },
+      },
     });
 
-    response.json({ item: company });
+    response.json({
+      item: {
+        id: company.id,
+        clientId: company.clientId,
+        clientName: company.client.name,
+        name: company.name,
+        legalName: company.legalName,
+        tradeName: company.tradeName,
+        cnpj: company.cnpj,
+        timezone: company.timezone,
+        isActive: company.isActive,
+        employees: company._count.users,
+      },
+    });
   }),
 );
 

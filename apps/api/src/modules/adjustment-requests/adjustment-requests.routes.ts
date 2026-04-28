@@ -12,6 +12,7 @@ import {
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { endOfDay, getDateOnly, startOfDay } from '../../common/utils/date.js';
+import { getOptionalRequestCompanyId } from '../../common/utils/company-scope.js';
 import { validateRequest } from '../../common/validation/validate-request.js';
 import { prisma } from '../../lib/prisma.js';
 import { ensureWorkday, recalculateWorkday } from '../time-records/time-records.service.js';
@@ -64,6 +65,7 @@ adjustmentRequestsRouter.get(
   '/',
   validateRequest(listSchema),
   asyncHandler(async (request, response) => {
+    const companyId = getOptionalRequestCompanyId(request);
     const where =
       request.authUser!.role === 'EMPLOYEE'
         ? {
@@ -71,7 +73,7 @@ adjustmentRequestsRouter.get(
             userId: request.authUser!.id,
           }
         : {
-            companyId: request.authUser!.companyId,
+            companyId: companyId ?? undefined,
             userId: request.query.userId ? Number(request.query.userId) : undefined,
           };
 
@@ -144,7 +146,7 @@ adjustmentRequestsRouter.post(
 
 adjustmentRequestsRouter.patch(
   '/:requestId/review',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
   validateRequest(reviewSchema),
   asyncHandler(async (request, response) => {
     const requestId = Number(request.params.requestId);

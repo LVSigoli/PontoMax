@@ -22,7 +22,7 @@ function formatShortDayLabel(value: Date) {
     .replace(',', '');
 }
 
-export async function getAnalyticsDashboard(companyId: number) {
+export async function getAnalyticsDashboard(companyId?: number) {
   const today = startOfDay(new Date());
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const sixDaysAgo = subDays(today, 5);
@@ -32,13 +32,13 @@ export async function getAnalyticsDashboard(companyId: number) {
     await Promise.all([
       prisma.user.count({
         where: {
-          companyId,
+          companyId: companyId ?? undefined,
           isActive: true,
         },
       }),
       prisma.workday.findMany({
         where: {
-          companyId,
+          companyId: companyId ?? undefined,
           date: {
             gte: today,
           },
@@ -49,7 +49,7 @@ export async function getAnalyticsDashboard(companyId: number) {
       }),
       prisma.workday.findMany({
         where: {
-          companyId,
+          companyId: companyId ?? undefined,
           date: {
             gte: monthStart,
           },
@@ -60,7 +60,7 @@ export async function getAnalyticsDashboard(companyId: number) {
       }),
       prisma.adjustmentRequest.findMany({
         where: {
-          companyId,
+          companyId: companyId ?? undefined,
           requestedAt: {
             gte: sixDaysAgo,
           },
@@ -68,7 +68,7 @@ export async function getAnalyticsDashboard(companyId: number) {
       }),
       prisma.workday.findMany({
         where: {
-          companyId,
+          companyId: companyId ?? undefined,
           date: {
             gte: fourDaysAgo,
           },
