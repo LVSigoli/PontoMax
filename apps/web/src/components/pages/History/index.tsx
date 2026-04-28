@@ -1,59 +1,129 @@
 // External Libraries
-import React from "react"
+import React, { useEffect, useRef } from "react"
+
+// Assets
+import UpdateIcon from "@/assets/icons/update.svg"
 
 // Components
-import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Table } from "@/components/structure/Table"
 import { Typography } from "@/components/structure/Typography"
 import { AnalysisCard } from "./components/AnalysisCard"
+import { AdjustmentRequestSidePanel } from "../PointRegister/components/modals/AdjustmentRequestSidePanel"
+import { DayHistorySidePanel } from "../PointRegister/components/modals/DayHistorySidePanel"
 
-// Constants
-import { SOLICITATION_ACTIONS } from "./constants"
+// Hooks
 import { useHistory } from "./hooks/useHistory"
 
-// Types
-import type { TableRowData } from "@/components/structure/Table/types"
-
 // Utils
-import { getSolicitationStatusClass } from "./utils"
+import {
+  formatWorkdayDate,
+  getPointStatusClass,
+} from "../PointRegister/utils"
+
+// Types
+import type {
+  TableAction,
+  TableRowData,
+} from "@/components/structure/Table/types"
+
+const POINT_HISTORY_ACTIONS: TableAction[] = [
+  {
+    id: "request-adjustment",
+    label: "Solicitar ajuste",
+    color: "text-warning-700",
+    icon: UpdateIcon,
+  },
+]
 
 export const History: React.FC = () => {
   const {
     analysisItems,
     errorMessage,
-    historyItems,
-    pagination,
-    handlePreviousPage,
-    handleNextPage,
+    historyRecords,
+    isInitialLoading,
+    isLoadingMore,
+    hasMore,
+    selectedHistoryRecord,
+    adjustmentRequestWorkdayDate,
+    adjustmentRequestRecords,
+    adjustmentRequestSidePanelRef,
+    dayHistorySidePanelRef,
+    loadMoreHistory,
+    handleHistoryRecordSelect,
+    handleAdjustmentRequestOpen,
+    handleAdjustmentRequestSubmitted,
   } = useHistory()
 
-  const tableData = historyItems.map<TableRowData>((item) => ({
-    "Horario da ultima solicitacao": {
-      value: item.lastSolicitationTime,
-      color: "text-content-secondary",
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const target = loadMoreRef.current
+
+    if (!target) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void loadMoreHistory()
+        }
+      },
+      {
+        root: null,
+        rootMargin: "160px 0px",
+        threshold: 0,
+      }
+    )
+
+    observer.observe(target)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [loadMoreHistory])
+
+  const tableData = historyRecords.map<TableRowData>((record) => ({
+    Data: {
+      value: formatWorkdayDate(record.workdayDate),
+    },
+    Registros: {
+      value: record.recordsCount,
+    },
+    "Horas trabalhadas": {
+      value: record.workedHours,
     },
     "Horas extras": {
-      value: item.extraHours,
-      color: "text-content-secondary",
+      value: record.extraHours,
     },
     "Horas faltantes": {
-      value: item.missingHours,
-      color: "text-content-secondary",
+      value: record.missingHours,
     },
     Status: {
-      value: item.status,
+      value: record.status,
       type: "badge",
-      color: getSolicitationStatusClass(item.status),
+      color: getPointStatusClass(record.status),
     },
   }))
 
-  function handleActionClick(actionId: string, row: TableRowData) {
-    console.log("history action", {
-      actionId,
-      row,
-    })
+  function handlePointHistoryActionClick(actionId: string, item: TableRowData) {
+    const recordIndex = tableData.indexOf(item)
+    const record = historyRecords[recordIndex]
+
+    if (actionId === "request-adjustment" && record) {
+      handleAdjustmentRequestOpen(record)
+    }
+  }
+
+  function handlePointHistoryRowSelect(item: TableRowData) {
+    const recordIndex = tableData.indexOf(item)
+    const record = historyRecords[recordIndex]
+
+    if (record) {
+      handleHistoryRecordSelect(record)
+    }
   }
 
   return (
@@ -64,8 +134,8 @@ export const History: React.FC = () => {
         <section className="min-w-0 flex-1 overflow-y-auto px-5 pt-8 pb-24 sm:px-8 lg:px-10 lg:py-8">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
             <Header
-              label="Historico de Solicitacoes"
-              subtitle="Acompanhe e ajuste suas solicitacoes"
+              label="Historico de ponto"
+              subtitle="Acompanhe e ajuste seus registros anteriores"
             />
 
             <section className="grid gap-4">
@@ -90,59 +160,60 @@ export const History: React.FC = () => {
               </div>
             </section>
 
-            <section className="grid gap-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <Typography
-                  variant="h4"
-                  value="Historico de solicitacoes"
-                  className="text-xl"
+            <section className="rounded-2xl border border-border-subtle bg-surface-card p-6 shadow-[0_18px_50px_rgba(15,23,42,0.04)]">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+                <Header
+                  titleVariant="h4"
+                  label="Historico de ponto"
+                  subtitle="Resumo diario dos dias trabalhados anteriores"
                 />
 
-                <div className="flex items-center gap-3">
-                  <Typography
-                    variant="caption"
-                    value={
-                      pagination.totalPages > 0
-                        ? `Pagina ${pagination.page} de ${pagination.totalPages}`
-                        : "Sem paginas"
-                    }
-                  />
-
-                  <Button
-                    value="Anterior"
-                    variant="outlined"
-                    color="primary"
-                    disabled={pagination.page <= 1}
-                    onClick={handlePreviousPage}
-                  />
-
-                  <Button
-                    value="Proxima"
-                    variant="outlined"
-                    color="primary"
-                    disabled={
-                      pagination.totalPages === 0 ||
-                      pagination.page >= pagination.totalPages
-                    }
-                    onClick={handleNextPage}
-                  />
-                </div>
+                <Typography
+                  variant="caption"
+                  value={`${historyRecords.length} dias carregados`}
+                />
               </div>
 
               <Table
                 data={tableData}
+                getRowKey={(_, index) => historyRecords[index].id}
                 allowActions
-                actions={SOLICITATION_ACTIONS}
-                className="overflow-hidden rounded-xl bg-surface-card shadow-[0_18px_45px_rgba(15,23,42,0.04)]"
-                emptyMessage="Nenhuma solicitacao encontrada"
-                getRowKey={(_, index) => historyItems[index].id}
-                minWidth="760px"
-                onActionClick={handleActionClick}
+                actions={POINT_HISTORY_ACTIONS}
+                onActionClick={handlePointHistoryActionClick}
+                onRowSelect={handlePointHistoryRowSelect}
+                emptyMessage="Nenhum historico encontrado"
               />
+
+              <div ref={loadMoreRef} className="flex justify-center pt-4">
+                <Typography
+                  variant="caption"
+                  value={
+    isInitialLoading
+      ? "Carregando historico..."
+      : isLoadingMore
+      ? "Carregando mais registros..."
+      : hasMore
+        ? "Role para carregar mais"
+                        : "Todos os registros foram carregados"
+                  }
+                />
+              </div>
             </section>
           </div>
         </section>
       </div>
+
+      <DayHistorySidePanel
+        ref={dayHistorySidePanelRef}
+        record={selectedHistoryRecord}
+      />
+
+      <AdjustmentRequestSidePanel
+        ref={adjustmentRequestSidePanelRef}
+        records={adjustmentRequestRecords}
+        workdayDate={adjustmentRequestWorkdayDate}
+        onSubmitted={handleAdjustmentRequestSubmitted}
+      />
     </main>
   )
 }

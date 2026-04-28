@@ -46,6 +46,7 @@ async function run() {
     { method: "GET", path: `/${apiPrefix}/holidays`, expectedStatus: 200 },
     { method: "GET", path: `/${apiPrefix}/time-records`, expectedStatus: 200 },
     { method: "GET", path: `/${apiPrefix}/time-records/overview`, expectedStatus: 200 },
+    { method: "GET", path: `/${apiPrefix}/time-records/summary`, expectedStatus: 200 },
     { method: "GET", path: `/${apiPrefix}/time-records/today`, expectedStatus: 200 },
     { method: "GET", path: `/${apiPrefix}/work-schedules`, expectedStatus: 200 },
     { method: "GET", path: `/${apiPrefix}/adjustment-requests`, expectedStatus: 200 },

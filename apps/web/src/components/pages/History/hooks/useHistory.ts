@@ -1,132 +1,253 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import {
-  getAdjustmentRequests,
   getTimeRecordsOverview,
+  getTimeRecordsSummary,
   type PaginationMeta,
+  type WorkdayApiItem,
 } from "@/services/domain"
-import {
-  formatHoursWithMinutes,
-  formatMinutes,
-  formatTimeLabel,
-  getErrorMessage,
-} from "@/services/utils"
+import { formatMinutes, getErrorMessage } from "@/services/utils"
 
-import type { SolicitationHistoryItem, UserAnalysisItem } from "../types"
+import type { AdjustmentRequestSidePanelMethods } from "@/components/pages/PointRegister/components/modals/AdjustmentRequestSidePanel/types"
+import type { DayHistorySidePanelMethods } from "@/components/pages/PointRegister/components/modals/DayHistorySidePanel/types"
+import type { PointRecord, WorkdaySummary } from "@/components/pages/PointRegister/types"
+import { mapWorkdayToSummary } from "@/components/pages/PointRegister/utils"
+import type { UserAnalysisItem } from "../types"
 
 const HISTORY_PAGE_SIZE = 10
 
 export function useHistory() {
+  const adjustmentRequestSidePanelRef =
+    useRef<AdjustmentRequestSidePanelMethods>(null)
+  const dayHistorySidePanelRef = useRef<DayHistorySidePanelMethods>(null)
+
   const [analysisItems, setAnalysisItems] = useState<UserAnalysisItem[]>([])
-  const [historyItems, setHistoryItems] = useState<SolicitationHistoryItem[]>(
-    []
-  )
+  const [historyRecords, setHistoryRecords] = useState<WorkdayApiItem[]>([])
   const [errorMessage, setErrorMessage] = useState("")
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [pagination, setPagination] = useState<PaginationMeta>({
-    page: 1,
+    page: 0,
     pageSize: HISTORY_PAGE_SIZE,
     totalItems: 0,
     totalPages: 0,
   })
+  const [selectedHistoryRecord, setSelectedHistoryRecord] =
+    useState<WorkdaySummary | null>(null)
+  const [adjustmentRequestWorkdayDate, setAdjustmentRequestWorkdayDate] =
+    useState<string>()
+  const [adjustmentRequestRecords, setAdjustmentRequestRecords] = useState<
+    PointRecord[]
+  >([])
+
+  const mappedHistoryRecords = useMemo(
+    () => historyRecords.map(mapWorkdayToSummary),
+    [historyRecords]
+  )
 
   useEffect(() => {
-    void loadHistory(1)
+    void loadInitialHistory()
   }, [])
 
-  async function loadHistory(page: number) {
+  useEffect(() => {
+    if (selectedHistoryRecord) {
+      dayHistorySidePanelRef.current?.open()
+    }
+  }, [selectedHistoryRecord])
+
+  useEffect(() => {
+    if (adjustmentRequestRecords.length > 0) {
+      adjustmentRequestSidePanelRef.current?.open()
+    }
+  }, [adjustmentRequestRecords])
+
+  async function loadInitialHistory() {
     try {
       setErrorMessage("")
+      setIsLoadingMore(true)
 
-      const [overview, adjustments] = await Promise.all([
+      const [overview, summary] = await Promise.all([
         getTimeRecordsOverview({
-          page,
+          page: 1,
           pageSize: HISTORY_PAGE_SIZE,
         }),
-        getAdjustmentRequests(),
+        getTimeRecordsSummary(),
       ])
 
-      const pendingCount = adjustments.filter(
-        (adjustment) => adjustment.status === "PENDING"
-      ).length
-
       setPagination(overview.meta)
-
+      setHistoryRecords(overview.items)
+      setHasMore(overview.meta.page < overview.meta.totalPages)
       setAnalysisItems([
         {
           label: "Dias trabalhados",
-          data: `${overview.summary.workedDays} dias`,
+          data: `${summary.workedDays} dias`,
           type: "worked-days",
           subtitle: "Quantidade de dias trabalhados no periodo carregado",
         },
         {
           label: "Saldo de horas",
-          data: formatMinutes(overview.summary.balanceMinutes),
+          data: formatMinutes(summary.balanceMinutes),
           type: "hour-balance",
           subtitle: "Total acumulado de horas extras e faltas",
         },
         {
           label: "Ajustes pendentes",
-          data: `${pendingCount} solicitacoes`,
+          data: `${summary.pendingAdjustments} solicitacoes`,
           type: "pending",
           subtitle: "Solicitacoes de correcao aguardando aprovacao",
         },
         {
           label: "Inconsistencias",
-          data: `${overview.summary.inconsistentCount} registros`,
+          data: `${summary.inconsistentCount} registros`,
           type: "issues",
           subtitle: "Casos com falta de registros ou jornadas incompletas",
         },
       ])
-
-      setHistoryItems(
-        overview.items.map((workday) => ({
-          id: workday.id,
-          lastSolicitationTime:
-            workday.timeEntries.at(-1)?.recordedAt
-              ? formatTimeLabel(workday.timeEntries.at(-1)!.recordedAt)
-              : "-",
-          extraHours: formatHoursWithMinutes(workday.overtimeMinutes),
-          missingHours: formatHoursWithMinutes(workday.missingMinutes),
-          status:
-            workday.status === "INCONSISTENT" ||
-            workday.status === "PENDING_ADJUSTMENT"
-              ? "Inconsistente"
-              : workday.status === "ADJUSTED"
-                ? "Registrado"
-                : "Registrado",
-        }))
-      )
     } catch (error) {
       setErrorMessage(
         getErrorMessage(error, "Nao foi possivel carregar o historico.")
       )
+    } finally {
+      setIsLoadingMore(false)
+      setIsInitialLoading(false)
     }
   }
 
-  function handlePreviousPage() {
-    if (pagination.page <= 1) {
-      return
-    }
-
-    const nextPage = pagination.page - 1
-    void loadHistory(nextPage)
-  }
-
-  function handleNextPage() {
-    if (pagination.totalPages === 0 || pagination.page >= pagination.totalPages) {
+  async function loadMoreHistory() {
+    if (isInitialLoading || isLoadingMore || !hasMore || pagination.page <= 0) {
       return
     }
 
     const nextPage = pagination.page + 1
-    void loadHistory(nextPage)
+
+    try {
+      setIsLoadingMore(true)
+      setErrorMessage("")
+
+      const overview = await getTimeRecordsOverview({
+        page: nextPage,
+        pageSize: HISTORY_PAGE_SIZE,
+      })
+
+      setPagination(overview.meta)
+      setHistoryRecords((current) => {
+        const nextRecords = [...current]
+        const existingIds = new Set(current.map((record) => record.id))
+
+        for (const item of overview.items) {
+          if (!existingIds.has(item.id)) {
+            nextRecords.push(item)
+          }
+        }
+
+        return nextRecords
+      })
+      setHasMore(overview.meta.page < overview.meta.totalPages)
+    } catch (error) {
+      setErrorMessage(
+        getErrorMessage(error, "Nao foi possivel carregar mais historico.")
+      )
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
+
+  async function refreshLoadedHistory() {
+    if (pagination.page <= 0) {
+      await loadInitialHistory()
+      return
+    }
+
+    try {
+      setErrorMessage("")
+
+      const requests = Array.from({ length: pagination.page }, (_, index) =>
+        getTimeRecordsOverview({
+          page: index + 1,
+          pageSize: HISTORY_PAGE_SIZE,
+        })
+      )
+
+      const [pages, summary] = await Promise.all([
+        Promise.all(requests),
+        getTimeRecordsSummary(),
+      ])
+      const latestPage = pages.at(-1)
+
+      if (!latestPage) {
+        return
+      }
+
+      setPagination(latestPage.meta)
+      setHistoryRecords(pages.flatMap((page) => page.items))
+      setHasMore(latestPage.meta.page < latestPage.meta.totalPages)
+      setAnalysisItems([
+        {
+          label: "Dias trabalhados",
+          data: `${summary.workedDays} dias`,
+          type: "worked-days",
+          subtitle: "Quantidade de dias trabalhados no periodo carregado",
+        },
+        {
+          label: "Saldo de horas",
+          data: formatMinutes(summary.balanceMinutes),
+          type: "hour-balance",
+          subtitle: "Total acumulado de horas extras e faltas",
+        },
+        {
+          label: "Ajustes pendentes",
+          data: `${summary.pendingAdjustments} solicitacoes`,
+          type: "pending",
+          subtitle: "Solicitacoes de correcao aguardando aprovacao",
+        },
+        {
+          label: "Inconsistencias",
+          data: `${summary.inconsistentCount} registros`,
+          type: "issues",
+          subtitle: "Casos com falta de registros ou jornadas incompletas",
+        },
+      ])
+    } catch (error) {
+      setErrorMessage(
+        getErrorMessage(error, "Nao foi possivel atualizar o historico.")
+      )
+    }
+  }
+
+  function handleHistoryRecordSelect(record: WorkdaySummary | null) {
+    if (!record) return
+
+    setSelectedHistoryRecord(record)
+  }
+
+  function handleAdjustmentRequestOpen(record: WorkdaySummary) {
+    setSelectedHistoryRecord(record)
+    setAdjustmentRequestWorkdayDate(record.workdayDate)
+    setAdjustmentRequestRecords(record.records)
+  }
+
+  async function handleAdjustmentRequestSubmitted() {
+    await refreshLoadedHistory()
+    setAdjustmentRequestWorkdayDate(undefined)
+    setAdjustmentRequestRecords([])
   }
 
   return {
     analysisItems,
     errorMessage,
-    historyItems,
-    pagination,
-    handlePreviousPage,
-    handleNextPage,
+    historyRecords: mappedHistoryRecords,
+    isInitialLoading,
+    isLoadingMore,
+    hasMore,
+    selectedHistoryRecord,
+    adjustmentRequestWorkdayDate,
+    adjustmentRequestRecords,
+    adjustmentRequestSidePanelRef,
+    dayHistorySidePanelRef,
+    loadMoreHistory,
+    handleHistoryRecordSelect,
+    handleAdjustmentRequestOpen,
+    handleAdjustmentRequestSubmitted,
   }
 }

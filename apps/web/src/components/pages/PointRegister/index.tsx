@@ -16,18 +16,18 @@ import { usePointRegister } from "./hooks"
 
 export const PointRegister: React.FC = () => {
   const {
-    historyRecords,
     currentDate,
     currentTime,
-    remainingTime,
     workedHours,
     balanceLabel,
-    adjustmentRequestWorkdayDate,
+    remainingTime,
     currentRecords,
-    adjustmentRequestRecords,
+    historyRecords,
     confirmationModalRef,
     selectedHistoryRecord,
     dayHistorySidePanelRef,
+    adjustmentRequestRecords,
+    adjustmentRequestWorkdayDate,
     adjustmentRequestSidePanelRef,
     handleRegisterPoint,
     handleAdjustmentRequestSubmitted,

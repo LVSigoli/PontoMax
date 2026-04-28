@@ -1,5 +1,4 @@
 export type UserAnalysisType = "worked-days" | "hour-balance" | "pending" | "issues"
-
 export type SolicitationStatus = "Inconsistente" | "Registrado" | "Recusado"
 
 export interface UserAnalysisItem {

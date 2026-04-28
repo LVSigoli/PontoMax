@@ -15,6 +15,7 @@ import {
   createTimeEntry,
   getTodayWorkdaySnapshot,
   getWorkdayOverview,
+  getUserWorkdaySummary,
   serializeTimeEntry,
   serializeWorkday,
 } from "./time-records.service.js"
@@ -43,6 +44,10 @@ const todaySchema = z.object({
   query: userScopeSchema,
 })
 
+const summarySchema = z.object({
+  query: userScopeSchema,
+})
+
 const registerSchema = z.object({
   body: z.object({
     recordedAt: z.string().datetime().optional(),
@@ -60,7 +65,6 @@ timeRecordsRouter.get(
     const { user, userId } = await resolveTimeRecordAccess(request)
 
     const overview = await getWorkdayOverview({
-      companyId: user.companyId,
       userId,
       page: Number(request.query.page ?? 1),
       pageSize: Number(request.query.pageSize ?? 20),
@@ -84,6 +88,22 @@ timeRecordsRouter.get(
     })
 
     response.json({ item })
+  })
+)
+
+timeRecordsRouter.get(
+  "/summary",
+  validateRequest(summarySchema),
+  asyncHandler(async (request, response) => {
+    const { user, userId } = await resolveTimeRecordAccess(request)
+
+    const summary = await getUserWorkdaySummary({
+      companyId: user.companyId,
+      userId,
+      timezone: user.company.timezone,
+    })
+
+    response.json({ summary })
   })
 )
 

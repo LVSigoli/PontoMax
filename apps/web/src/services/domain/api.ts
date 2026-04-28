@@ -13,6 +13,7 @@ import type {
   UserApiItem,
   WorkdayApiItem,
   WorkdayOverviewResponse,
+  WorkdayOverviewSummaryApiItem,
 } from "./types"
 
 export async function getCompanies() {
@@ -247,6 +248,14 @@ export async function getTodayTimeRecords() {
   )
 
   return response.data.item
+}
+
+export async function getTimeRecordsSummary() {
+  const response = await PONTO_MAX_API.get<{
+    summary: WorkdayOverviewSummaryApiItem
+  }>("time-records/summary")
+
+  return response.data.summary
 }
 
 export async function registerTimeRecord(payload?: {

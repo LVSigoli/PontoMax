@@ -109,12 +109,11 @@ export interface WorkdayOverviewSummaryApiItem {
   workedDays: number
   balanceMinutes: number
   inconsistentCount: number
+  pendingAdjustments: number
 }
 
 export interface WorkdayOverviewResponse
-  extends ApiPaginatedResponse<WorkdayApiItem> {
-  summary: WorkdayOverviewSummaryApiItem
-}
+  extends ApiPaginatedResponse<WorkdayApiItem> {}
 
 export interface RegisterTimeRecordResponse {
   entry: TimeEntryApiItem
