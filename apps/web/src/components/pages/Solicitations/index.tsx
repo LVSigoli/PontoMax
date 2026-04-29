@@ -1,9 +1,6 @@
 // External Libraries
 import React from "react"
 
-// Assets
-import SearchIcon from "@/assets/icons/search.svg"
-
 // Components
 import { Header } from "@/components/structure/Header"
 import { SearchInput } from "@/components/structure/SearchInput"
@@ -12,13 +9,14 @@ import { Sidebar } from "@/components/structure/Sidebar"
 import { SolicitationCard } from "./components/SolicitationCard"
 import { SolicitationDrawer } from "./components/SolicitationDrawer"
 
-// Constants
+// Assets
+import SearchIcon from "@/assets/icons/search.svg"
+
+// Utils
 import { SOLICITATION_STATUS_OPTIONS } from "./constants"
 
-// Contexts
-import { SolicitationsProvider } from "./contexts/SolicitationsContext"
-
 // Hooks
+import { SolicitationsProvider } from "./contexts/SolicitationsContext"
 import { useSolicitations } from "./hooks/useSolicitations"
 
 export const Solicitations: React.FC = () => {

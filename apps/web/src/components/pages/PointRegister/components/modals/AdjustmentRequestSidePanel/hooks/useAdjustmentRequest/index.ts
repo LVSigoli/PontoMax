@@ -96,6 +96,9 @@ export function useAdjustmentRequest({
   async function handleConfirm() {
     const effectiveWorkdayDate =
       workdayDate ?? records[0]?.workdayDate ?? form.records[0]?.workdayDate
+    const normalizedWorkdayDate = effectiveWorkdayDate
+      ? normalizeWorkdayDate(effectiveWorkdayDate)
+      : ""
 
     if (isSubmitting || !effectiveWorkdayDate) {
       return
@@ -117,8 +120,13 @@ export function useAdjustmentRequest({
         return
       }
 
+      if (!normalizedWorkdayDate) {
+        setErrorMessage("Informe um horario valido para continuar.")
+        return
+      }
+
       await createAdjustmentRequest({
-        workdayDate: effectiveWorkdayDate,
+        workdayDate: normalizedWorkdayDate,
         justification: form.justification.trim(),
         records: adjustmentRecords,
       })
@@ -319,16 +327,41 @@ function makeDateTime(date: string, time: string) {
   const [rawHours = "", rawMinutes = ""] = time.trim().split(":")
   const hours = rawHours.padStart(2, "0")
   const minutes = rawMinutes.padStart(2, "0")
+  const normalizedDate = normalizeWorkdayDate(date)
 
   if (!/^\d{2}$/.test(hours) || !/^\d{2}$/.test(minutes)) {
     throw new Error("Informe um horario valido para continuar.")
   }
 
-  const parsedDate = new Date(`${date}T${hours}:${minutes}:00`)
+  if (!normalizedDate) {
+    throw new Error("Informe um horario valido para continuar.")
+  }
+
+  const parsedDate = new Date(`${normalizedDate}T${hours}:${minutes}:00`)
 
   if (Number.isNaN(parsedDate.getTime())) {
     throw new Error("Informe um horario valido para continuar.")
   }
 
   return parsedDate.toISOString()
+}
+
+function normalizeWorkdayDate(date: string) {
+  const matchedDate = date.match(/^\d{4}-\d{2}-\d{2}/)?.[0]
+
+  if (matchedDate) {
+    return matchedDate
+  }
+
+  const parsedDate = new Date(date)
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return ""
+  }
+
+  const year = parsedDate.getFullYear()
+  const month = String(parsedDate.getMonth() + 1).padStart(2, "0")
+  const day = String(parsedDate.getDate()).padStart(2, "0")
+
+  return `${year}-${month}-${day}`
 }

@@ -45,6 +45,8 @@ export interface WorkdayOverviewResponse {
   }
 }
 
+const NIGHT_SHIFT_CARRYOVER_MINUTES = 12 * 60
+
 function mapWorkedStatus(params: {
   totalEntries: number
   workedMinutes: number
@@ -66,7 +68,7 @@ function mapWorkedStatus(params: {
 export async function ensureWorkday(params: {
   companyId: number
   userId: number
-  date: Date
+  date: Date | string
   timezone?: string
 }) {
   const date = getDateOnly(params.date, params.timezone)
@@ -120,7 +122,12 @@ export async function getTodayWorkdaySnapshot(params: {
   userId: number
   timezone?: string
 }) {
-  const date = getDateOnly(new Date(), params.timezone)
+  const assignments = await getJourneyAssignmentsForRange({
+    userId: params.userId,
+    from: addUtcDays(getDateOnly(new Date(), params.timezone), -1),
+    to: getDateOnly(new Date(), params.timezone),
+  })
+  const date = resolveEffectiveWorkdayDate(new Date(), assignments, params.timezone)
   const assignment = await prisma.userJourneyAssignment.findFirst({
     where: {
       userId: params.userId,
@@ -163,7 +170,9 @@ export async function getTodayWorkdaySnapshot(params: {
   })
 
   if (workday) {
-    return serializeWorkday(workday)
+    return serializeWorkday(
+      normalizeWorkdayForTimezone(workday, params.timezone, assignments)
+    )
   }
 
   const scheduledMinutes = assignment?.journey.dailyWorkMinutes ?? 0
@@ -222,11 +231,23 @@ export async function getWorkdayOverview(params: {
       take: params.pageSize,
     }),
   ])
+  const earliestWorkdayDate = workdays.reduce<Date | null>(
+    (current, workday) =>
+      !current || workday.date.getTime() < current.getTime() ? workday.date : current,
+    null
+  )
+  const assignments = await getJourneyAssignmentsForRange({
+    userId: params.userId,
+    from: earliestWorkdayDate ? addUtcDays(getStoredDateOnly(earliestWorkdayDate), -1) : today,
+    to: today,
+  })
 
   const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / params.pageSize)
 
   return {
-    items: workdays.map(serializeWorkday),
+    items: workdays.map((workday) =>
+      serializeWorkday(normalizeWorkdayForTimezone(workday, params.timezone, assignments))
+    ),
     meta: {
       page: totalPages === 0 ? 1 : Math.min(params.page, totalPages),
       pageSize: params.pageSize,
@@ -242,21 +263,6 @@ export async function getUserWorkdaySummary(params: {
   timezone?: string
 }): Promise<WorkdayOverviewSummary> {
   const today = getDateOnly(new Date(), params.timezone)
-  const assignments = await prisma.userJourneyAssignment.findMany({
-    where: {
-      userId: params.userId,
-      validFrom: {
-        lt: today,
-      },
-    },
-    include: {
-      journey: true,
-    },
-    orderBy: {
-      validFrom: "asc",
-    },
-  })
-
   const workdays = await prisma.workday.findMany({
     where: {
       userId: params.userId,
@@ -275,15 +281,6 @@ export async function getUserWorkdaySummary(params: {
       },
     },
   })
-
-  if (assignments.length === 0 && workdays.length === 0) {
-    return {
-      workedDays: 0,
-      balanceMinutes: 0,
-      inconsistentCount: 0,
-      pendingAdjustments: 0,
-    }
-  }
 
   const holidays = await prisma.holiday.findMany({
     where: {
@@ -312,7 +309,39 @@ export async function getUserWorkdaySummary(params: {
     }),
     Promise.resolve(new Set(holidays.map((holiday) => getDateKey(getStoredDateOnly(holiday.date))))),
   ])
-  const relevantWorkdays = workdays.filter((workday) => {
+  const assignments = await getJourneyAssignmentsForRange({
+    userId: params.userId,
+    from:
+      workdays.length > 0
+        ? addUtcDays(
+            getStoredDateOnly(
+              [...workdays].sort((left, right) => left.date.getTime() - right.date.getTime())[0]!
+                .date
+            ),
+            -1
+          )
+        : today,
+    to: today,
+  })
+
+  if (assignments.length === 0 && workdays.length === 0) {
+    return {
+      workedDays: 0,
+      balanceMinutes: 0,
+      inconsistentCount: 0,
+      pendingAdjustments: 0,
+    }
+  }
+
+  const normalizedWorkdays = workdays.map((workday) =>
+    normalizeWorkdayForTimezone(workday, params.timezone, assignments)
+  )
+
+  const relevantWorkdays = normalizedWorkdays.filter((workday) => {
+    if (shouldIgnoreWorkdayInSummary(workday)) {
+      return false
+    }
+
     const date = getStoredDateOnly(workday.date)
     const assignment = findJourneyAssignmentForDate(assignments, date)
 
@@ -414,10 +443,22 @@ export async function createTimeEntry(params: {
   kind?: TimeEntryKind
   timezone?: string
 }) {
+  const openPreviousWorkdayDate = await findOpenPreviousWorkdayDateForUser({
+    userId: params.userId,
+    recordedAt: params.recordedAt,
+    timezone: params.timezone,
+  })
+  const effectiveWorkdayDate =
+    openPreviousWorkdayDate ??
+    (await getEffectiveWorkdayDateForUser({
+      userId: params.userId,
+      recordedAt: params.recordedAt,
+      timezone: params.timezone,
+    }))
   const workday = await ensureWorkday({
     companyId: params.companyId,
     userId: params.userId,
-    date: params.recordedAt,
+    date: effectiveWorkdayDate,
     timezone: params.timezone,
   })
 
@@ -435,6 +476,15 @@ export async function createTimeEntry(params: {
     params.kind ??
     (existingActiveEntries.length % 2 === 0 ? ("ENTRY" as const) : ("EXIT" as const))
 
+  const nextSequenceResult = await prisma.timeEntry.aggregate({
+    where: {
+      workdayId: workday.id,
+    },
+    _max: {
+      sequence: true,
+    },
+  })
+
   const createdEntry = await prisma.timeEntry.create({
     data: {
       workdayId: workday.id,
@@ -442,7 +492,7 @@ export async function createTimeEntry(params: {
       recordedAt: params.recordedAt,
       source: params.source,
       kind,
-      sequence: existingActiveEntries.length + 1,
+      sequence: (nextSequenceResult._max.sequence ?? 0) + 1,
       timezone: params.timezone ?? "America/Sao_Paulo",
     },
   })
@@ -470,7 +520,7 @@ export function serializeTimeEntry(entry: TimeEntry) {
 export function serializeWorkday(workday: WorkdayLike) {
   return {
     id: workday.id,
-    date: workday.date,
+    date: getDateKey(getStoredDateOnly(workday.date)),
     status: workday.status,
     scheduledMinutes: workday.scheduledMinutes,
     workedMinutes: workday.workedMinutes,
@@ -544,6 +594,231 @@ function diffInDays(start: Date, end: Date) {
 
 function getDateKey(date: Date) {
   return date.toISOString().slice(0, 10)
+}
+
+function normalizeWorkdayForTimezone<T extends WorkdayLike>(
+  workday: T,
+  timeZone?: string,
+  assignments: JourneyAssignmentWithJourney[] = []
+): T {
+  if (!workday.timeEntries) {
+    return workday
+  }
+
+  const workdayDateKey = getDateKey(getStoredDateOnly(workday.date))
+  const workdayAssignment = findJourneyAssignmentForDate(
+    assignments,
+    getStoredDateOnly(workday.date)
+  )
+  const treatAsNightShift =
+    Boolean(workdayAssignment?.journey.nightShift) ||
+    shouldTreatEntriesAsOvernight(workday.timeEntries, timeZone)
+  const timeEntries = workday.timeEntries.filter(
+    (entry) =>
+      getDateKey(resolveEffectiveWorkdayDate(entry.recordedAt, assignments, timeZone)) ===
+      workdayDateKey
+  )
+  const sortedTimeEntries = [...timeEntries].sort((left, right) => {
+    const leftRecordedAt = getComparableRecordedAtForWorkday(
+      workday.date,
+      left.recordedAt,
+      treatAsNightShift,
+      timeZone
+    )
+    const rightRecordedAt = getComparableRecordedAtForWorkday(
+      workday.date,
+      right.recordedAt,
+      treatAsNightShift,
+      timeZone
+    )
+
+    return leftRecordedAt.getTime() - rightRecordedAt.getTime()
+  })
+  const workedMinutes = calculateWorkedMinutes(
+    sortedTimeEntries.map((entry) => ({
+      kind: toTimeEntryKind(entry.kind),
+      recordedAt: getComparableRecordedAtForWorkday(
+        workday.date,
+        entry.recordedAt,
+        treatAsNightShift,
+        timeZone
+      ),
+    }))
+  )
+  const overtimeMinutes = Math.max(0, workedMinutes - workday.scheduledMinutes)
+  const missingMinutes = Math.max(0, workday.scheduledMinutes - workedMinutes)
+  const status =
+    workday.status === "PENDING_ADJUSTMENT" || workday.status === "ADJUSTED"
+      ? workday.status
+      : mapWorkedStatus({
+          totalEntries: timeEntries.length,
+          workedMinutes,
+          scheduledMinutes: workday.scheduledMinutes,
+        })
+
+  return {
+    ...workday,
+    workedMinutes,
+    overtimeMinutes,
+    missingMinutes,
+    status,
+    timeEntries: sortedTimeEntries,
+  }
+}
+
+function shouldIgnoreWorkdayInSummary(workday: WorkdayLike) {
+  return (
+    workday.timeEntries?.length === 0 &&
+    (workday.status === "ADJUSTED" || workday.status === "PENDING_ADJUSTMENT")
+  )
+}
+
+async function getEffectiveWorkdayDateForUser(params: {
+  userId: number
+  recordedAt: Date
+  timezone?: string
+}) {
+  const localDate = getDateOnly(params.recordedAt, params.timezone)
+  const assignments = await getJourneyAssignmentsForRange({
+    userId: params.userId,
+    from: addUtcDays(localDate, -1),
+    to: localDate,
+  })
+
+  return resolveEffectiveWorkdayDate(params.recordedAt, assignments, params.timezone)
+}
+
+async function findOpenPreviousWorkdayDateForUser(params: {
+  userId: number
+  recordedAt: Date
+  timezone?: string
+}) {
+  if (getLocalMinutes(params.recordedAt, params.timezone) >= NIGHT_SHIFT_CARRYOVER_MINUTES) {
+    return null
+  }
+
+  const localDate = getDateOnly(params.recordedAt, params.timezone)
+  const previousDate = addUtcDays(localDate, -1)
+  const previousWorkday = await prisma.workday.findUnique({
+    where: {
+      userId_date: {
+        userId: params.userId,
+        date: previousDate,
+      },
+    },
+    include: {
+      timeEntries: {
+        where: {
+          status: "ACTIVE",
+        },
+      },
+    },
+  })
+
+  if (!previousWorkday || previousWorkday.timeEntries.length % 2 === 0) {
+    return null
+  }
+
+  return previousDate
+}
+
+async function getJourneyAssignmentsForRange(params: {
+  userId: number
+  from: Date
+  to: Date
+}) {
+  return prisma.userJourneyAssignment.findMany({
+    where: {
+      userId: params.userId,
+      validFrom: {
+        lte: params.to,
+      },
+      OR: [{ validTo: null }, { validTo: { gte: params.from } }],
+    },
+    include: {
+      journey: true,
+    },
+    orderBy: {
+      validFrom: "asc",
+    },
+  })
+}
+
+function resolveEffectiveWorkdayDate(
+  value: Date,
+  assignments: JourneyAssignmentWithJourney[],
+  timeZone?: string
+) {
+  const localDate = getDateOnly(value, timeZone)
+  const previousDate = addUtcDays(localDate, -1)
+  const previousAssignment = findJourneyAssignmentForDate(assignments, previousDate)
+
+  if (
+    previousAssignment?.journey.nightShift &&
+    getLocalMinutes(value, timeZone) < NIGHT_SHIFT_CARRYOVER_MINUTES
+  ) {
+    return previousDate
+  }
+
+  return localDate
+}
+
+function getLocalMinutes(value: Date, timeZone = "America/Sao_Paulo") {
+  const { hours, minutes } = getLocalTimeParts(value, timeZone)
+
+  return hours * 60 + minutes
+}
+
+function getLocalTimeParts(value: Date, timeZone = "America/Sao_Paulo") {
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+  const parts = formatter.formatToParts(value)
+  const hours = Number(parts.find((part) => part.type === "hour")?.value ?? "0")
+  const minutes = Number(parts.find((part) => part.type === "minute")?.value ?? "0")
+
+  return { hours, minutes }
+}
+
+function getComparableRecordedAtForWorkday(
+  workdayDate: Date,
+  recordedAt: Date,
+  isNightShift: boolean,
+  timeZone?: string
+) {
+  if (!isNightShift) {
+    return recordedAt
+  }
+
+  const baseDate = getStoredDateOnly(workdayDate)
+  const localMinutes = getLocalMinutes(recordedAt, timeZone)
+  const dayOffset = localMinutes < NIGHT_SHIFT_CARRYOVER_MINUTES ? 1 : 0
+  const { hours, minutes } = getLocalTimeParts(recordedAt, timeZone)
+
+  return new Date(
+    Date.UTC(
+      baseDate.getUTCFullYear(),
+      baseDate.getUTCMonth(),
+      baseDate.getUTCDate() + dayOffset,
+      hours,
+      minutes
+    )
+  )
+}
+
+function shouldTreatEntriesAsOvernight(entries: TimeEntry[], timeZone?: string) {
+  const localMinutes = entries.map((entry) => getLocalMinutes(entry.recordedAt, timeZone))
+  const hasLateEntry = localMinutes.some((minutes) => minutes >= 18 * 60)
+  const hasEarlyEntry = localMinutes.some((minutes) => minutes < NIGHT_SHIFT_CARRYOVER_MINUTES)
+
+  return hasLateEntry && hasEarlyEntry
+}
+
+function addUtcDays(value: Date, amount: number) {
+  return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate() + amount))
 }
 
 function getStoredDateOnly(value: Date) {

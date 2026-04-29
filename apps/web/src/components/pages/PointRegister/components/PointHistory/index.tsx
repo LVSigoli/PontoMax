@@ -60,6 +60,9 @@ export const PointHistory: React.FC<Props> = ({
     const recordIndex = tableData.indexOf(item)
     const record = records[recordIndex]
 
+    console.log(actionId)
+
+    console.log(record)
     if (actionId === "request-adjustment" && record) {
       onAdjustmentRequest?.(record)
     }

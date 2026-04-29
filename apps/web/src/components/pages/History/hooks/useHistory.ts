@@ -222,7 +222,6 @@ export function useHistory() {
   }
 
   function handleAdjustmentRequestOpen(record: WorkdaySummary) {
-    setSelectedHistoryRecord(record)
     setAdjustmentRequestWorkdayDate(record.workdayDate)
     setAdjustmentRequestRecords(record.records)
   }

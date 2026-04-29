@@ -6,7 +6,7 @@ import { Table } from "@/components/structure/Table"
 import { Typography } from "@/components/structure/Typography"
 
 // Utils
-import { getPointStatusClass, getPointTypeClass } from "../../utils"
+import { getPointTypeClass } from "../../utils"
 
 // Types
 import type { TableRowData } from "@/components/structure/Table/types"
@@ -24,11 +24,6 @@ export const CurrentRegisters: React.FC<Props> = ({ records }) => {
     Tipo: {
       value: record.type,
       color: getPointTypeClass(record.type),
-    },
-    Status: {
-      value: record.status,
-      type: "badge",
-      color: getPointStatusClass(record.status),
     },
   }))
 

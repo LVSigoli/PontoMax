@@ -11,7 +11,7 @@ import {
 } from '../../common/constants/domain-enums.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
-import { endOfDay, getDateOnly, startOfDay } from '../../common/utils/date.js';
+import { endOfDay, startOfDay } from '../../common/utils/date.js';
 import { getOptionalRequestCompanyId } from '../../common/utils/company-scope.js';
 import { validateRequest } from '../../common/validation/validate-request.js';
 import { prisma } from '../../lib/prisma.js';
@@ -96,7 +96,17 @@ adjustmentRequestsRouter.get(
       },
     });
 
-    response.json({ items });
+    response.json({
+      items: items.map((item) => ({
+        ...item,
+        workday: item.workday
+          ? {
+              ...item.workday,
+              date: item.workday.date.toISOString().slice(0, 10),
+            }
+          : item.workday,
+      })),
+    });
   }),
 );
 
@@ -107,7 +117,7 @@ adjustmentRequestsRouter.post(
     const workday = await ensureWorkday({
       companyId: request.authUser!.companyId,
       userId: request.authUser!.id,
-      date: getDateOnly(request.body.workdayDate),
+      date: request.body.workdayDate,
     });
 
     const createdRequest = await prisma.adjustmentRequest.create({
@@ -208,10 +218,12 @@ adjustmentRequestsRouter.patch(
             },
           });
 
-          const activeEntriesCount = await transaction.timeEntry.count({
+          const nextSequenceResult = await transaction.timeEntry.aggregate({
             where: {
               workdayId: adjustmentRequest.workdayId,
-              status: 'ACTIVE',
+            },
+            _max: {
+              sequence: true,
             },
           });
 
@@ -223,7 +235,7 @@ adjustmentRequestsRouter.patch(
               recordedAt: pointAdjustment.newRecordedAt ?? currentEntry.recordedAt,
               source: 'ADJUSTMENT',
               status: 'ACTIVE',
-              sequence: activeEntriesCount + 1,
+              sequence: (nextSequenceResult._max.sequence ?? 0) + 1,
               timezone: currentEntry.timezone,
             },
           });
@@ -231,10 +243,12 @@ adjustmentRequestsRouter.patch(
         }
 
         if (pointAdjustment.actionType === 'CREATE' && pointAdjustment.newRecordedAt) {
-          const activeEntriesCount = await transaction.timeEntry.count({
+          const nextSequenceResult = await transaction.timeEntry.aggregate({
             where: {
               workdayId: adjustmentRequest.workdayId,
-              status: 'ACTIVE',
+            },
+            _max: {
+              sequence: true,
             },
           });
 
@@ -246,7 +260,7 @@ adjustmentRequestsRouter.patch(
               recordedAt: pointAdjustment.newRecordedAt,
               source: 'ADJUSTMENT',
               status: 'ACTIVE',
-              sequence: activeEntriesCount + 1,
+              sequence: (nextSequenceResult._max.sequence ?? 0) + 1,
               timezone: 'America/Sao_Paulo',
             },
           });
@@ -254,13 +268,33 @@ adjustmentRequestsRouter.patch(
       }
     });
 
-    const workday = await recalculateWorkday(adjustmentRequest.workdayId);
+    await recalculateWorkday(adjustmentRequest.workdayId);
+
+    const workday = await prisma.workday.update({
+      where: { id: adjustmentRequest.workdayId },
+      data: {
+        status: 'ADJUSTED',
+      },
+      include: {
+        timeEntries: {
+          where: {
+            status: 'ACTIVE',
+          },
+          orderBy: {
+            recordedAt: 'asc',
+          },
+        },
+      },
+    });
 
     response.json({
       item: {
         id: adjustmentRequest.id,
         status: nextStatus,
-        workday,
+        workday: {
+          ...workday,
+          date: workday.date.toISOString().slice(0, 10),
+        },
       },
     });
   }),
