@@ -117,15 +117,6 @@ export function usePointRegister() {
     void loadPointRegisterData()
   }, [])
 
-  // useEffect(() => {
-  //   if (selectedHistoryRecord)
-  // }, [selectedHistoryRecord])
-
-  useEffect(() => {
-    if (adjustmentRequestRecords.length > 0) {
-    }
-  }, [adjustmentRequestRecords])
-
   // Functions
   async function loadPointRegisterData() {
     try {
