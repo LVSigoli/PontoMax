@@ -1,20 +1,21 @@
 import { subDays } from './date-helpers.js';
 
 import { prisma } from '../../lib/prisma.js';
-import { getDateOnly, startOfDay } from '../../common/utils/date.js';
+import { getDateOnly } from '../../common/utils/date.js';
+import { getUserWorkdaySummary } from '../time-records/time-records.service.js';
 
 function getDateKey(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
 function formatWeekdayLabel(value: Date) {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('pt-BR', {
     weekday: 'short',
   }).format(value);
 }
 
 function formatShortDayLabel(value: Date) {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     weekday: 'short',
   })
@@ -25,10 +26,10 @@ function formatShortDayLabel(value: Date) {
 export async function getAnalyticsDashboard(companyId?: number) {
   const today = getDateOnly(new Date());
   const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
-  const sixDaysAgo = subDays(today, 5);
-  const fourDaysAgo = subDays(today, 4);
+  const sixCompletedDaysAgo = subDays(today, 6);
+  const fiveCompletedDaysAgo = subDays(today, 5);
 
-  const [companyEmployees, todayWorkdays, monthlyWorkdays, monthlyAdjustments, recentAdjustments] =
+  const [companyEmployees, todayWorkdays, monthlyWorkdays, monthlyAdjustments, recentWorkdays, activeUsers] =
     await Promise.all([
       prisma.user.count({
         where: {
@@ -55,17 +56,15 @@ export async function getAnalyticsDashboard(companyId?: number) {
           companyId: companyId ?? undefined,
           date: {
             gte: monthStart,
+            lt: today,
           },
-        },
-        include: {
-          user: true,
         },
       }),
       prisma.adjustmentRequest.findMany({
         where: {
           companyId: companyId ?? undefined,
           requestedAt: {
-            gte: sixDaysAgo,
+            gte: sixCompletedDaysAgo,
           },
         },
       }),
@@ -73,7 +72,21 @@ export async function getAnalyticsDashboard(companyId?: number) {
         where: {
           companyId: companyId ?? undefined,
           date: {
-            gte: fourDaysAgo,
+            gte: fiveCompletedDaysAgo,
+            lt: today,
+          },
+        },
+      }),
+      prisma.user.findMany({
+        where: {
+          companyId: companyId ?? undefined,
+          isActive: true,
+        },
+        include: {
+          company: {
+            select: {
+              timezone: true,
+            },
           },
         },
       }),
@@ -82,10 +95,7 @@ export async function getAnalyticsDashboard(companyId?: number) {
   const presentEmployees = todayWorkdays.filter((workday) =>
     workday.timeEntries.some((entry) => entry.kind === 'ENTRY'),
   ).length;
-  const overtimeMinutes = monthlyWorkdays.reduce(
-    (total, workday) => total + workday.overtimeMinutes,
-    0,
-  );
+  const overtimeMinutes = monthlyWorkdays.reduce((total, workday) => total + workday.overtimeMinutes, 0);
   const inconsistentWorkdays = monthlyWorkdays.filter(
     (workday) => workday.status === 'INCONSISTENT' || workday.status === 'PENDING_ADJUSTMENT',
   ).length;
@@ -93,27 +103,23 @@ export async function getAnalyticsDashboard(companyId?: number) {
     (adjustment) => adjustment.status === 'PENDING',
   ).length;
 
-  const balanceByUser = new Map<
-    number,
-    {
-      id: number;
-      name: string;
-      balanceMinutes: number;
-    }
-  >();
+  const balances = (
+    await Promise.all(
+      activeUsers.map(async (user) => {
+        const summary = await getUserWorkdaySummary({
+          companyId: user.companyId,
+          userId: user.id,
+          timezone: user.company.timezone,
+        });
 
-  for (const workday of monthlyWorkdays) {
-    const current = balanceByUser.get(workday.userId) ?? {
-      id: workday.userId,
-      name: workday.user.fullName,
-      balanceMinutes: 0,
-    };
-
-    current.balanceMinutes += workday.overtimeMinutes - workday.missingMinutes;
-    balanceByUser.set(workday.userId, current);
-  }
-
-  const balances = [...balanceByUser.values()]
+        return {
+          id: user.id,
+          name: user.fullName,
+          balanceMinutes: summary.balanceMinutes,
+        };
+      }),
+    )
+  )
     .sort((left, right) => right.balanceMinutes - left.balanceMinutes)
     .slice(0, 7);
 
@@ -127,7 +133,7 @@ export async function getAnalyticsDashboard(companyId?: number) {
   >();
 
   for (let index = 0; index < 6; index += 1) {
-    const date = subDays(today, 5 - index);
+    const date = subDays(today, 6 - index);
     adjustmentsByDay.set(getDateKey(date), {
       approved: 0,
       pending: 0,
@@ -136,7 +142,7 @@ export async function getAnalyticsDashboard(companyId?: number) {
   }
 
   for (const adjustment of monthlyAdjustments) {
-    const key = getDateKey(startOfDay(adjustment.requestedAt));
+    const key = getDateKey(getDateOnly(adjustment.requestedAt));
     const bucket = adjustmentsByDay.get(key);
 
     if (!bucket) {
@@ -165,18 +171,17 @@ export async function getAnalyticsDashboard(companyId?: number) {
     refused: bucket.refused,
   }));
 
-  const workedHoursByDay = new Map<string, { totalMinutes: number; count: number }>();
+  const workedHoursByDay = new Map<string, { totalMinutes: number }>();
 
   for (let index = 0; index < 5; index += 1) {
-    const date = subDays(today, 4 - index);
+    const date = subDays(today, 5 - index);
     workedHoursByDay.set(getDateKey(date), {
       totalMinutes: 0,
-      count: 0,
     });
   }
 
-  for (const workday of recentAdjustments) {
-    const key = getDateKey(startOfDay(workday.date));
+  for (const workday of recentWorkdays) {
+    const key = getDateKey(workday.date);
     const bucket = workedHoursByDay.get(key);
 
     if (!bucket) {
@@ -184,13 +189,11 @@ export async function getAnalyticsDashboard(companyId?: number) {
     }
 
     bucket.totalMinutes += workday.workedMinutes;
-    bucket.count += 1;
   }
 
   const workedHours = [...workedHoursByDay.entries()].map(([key, bucket]) => ({
     label: formatWeekdayLabel(new Date(`${key}T00:00:00`)),
-    hours:
-      bucket.count === 0 ? 0 : Number((bucket.totalMinutes / bucket.count / 60).toFixed(1)),
+    hours: Number((bucket.totalMinutes / 60).toFixed(1)),
   }));
 
   return {
