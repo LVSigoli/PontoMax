@@ -4,6 +4,7 @@ import React from "react"
 // Components
 import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
+import { Select } from "@/components/structure/Select"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Typography } from "@/components/structure/Typography"
 import { HourBalanceList } from "./components/HourBalanceList"
@@ -13,8 +14,17 @@ import { WorkedHoursLineChart } from "./components/WorkedHoursLineChart"
 import { useAnalytics } from "./hooks/useAnalytics"
 
 export const Analytics: React.FC = () => {
-  const { balances, errorMessage, metrics, solicitationChart, workedHours } =
-    useAnalytics()
+  const {
+    balances,
+    companyOptions,
+    errorMessage,
+    handleCompanyFilterChange,
+    isPlatformAdmin,
+    metrics,
+    selectedCompanyOption,
+    solicitationChart,
+    workedHours,
+  } = useAnalytics()
 
   function handleExportReport() {
     console.log("export report")
@@ -37,7 +47,18 @@ export const Analytics: React.FC = () => {
                 subtitle="Receba analise detalhada das horas trabalhadas na sua empresa"
               />
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {isPlatformAdmin ? (
+                  <div className="w-full min-w-64 sm:w-72">
+                    <Select
+                      options={companyOptions}
+                      selectedItem={selectedCompanyOption}
+                      buttonClassName="h-11 bg-surface-card"
+                      onSelectionChange={handleCompanyFilterChange}
+                    />
+                  </div>
+                ) : null}
+
                 <Button
                   value="Exportar Relatorio"
                   color="primary"

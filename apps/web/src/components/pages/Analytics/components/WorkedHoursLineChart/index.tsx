@@ -1,13 +1,15 @@
+import type { ApexOptions } from "apexcharts"
+
+import { ApexChart } from "@/components/structure/Charts/ApexChart"
+import {
+  BASE_AXIS_LABEL_STYLE,
+  BASE_CHART_OPTIONS,
+  CHART_PALETTE,
+} from "@/components/structure/Charts/constants"
 // Components
 import { Typography } from "@/components/structure/Typography"
 
 import type { WorkedHoursItem } from "../../types"
-
-const WIDTH = 640
-const HEIGHT = 150
-const TOP_PADDING = 14
-const BOTTOM_PADDING = 18
-const MAX_HOURS = 10
 
 interface Props {
   items: WorkedHoursItem[]
@@ -15,91 +17,112 @@ interface Props {
 
 export const WorkedHoursLineChart: React.FC<Props> = ({ items }) => {
   const safeItems = items.length > 0 ? items : [{ label: "-", hours: 0 }]
-
-  const points = safeItems.map((item, index) => {
-    const x =
-      safeItems.length === 1 ? WIDTH / 2 : (index / (safeItems.length - 1)) * WIDTH
-    const y =
-      TOP_PADDING +
-      (1 - item.hours / MAX_HOURS) * (HEIGHT - TOP_PADDING - BOTTOM_PADDING)
-
-    return { ...item, x, y }
-  })
-
-  const polylinePoints = points.map((point) => `${point.x},${point.y}`).join(" ")
-  const areaPoints = `0,${HEIGHT - BOTTOM_PADDING} ${polylinePoints} ${WIDTH},${
-    HEIGHT - BOTTOM_PADDING
-  }`
+  const maxHours = getRoundedMax(
+    safeItems.map((item) => item.hours),
+    2
+  )
+  const options: ApexOptions = {
+    ...BASE_CHART_OPTIONS,
+    chart: {
+      ...BASE_CHART_OPTIONS.chart,
+      type: "area",
+    },
+    colors: [CHART_PALETTE.brand600],
+    fill: {
+      type: "gradient",
+      gradient: {
+        opacityFrom: 0.22,
+        opacityTo: 0.04,
+        shadeIntensity: 1,
+        stops: [0, 90, 100],
+      },
+    },
+    grid: {
+      ...BASE_CHART_OPTIONS.grid,
+      padding: {
+        left: 4,
+        right: 10,
+      },
+    },
+    markers: {
+      hover: {
+        sizeOffset: 2,
+      },
+      size: 4,
+      strokeColors: CHART_PALETTE.white,
+      strokeWidth: 2,
+    },
+    stroke: {
+      curve: "smooth",
+      lineCap: "round",
+      width: 3,
+    },
+    tooltip: {
+      ...BASE_CHART_OPTIONS.tooltip,
+      y: {
+        formatter(value) {
+          return formatHours(value)
+        },
+      },
+    },
+    xaxis: {
+      categories: safeItems.map((item) => item.label),
+      axisBorder: {
+        show: false,
+      },
+      axisTicks: {
+        show: false,
+      },
+      labels: {
+        style: BASE_AXIS_LABEL_STYLE,
+      },
+    },
+    yaxis: {
+      forceNiceScale: true,
+      max: maxHours,
+      min: 0,
+      tickAmount: 4,
+      labels: {
+        formatter(value) {
+          return `${Number(value ?? 0).toFixed(0)}h`
+        },
+        style: BASE_AXIS_LABEL_STYLE,
+      },
+    },
+  }
+  const series = [
+    {
+      name: "Horas trabalhadas",
+      data: safeItems.map((item) => item.hours),
+    },
+  ]
 
   return (
     <section className="rounded-xl bg-surface-card px-6 py-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
       <Typography variant="h4" value="Horas Trabalhadas por Dia" />
 
       <div className="mt-8 overflow-hidden rounded-lg">
-        <svg
-          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          className="h-44 w-full"
-          role="img"
-          aria-label="Grafico de horas trabalhadas por dia"
-        >
-          <defs>
-            <linearGradient id="worked-hours-area" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
-            </linearGradient>
-          </defs>
-
-          {Array.from({ length: 5 }).map((_, index) => {
-            const y =
-              TOP_PADDING +
-              (index / 4) * (HEIGHT - TOP_PADDING - BOTTOM_PADDING)
-
-            return (
-              <line
-                key={index}
-                x1="0"
-                x2={WIDTH}
-                y1={y}
-                y2={y}
-                stroke="#e2e8f0"
-                strokeDasharray="3 4"
-              />
-            )
-          })}
-
-          <polygon points={areaPoints} fill="url(#worked-hours-area)" />
-          <polyline
-            points={polylinePoints}
-            fill="none"
-            stroke="#2563eb"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-          />
-
-          {points.map((point) => (
-            <circle
-              key={point.label}
-              cx={point.x}
-              cy={point.y}
-              r="3"
-              fill="#2563eb"
-            />
-          ))}
-
-          {points.map((point) => (
-            <text
-              key={point.label}
-              x={point.x}
-              y={HEIGHT - 2}
-              textAnchor="middle"
-              className="fill-content-muted text-[10px]"
-            >
-              {point.label}
-            </text>
-          ))}
-        </svg>
+        <ApexChart
+          type="area"
+          height={240}
+          series={series}
+          options={options}
+        />
       </div>
     </section>
   )
+}
+
+function getRoundedMax(values: number[], step: number) {
+  const highestValue = Math.max(...values, 0)
+
+  if (highestValue === 0) {
+    return step
+  }
+
+  return Math.ceil(highestValue / step) * step
+}
+
+function formatHours(value: number) {
+  return `${Number(value ?? 0).toFixed(1)}h`
 }

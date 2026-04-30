@@ -1,7 +1,7 @@
 import { subDays } from './date-helpers.js';
 
 import { prisma } from '../../lib/prisma.js';
-import { startOfDay } from '../../common/utils/date.js';
+import { getDateOnly, startOfDay } from '../../common/utils/date.js';
 
 function getDateKey(value: Date) {
   return value.toISOString().slice(0, 10);
@@ -23,8 +23,8 @@ function formatShortDayLabel(value: Date) {
 }
 
 export async function getAnalyticsDashboard(companyId?: number) {
-  const today = startOfDay(new Date());
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const today = getDateOnly(new Date());
+  const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
   const sixDaysAgo = subDays(today, 5);
   const fourDaysAgo = subDays(today, 4);
 
@@ -39,11 +39,14 @@ export async function getAnalyticsDashboard(companyId?: number) {
       prisma.workday.findMany({
         where: {
           companyId: companyId ?? undefined,
-          date: {
-            gte: today,
-          },
+          date: today,
         },
         include: {
+          timeEntries: {
+            where: {
+              status: 'ACTIVE',
+            },
+          },
           user: true,
         },
       }),
@@ -76,7 +79,9 @@ export async function getAnalyticsDashboard(companyId?: number) {
       }),
     ]);
 
-  const presentEmployees = todayWorkdays.filter((workday) => workday.workedMinutes > 0).length;
+  const presentEmployees = todayWorkdays.filter((workday) =>
+    workday.timeEntries.some((entry) => entry.kind === 'ENTRY'),
+  ).length;
   const overtimeMinutes = monthlyWorkdays.reduce(
     (total, workday) => total + workday.overtimeMinutes,
     0,

@@ -7,6 +7,8 @@ export interface AuthenticatedUser {
   email: string
   role: string
   groups: Set<UserGroup>
+  companyId?: number
+  companyName?: string | null
   mustChangePassword: boolean
 }
 

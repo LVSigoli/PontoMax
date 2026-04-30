@@ -1,71 +1,139 @@
+import type { ApexOptions } from "apexcharts"
+
+import {
+  ApexChart,
+} from "@/components/structure/Charts/ApexChart"
+import {
+  BASE_AXIS_LABEL_STYLE,
+  BASE_CHART_OPTIONS,
+  CHART_PALETTE,
+} from "@/components/structure/Charts/constants"
 // Components
 import { Typography } from "@/components/structure/Typography"
 
 import type { SolicitationChartItem } from "../../types"
-
-const MAX_VALUE = 25
 
 interface Props {
   items: SolicitationChartItem[]
 }
 
 export const SolicitationBarChart: React.FC<Props> = ({ items }) => {
+  const safeItems =
+    items.length > 0
+      ? items
+      : [{ label: "-", refused: 0, pending: 0, approved: 0 }]
+  const maxValue = getRoundedMax(
+    safeItems.flatMap((item) => [item.refused, item.pending, item.approved]),
+    5
+  )
+  const series = [
+    {
+      name: "Recusado",
+      data: safeItems.map((item) => item.refused),
+    },
+    {
+      name: "Pendente",
+      data: safeItems.map((item) => item.pending),
+    },
+    {
+      name: "Aprovado",
+      data: safeItems.map((item) => item.approved),
+    },
+  ]
+  const options: ApexOptions = {
+    ...BASE_CHART_OPTIONS,
+    chart: {
+      ...BASE_CHART_OPTIONS.chart,
+      stacked: false,
+      type: "bar",
+    },
+    colors: [
+      CHART_PALETTE.danger500,
+      CHART_PALETTE.warning500,
+      CHART_PALETTE.success500,
+    ],
+    grid: {
+      ...BASE_CHART_OPTIONS.grid,
+      padding: {
+        left: 0,
+        right: 6,
+      },
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 4,
+        columnWidth: "52%",
+      },
+    },
+    stroke: {
+      show: false,
+    },
+    tooltip: {
+      ...BASE_CHART_OPTIONS.tooltip,
+      y: {
+        formatter(value) {
+          return `${Number(value ?? 0)} solicitacoes`
+        },
+      },
+    },
+    xaxis: {
+      categories: safeItems.map((item) => item.label),
+      axisBorder: {
+        show: false,
+      },
+      axisTicks: {
+        show: false,
+      },
+      labels: {
+        style: BASE_AXIS_LABEL_STYLE,
+      },
+    },
+    yaxis: {
+      forceNiceScale: true,
+      max: maxValue,
+      min: 0,
+      tickAmount: Math.min(5, maxValue),
+      labels: {
+        formatter(value) {
+          return Number(value ?? 0).toFixed(0)
+        },
+        style: BASE_AXIS_LABEL_STYLE,
+      },
+    },
+  }
+
   return (
     <section className="rounded-xl bg-surface-card px-6 py-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Typography variant="h4" value="Solicitacoes de ajuste de ponto" />
 
         <div className="flex flex-wrap items-center gap-4 text-xs text-content-secondary">
-          <Legend color="bg-danger-600" label="Recusado" />
+          <Legend color="bg-danger-500" label="Recusado" />
           <Legend color="bg-warning-500" label="Pendente" />
-          <Legend color="bg-success-600" label="Aprovado" />
+          <Legend color="bg-success-500" label="Aprovado" />
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-[2rem_1fr] gap-3">
-        <div className="grid h-44 grid-rows-5 text-right text-xs text-content-muted">
-          {[25, 20, 15, 10, 5].map((value) => (
-            <span key={value}>{value}</span>
-          ))}
-        </div>
-
-        <div className="relative h-44">
-          <div className="absolute inset-0 grid grid-rows-5">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <span
-                key={index}
-                className="border-t border-border-subtle first:border-t-border-default"
-              />
-            ))}
-          </div>
-
-          <div className="relative z-10 grid h-full grid-cols-6 items-end gap-5 px-3">
-            {items.map((item) => (
-              <div key={item.label} className="grid gap-3">
-                <div className="flex h-36 items-end justify-center gap-2">
-                  <Bar color="bg-danger-500" value={item.refused} />
-                  <Bar color="bg-warning-500" value={item.pending} />
-                  <Bar color="bg-success-500" value={item.approved} />
-                </div>
-                <span className="text-center text-xs text-content-muted">
-                  {item.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="mt-6">
+        <ApexChart
+          type="bar"
+          height={240}
+          series={series}
+          options={options}
+        />
       </div>
     </section>
   )
 }
 
-function Bar({ color, value }: { color: string; value: number }) {
-  return (
-    <span
-      className={`w-4 rounded-t-sm ${color}`}
-      style={{ height: `${(value / MAX_VALUE) * 100}%` }}
-    />
-  )
+function getRoundedMax(values: number[], step: number) {
+  const highestValue = Math.max(...values, 0)
+
+  if (highestValue === 0) {
+    return step
+  }
+
+  return Math.ceil(highestValue / step) * step
 }
 
 function Legend({ color, label }: { color: string; label: string }) {

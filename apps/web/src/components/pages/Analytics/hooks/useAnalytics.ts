@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 
-import { getAnalyticsDashboard } from "@/services/domain"
+import { useAuth } from "@/contexts/AuthContext"
+import type { SelectionOption } from "@/components/structure/Select/types"
+import { getAnalyticsDashboard, getCompanies } from "@/services/domain"
 import {
   formatHoursWithMinutes,
   formatMinutes,
@@ -15,23 +17,61 @@ import type {
 } from "../types"
 
 export function useAnalytics() {
+  const { user } = useAuth()
+
   const [metrics, setMetrics] = useState<AnalyticsMetric[]>([])
   const [balances, setBalances] = useState<EmployeeHourBalance[]>([])
   const [solicitationChart, setSolicitationChart] = useState<
     SolicitationChartItem[]
   >([])
   const [workedHours, setWorkedHours] = useState<WorkedHoursItem[]>([])
+  const [companyOptions, setCompanyOptions] = useState<SelectionOption[]>([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState("all")
   const [errorMessage, setErrorMessage] = useState("")
+  const isPlatformAdmin = user?.role === "PLATFORM_ADMIN"
 
   useEffect(() => {
+    if (!user) return
+
     void loadDashboard()
-  }, [])
+  }, [selectedCompanyId, user])
+
+  useEffect(() => {
+    if (!isPlatformAdmin) {
+      setCompanyOptions([])
+      setSelectedCompanyId("all")
+      return
+    }
+
+    void loadCompanies()
+  }, [isPlatformAdmin])
+
+  async function loadCompanies() {
+    try {
+      const companies = await getCompanies()
+      setCompanyOptions([
+        { value: "all", label: "Todas as empresas" },
+        ...companies.map((company) => ({
+          value: String(company.id),
+          label: company.tradeName || company.name,
+        })),
+      ])
+    } catch (error) {
+      setErrorMessage(
+        getErrorMessage(error, "Nao foi possivel carregar as empresas.")
+      )
+    }
+  }
 
   async function loadDashboard() {
     try {
       setErrorMessage("")
 
-      const dashboard = await getAnalyticsDashboard()
+      const dashboard = await getAnalyticsDashboard(
+        isPlatformAdmin && selectedCompanyId !== "all"
+          ? { companyId: Number(selectedCompanyId) }
+          : undefined
+      )
 
       setMetrics([
         {
@@ -83,10 +123,24 @@ export function useAnalytics() {
     }
   }
 
+  function handleCompanyFilterChange(selection: SelectionOption[]) {
+    const nextCompanyId = selection[0]?.value
+
+    if (!nextCompanyId) return
+
+    setSelectedCompanyId(nextCompanyId)
+  }
+
   return {
+    companyOptions,
     errorMessage,
+    handleCompanyFilterChange,
+    isPlatformAdmin,
     metrics,
     balances,
+    selectedCompanyOption: companyOptions.filter(
+      (option) => option.value === selectedCompanyId
+    ),
     solicitationChart,
     workedHours,
   }

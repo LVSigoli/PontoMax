@@ -336,6 +336,11 @@ export async function getUserWorkdaySummary(params: {
   const normalizedWorkdays = workdays.map((workday) =>
     normalizeWorkdayForTimezone(workday, params.timezone, assignments)
   )
+  const workedDays = normalizedWorkdays.filter(
+    (workday) =>
+      !shouldIgnoreWorkdayInSummary(workday) &&
+      workday.timeEntries?.some((entry) => entry.kind === "ENTRY")
+  ).length
 
   const relevantWorkdays = normalizedWorkdays.filter((workday) => {
     if (shouldIgnoreWorkdayInSummary(workday)) {
@@ -360,10 +365,6 @@ export async function getUserWorkdaySummary(params: {
 
   const summary = relevantWorkdays.reduce<Omit<WorkdayOverviewSummary, "pendingAdjustments">>(
     (summary, workday) => {
-      if (workday.workedMinutes > 0) {
-        summary.workedDays += 1
-      }
-
       summary.balanceMinutes += workday.overtimeMinutes - workday.missingMinutes
 
       if (workday.status === "INCONSISTENT" || workday.status === "PENDING_ADJUSTMENT") {
@@ -373,7 +374,7 @@ export async function getUserWorkdaySummary(params: {
       return summary
     },
     {
-      workedDays: 0,
+      workedDays,
       balanceMinutes: 0,
       inconsistentCount: 0,
     },

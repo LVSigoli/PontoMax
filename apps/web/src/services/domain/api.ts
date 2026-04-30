@@ -325,9 +325,13 @@ export async function reviewAdjustmentRequest(
   return response.data
 }
 
-export async function getAnalyticsDashboard() {
-  const response =
-    await PONTO_MAX_API.get<AnalyticsDashboardResponse>("analytics/dashboard")
+export async function getAnalyticsDashboard(params?: { companyId?: number }) {
+  const response = await PONTO_MAX_API.get<AnalyticsDashboardResponse>(
+    "analytics/dashboard",
+    {
+      params,
+    }
+  )
 
   return response.data
 }
