@@ -63,7 +63,7 @@ function loadEnv() {
     NODE_ENV: readNodeEnv(),
     PORT: readPort(),
     API_PREFIX: process.env.API_PREFIX?.trim() || "api",
-    DATABASE_URL: process.env.DATABASE_URL?.trim() || "file:./dev.db",
+    DATABASE_URL: readRequiredString("DATABASE_URL"),
     JWT_ACCESS_SECRET: readRequiredString("JWT_ACCESS_SECRET"),
     JWT_ACCESS_EXPIRES_IN: readRequiredString("JWT_ACCESS_EXPIRES_IN"),
     JWT_REFRESH_SECRET: readRequiredString("JWT_REFRESH_SECRET"),

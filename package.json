@@ -10,7 +10,7 @@
     "dev:backend": "pnpm run db:prepare && pnpm run dev:api",
     "dev:http": "pnpm --parallel --filter ponto-max-api --filter ponto-max-web dev",
     "dev-http": "pnpm run dev:http",
-    "db:prepare": "pnpm --filter ponto-max-api db:init && pnpm --filter ponto-max-api seed",
+    "db:prepare": "pnpm --filter ponto-max-api db:prepare",
     "build": "pnpm --filter ponto-max-web build",
     "build:web": "pnpm --filter ponto-max-web build",
     "build:api": "pnpm --filter ponto-max-api build",

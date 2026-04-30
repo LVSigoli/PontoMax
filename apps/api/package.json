@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "db:init": "pnpm build && node dist/scripts/init-sqlite.js",
+    "db:prepare": "pnpm prisma:generate && pnpm prisma:deploy && pnpm seed:build",
     "prisma:generate": "prisma generate --schema ../../prisma/schema.prisma",
     "prisma:push": "prisma db push --schema ../../prisma/schema.prisma",
     "prisma:validate": "prisma validate --schema ../../prisma/schema.prisma",

@@ -1,8 +1,9 @@
 # Modelo de banco de dados
 
-Este projeto agora tem uma modelagem base para `Next.js + Prisma`, com `SQLite` como banco local padrao:
+Este projeto agora tem uma modelagem base para `Next.js + Prisma`, com `PostgreSQL` como banco principal:
 
 - `prisma/schema.prisma`: modelo principal para a aplicacao
+- `prisma/migrations/20260430195000_init_postgres/migration.sql`: migration inicial para PostgreSQL
 - `database/schema.sql`: DDL SQL legado do desenho original em PostgreSQL
 
 ## O que foi modelado

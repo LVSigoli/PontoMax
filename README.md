@@ -69,11 +69,11 @@ pnpm run format
 pnpm run format:check
 ```
 
-## Banco Local
+## Banco E Ambiente
 
-O projeto agora roda localmente com `SQLite`, sem instalar banco separado.
+O projeto agora esta preparado para `PostgreSQL`, pensando em deploy real com `Railway` para a API e `Vercel` para o frontend.
 
-Fluxo recomendado:
+Fluxo recomendado para ambiente local ou homologacao:
 
 ```bash
 pnpm run db:prepare
@@ -88,15 +88,32 @@ pnpm run dev:backend
 
 Detalhes do setup:
 
-- banco padrao: `SQLite`
-- arquivo do banco: `prisma/dev.db`
-- `DATABASE_URL` e opcional; se voce nao definir nada, o projeto usa `file:./dev.db`
-- `pnpm run db:prepare`: sincroniza o schema no SQLite e roda a seed demo
+- banco padrao: `PostgreSQL`
+- `DATABASE_URL` e obrigatoria
+- `pnpm run db:prepare`: gera o client Prisma, aplica as migrations e roda a seed demo
+- migration inicial: `prisma/migrations/20260430195000_init_postgres/migration.sql`
+
+Exemplo de `DATABASE_URL` local:
+
+```bash
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/pontomax?schema=public"
+```
 
 ## Credenciais Demo
 
 - `demo@pontomax.com.br`
 - `123456`
+
+## Deploy Recomendado
+
+- frontend `apps/web`: `Vercel`
+- backend `apps/api`: `Railway`
+- banco: `PostgreSQL`
+
+Variaveis principais:
+
+- Vercel: `NEXT_PUBLIC_API_URL`
+- Railway/API: `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`, `APP_URL`, `MAIL_FROM`, `RESEND_API_KEY`
 
 ## Diretrizes Tecnicas
 
