@@ -167,7 +167,9 @@ export function usePointRegister() {
 
   async function handleRegisterPoint() {
     try {
-      await registerTimeRecord({ timezone: WORKDAY_TIMEZONE })
+      await registerTimeRecord({
+        timezone: WORKDAY_TIMEZONE,
+      })
       await loadCurrentWorkday()
     } catch (e) {
       console.log(e)

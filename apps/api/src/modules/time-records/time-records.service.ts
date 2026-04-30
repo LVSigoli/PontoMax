@@ -71,7 +71,7 @@ export async function ensureWorkday(params: {
   date: Date | string
   timezone?: string
 }) {
-  const date = getDateOnly(params.date, params.timezone)
+  const date = normalizeWorkdayDateInput(params.date, params.timezone)
   const assignment = await prisma.userJourneyAssignment.findFirst({
     where: {
       userId: params.userId,
@@ -567,7 +567,7 @@ function isScheduledWorkday(assignment: JourneyAssignmentWithJourney, date: Date
   }
 
   if (scaleCode === "12X36") {
-    return diffInDays(getDateOnly(assignment.validFrom), date) % 2 === 0
+    return diffInDays(getStoredDateOnly(assignment.validFrom), date) % 2 === 0
   }
 
   const cycleMatch = scaleCode.match(/^(\d+)X(\d+)$/)
@@ -584,7 +584,7 @@ function isScheduledWorkday(assignment: JourneyAssignmentWithJourney, date: Date
   }
 
   const cycleLength = workDays + offDays
-  const dayIndex = diffInDays(getDateOnly(assignment.validFrom), date) % cycleLength
+  const dayIndex = diffInDays(getStoredDateOnly(assignment.validFrom), date) % cycleLength
 
   return dayIndex < workDays
 }
@@ -820,6 +820,27 @@ function shouldTreatEntriesAsOvernight(entries: TimeEntry[], timeZone?: string) 
 
 function addUtcDays(value: Date, amount: number) {
   return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate() + amount))
+}
+
+function normalizeWorkdayDateInput(value: Date | string, timeZone?: string) {
+  if (typeof value === "string") {
+    return getDateOnly(value, timeZone)
+  }
+
+  if (isUtcDateOnly(value)) {
+    return getStoredDateOnly(value)
+  }
+
+  return getDateOnly(value, timeZone)
+}
+
+function isUtcDateOnly(value: Date) {
+  return (
+    value.getUTCHours() === 0 &&
+    value.getUTCMinutes() === 0 &&
+    value.getUTCSeconds() === 0 &&
+    value.getUTCMilliseconds() === 0
+  )
 }
 
 function getStoredDateOnly(value: Date) {
