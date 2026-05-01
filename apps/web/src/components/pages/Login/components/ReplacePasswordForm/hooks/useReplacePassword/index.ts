@@ -21,6 +21,8 @@ export function useReplacePassword() {
   const [errorMessage, setErrorMessage] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPasswordHidden, setIsPasswordHidden] = useState(true)
+  const [isConfirmPasswordHidden, setIsConfirmPasswordHidden] = useState(true)
 
   function handleCredentialChange(
     key: keyof ReplacePasswordCredential,
@@ -29,6 +31,14 @@ export function useReplacePassword() {
     setErrorMessage("")
     setSuccessMessage("")
     setCredential({ ...credential, [key]: value })
+  }
+
+  function handlePasswordIconClick() {
+    setIsPasswordHidden((currentValue) => !currentValue)
+  }
+
+  function handleConfirmPasswordIconClick() {
+    setIsConfirmPasswordHidden((currentValue) => !currentValue)
   }
 
   async function handleSubmit() {
@@ -76,7 +86,11 @@ export function useReplacePassword() {
     errorMessage,
     successMessage,
     isSubmitting,
+    isPasswordHidden,
+    isConfirmPasswordHidden,
     handleCredentialChange,
     handleSubmit,
+    handlePasswordIconClick,
+    handleConfirmPasswordIconClick,
   }
 }

@@ -25,7 +25,11 @@ export const ReplacePasswordForm: React.FC<Props> = ({
     credential,
     errorMessage,
     handleCredentialChange,
+    handleConfirmPasswordIconClick,
+    handlePasswordIconClick,
     handleSubmit,
+    isConfirmPasswordHidden,
+    isPasswordHidden,
     isSubmitting,
     successMessage,
   } = useReplacePassword()
@@ -57,19 +61,21 @@ export const ReplacePasswordForm: React.FC<Props> = ({
       <div className="space-y-4">
         <Input
           title="nova senha"
-          type="password"
           icon={LockIcon}
           value={credential.password}
           placeholder="Informe sua nova senha"
+          type={isPasswordHidden ? "password" : "text"}
+          onIconClick={handlePasswordIconClick}
           onChange={(value) => handleCredentialChange("password", value)}
         />
 
         <Input
           title="confirmar senha"
-          type="password"
           icon={LockIcon}
           value={credential.confirmPassword}
           placeholder="Confirme sua nova senha"
+          type={isConfirmPasswordHidden ? "password" : "text"}
+          onIconClick={handleConfirmPasswordIconClick}
           onChange={(value) => handleCredentialChange("confirmPassword", value)}
         />
       </div>
