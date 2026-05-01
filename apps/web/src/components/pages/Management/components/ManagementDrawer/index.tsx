@@ -15,6 +15,7 @@ import { Select } from "@/components/structure/Select"
 import { SidePanel } from "@/components/structure/SidePanel"
 import { Toggle } from "@/components/structure/Toggle"
 import { Typography } from "@/components/structure/Typography"
+import { getErrorMessage } from "@/services/utils"
 
 // Constants
 import { SCALE_OPTIONS } from "../../constants"
@@ -33,18 +34,18 @@ import type {
 } from "./types"
 
 // Utils
+import { useManagementContext } from "../../contexts/ManagementContext"
 import {
   getEntityLabel,
   makeCompanyForm,
   makeCompanyOptions,
   makeEmployeeForm,
-  makeJourneyOptions,
   makeJourneyForm,
+  makeJourneyOptions,
 } from "../../utils"
-import { useManagementContext } from "../../contexts/ManagementContext"
 
 export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
-  ({ element, view }, ref) => {
+  ({ element, view, onSuccess }, ref) => {
     // Refs
     const sidePanelRef = useRef<SidePanelMethods>(null)
 
@@ -103,9 +104,20 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
       }))
     }
 
-    function handleSave() {
-      saveEntity(view.id, element, form)
-      handleClose()
+    async function handleSave() {
+      try {
+        await saveEntity(view.id, element, form)
+        handleClose()
+        if (view.id === "employees" && !element) {
+          onSuccess()
+        }
+      } catch (error) {
+        if (typeof window !== "undefined") {
+          window.alert(
+            getErrorMessage(error, "Nao foi possivel salvar este cadastro.")
+          )
+        }
+      }
     }
 
     function renderForm() {
@@ -310,7 +322,7 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
               onClick={handleCancel}
             />
 
-            <Button fitWidth value="Salvar" onClick={handleSave} />
+            <Button fitWidth value="Salvar" onClick={() => void handleSave()} />
           </footer>
         </div>
       </SidePanel>

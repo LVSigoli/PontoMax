@@ -19,6 +19,7 @@ import { MANAGEMENT_ACTIONS, MANAGEMENT_TABS } from "./constants"
 import { ManagementProvider } from "./contexts/ManagementContext"
 
 // Hooks
+import { InviteModal } from "./components/InviteModal"
 import { useManagement } from "./hooks/useManagement"
 
 // Types
@@ -34,15 +35,18 @@ export const Management: React.FC = () => {
 const ManagementContent: React.FC = () => {
   // Hooks
   const {
+    invite,
     activeTab,
-    selectedElement,
     tableData,
     drawerRef,
+    inviteModalRef,
+    selectedElement,
+    getRowKey,
     handleActionClick,
     handleAddClick,
     handleRowSelect,
     handleTabChange,
-    getRowKey,
+    handleInviteSuccess,
   } = useManagement()
 
   return (
@@ -90,10 +94,12 @@ const ManagementContent: React.FC = () => {
 
       <ManagementDrawer
         ref={drawerRef}
-        onSuccess={() => console.log}
-        element={selectedElement}
         view={activeTab}
+        element={selectedElement}
+        onSuccess={handleInviteSuccess}
       />
+
+      <InviteModal ref={inviteModalRef} invite={invite} />
     </main>
   )
 }

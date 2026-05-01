@@ -6,24 +6,28 @@ import { MANAGEMENT_TABS } from "../../constants"
 
 // Utils
 import { useManagementContext } from "../../contexts/ManagementContext"
-import { makeInitialEntity, makeTableData } from "./utils"
+import { makeTableData } from "./utils"
 
 // Types
 import type { TableRowData } from "@/components/structure/Table/types"
+import type { InviteModalMethods } from "../../components/InviteModal/types"
 import type { ManagementDrawerMethods } from "../../components/ManagementDrawer/types"
 import type { ManagementEntity, ManagementTabOption } from "../../types"
 
 export function useManagement() {
   // Refs
+  const inviteModalRef = useRef<InviteModalMethods>(null)
   const drawerRef = useRef<ManagementDrawerMethods>(null)
 
   // States
   const [drawerRequestKey, setDrawerRequestKey] = useState(0)
   const [activeTab, setActiveTab] = useState(MANAGEMENT_TABS[0])
-  const [selectedElement, setSelectedElement] = useState(makeInitialEntity)
+  const [selectedElement, setSelectedElement] =
+    useState<ManagementEntity | null>(null)
+  const [shouldOpenInviteModal, setShouldOpenInviteModal] = useState(false)
 
   // Hooks
-  const { companies, employees, journeys, removeEntity } =
+  const { companies, employees, journeys, invite, removeEntity } =
     useManagementContext()
 
   // Constants
@@ -39,6 +43,13 @@ export function useManagement() {
 
     drawerRef.current?.open()
   }, [drawerRequestKey])
+
+  useEffect(() => {
+    if (!shouldOpenInviteModal || !invite.copyText) return
+
+    inviteModalRef.current?.open()
+    setShouldOpenInviteModal(false)
+  }, [invite.copyText, shouldOpenInviteModal])
 
   // Functions
   function getActiveItems(): ManagementEntity[] {
@@ -75,7 +86,7 @@ export function useManagement() {
   }
 
   function handleAddClick() {
-    setSelectedElement(makeInitialEntity)
+    setSelectedElement(null)
     setDrawerRequestKey((currentValue) => currentValue + 1)
   }
 
@@ -89,18 +100,25 @@ export function useManagement() {
 
   function handleTabChange(tab: ManagementTabOption) {
     setActiveTab(tab)
-    setSelectedElement(makeInitialEntity)
+    setSelectedElement(null)
+  }
+
+  function handleInviteSuccess() {
+    setShouldOpenInviteModal(true)
   }
 
   return {
+    invite,
     activeTab,
     tableData,
     drawerRef,
+    inviteModalRef,
     selectedElement,
     getRowKey,
     handleAddClick,
     handleRowSelect,
     handleTabChange,
     handleActionClick,
+    handleInviteSuccess,
   }
 }
