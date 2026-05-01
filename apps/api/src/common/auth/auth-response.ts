@@ -28,6 +28,7 @@ export function makeSessionResponse(params: {
       id: String(user.id),
       name: user.fullName,
       email: user.email,
+      position: user.position ?? null,
       role: user.role,
       groups: mapRoleToGroups(user.role),
       companyId: user.companyId,

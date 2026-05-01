@@ -4,6 +4,7 @@ export interface AuthenticatedUser {
   id: string
   name: string
   email: string
+  position?: string | null
   role: string
   groups: Set<string>
   companyId?: number

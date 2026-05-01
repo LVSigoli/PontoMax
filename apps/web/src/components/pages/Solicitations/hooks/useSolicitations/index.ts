@@ -49,7 +49,7 @@ export function useSolicitations() {
     const selectedValue = selection[0]?.value
     if (!selectedValue) return
 
-    setStatusFilter(selectedValue)
+    setStatusFilter(selectedValue as SolicitationStatusFilter)
   }
 
   function handleSolicitationSelect(solicitation: Solicitation) {
