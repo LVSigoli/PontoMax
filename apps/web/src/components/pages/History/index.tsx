@@ -6,18 +6,15 @@ import { Header } from "@/components/structure/Header"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Table } from "@/components/structure/Table"
 import { Typography } from "@/components/structure/Typography"
-import { AnalysisCard } from "./components/AnalysisCard"
 import { AdjustmentRequestSidePanel } from "../PointRegister/components/modals/AdjustmentRequestSidePanel"
 import { DayHistorySidePanel } from "../PointRegister/components/modals/DayHistorySidePanel"
+import { AnalysisCard } from "./components/AnalysisCard"
 
 // Hooks
 import { useHistory } from "./hooks/useHistory"
 
 // Utils
-import {
-  formatWorkdayDate,
-  getPointStatusClass,
-} from "../PointRegister/utils"
+import { formatWorkdayDate, getPointStatusClass } from "../PointRegister/utils"
 
 // Types
 import type {
@@ -43,7 +40,7 @@ export const History: React.FC = () => {
     isLoadingMore,
     hasMore,
     selectedHistoryRecord,
-    adjustmentRequestWorkdayDate,
+    adjustmentWorkdayDate,
     adjustmentRequestRecords,
     adjustmentRequestSidePanelRef,
     dayHistorySidePanelRef,
@@ -58,15 +55,11 @@ export const History: React.FC = () => {
   useEffect(() => {
     const target = loadMoreRef.current
 
-    if (!target) {
-      return
-    }
+    if (!target) return
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          void loadMoreHistory()
-        }
+        if (entries[0]?.isIntersecting) void loadMoreHistory()
       },
       {
         root: null,
@@ -185,13 +178,13 @@ export const History: React.FC = () => {
                 <Typography
                   variant="caption"
                   value={
-    isInitialLoading
-      ? "Carregando historico..."
-      : isLoadingMore
-      ? "Carregando mais registros..."
-      : hasMore
-        ? "Role para carregar mais"
-                        : "Todos os registros foram carregados"
+                    isInitialLoading
+                      ? "Carregando historico..."
+                      : isLoadingMore
+                        ? "Carregando mais registros..."
+                        : hasMore
+                          ? "Role para carregar mais"
+                          : "Todos os registros foram carregados"
                   }
                 />
               </div>
@@ -208,7 +201,7 @@ export const History: React.FC = () => {
       <AdjustmentRequestSidePanel
         ref={adjustmentRequestSidePanelRef}
         records={adjustmentRequestRecords}
-        workdayDate={adjustmentRequestWorkdayDate}
+        workdayDate={adjustmentWorkdayDate}
         onSubmitted={handleAdjustmentRequestSubmitted}
       />
     </main>

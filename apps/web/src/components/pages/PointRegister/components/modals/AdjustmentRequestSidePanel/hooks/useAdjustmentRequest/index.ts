@@ -6,40 +6,33 @@ import { POINT_TYPES } from "../../constants"
 
 // Services
 import { createAdjustmentRequest } from "@/services/domain"
-import { getErrorMessage } from "@/services/utils"
 
 // Types
 import type { SelectionOption } from "@/components/structure/Select/types"
 import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
 import type { TableRowData } from "@/components/structure/Table/types"
 import type { PointRecord } from "../../../../../types"
-
-interface UseAdjustmentRequestParams {
-  records: PointRecord[]
-  workdayDate?: string
-  onSubmitted?: () => Promise<void> | void
-}
-
-interface AdjustmentRequestForm {
-  justification: string
-  records: PointRecord[]
-}
+import { AdjustmentRequestForm, UseAdjustmentRequestParams } from "./types"
 
 export function useAdjustmentRequest({
   onSubmitted,
   records,
   workdayDate,
 }: UseAdjustmentRequestParams) {
+  // Refs
   const sidePanelRef = useRef<SidePanelMethods>(null)
 
-  const [form, setForm] = useState<AdjustmentRequestForm>(() =>
-    makeInitialForm(records)
-  )
+  // States
   const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [form, setForm] = useState<AdjustmentRequestForm>(makeInitialForm)
 
+  // Effects
   useEffect(() => {
-    setForm(makeInitialForm(records))
+    if (!records.length) return
+
+    setForm(buildCurrentForm(records))
+
     setErrorMessage("")
   }, [records])
 
@@ -70,15 +63,15 @@ export function useAdjustmentRequest({
   function handleAddRecord() {
     setErrorMessage("")
     setForm((currentForm) => ({
-        ...currentForm,
-        records: [
-          ...currentForm.records,
-          {
-            id: Date.now(),
-            workdayDate: workdayDate ?? records[0]?.workdayDate,
-            time: "08:00",
-            workedHours: "00h 00min",
-            extraHours: "00h 00min",
+      ...currentForm,
+      records: [
+        ...currentForm.records,
+        {
+          id: Date.now(),
+          workdayDate: workdayDate ?? records[0]?.workdayDate,
+          time: "08:00",
+          workedHours: "00h 00min",
+          extraHours: "00h 00min",
           missingHours: "00h 00min",
           type: getNextPointType(currentForm.records),
           status: "Registrado",
@@ -89,20 +82,19 @@ export function useAdjustmentRequest({
 
   function handleCancel() {
     setErrorMessage("")
-    setForm(makeInitialForm(records))
+    setForm(makeInitialForm())
     sidePanelRef.current?.close()
   }
 
   async function handleConfirm() {
     const effectiveWorkdayDate =
       workdayDate ?? records[0]?.workdayDate ?? form.records[0]?.workdayDate
+
     const normalizedWorkdayDate = effectiveWorkdayDate
       ? normalizeWorkdayDate(effectiveWorkdayDate)
       : ""
 
-    if (isSubmitting || !effectiveWorkdayDate) {
-      return
-    }
+    if (isSubmitting || !effectiveWorkdayDate) return
 
     if (!form.justification.trim()) {
       setErrorMessage("Informe uma justificativa para continuar.")
@@ -116,7 +108,9 @@ export function useAdjustmentRequest({
       const adjustmentRecords = buildAdjustmentRecords(records, form.records)
 
       if (adjustmentRecords.length === 0) {
-        setErrorMessage("Altere ao menos um horario antes de solicitar o ajuste.")
+        setErrorMessage(
+          "Altere ao menos um horario antes de solicitar o ajuste."
+        )
         return
       }
 
@@ -132,11 +126,10 @@ export function useAdjustmentRequest({
       })
 
       await onSubmitted?.()
+
       sidePanelRef.current?.close()
     } catch (error) {
-      setErrorMessage(
-        getErrorMessage(error, "Nao foi possivel enviar a solicitacao de ajuste.")
-      )
+      console.log(error)
     } finally {
       setIsSubmitting(false)
     }
@@ -148,7 +141,7 @@ export function useAdjustmentRequest({
 
   function handleOpen() {
     setErrorMessage("")
-    setForm(makeInitialForm(records))
+    setForm(buildCurrentForm(records))
     sidePanelRef.current?.open()
   }
 
@@ -158,10 +151,8 @@ export function useAdjustmentRequest({
 
   function handleJustificationChange(value: string) {
     setErrorMessage("")
-    setForm((currentForm) => ({
-      ...currentForm,
-      justification: value,
-    }))
+
+    setForm((currentForm) => ({ ...currentForm, justification: value }))
   }
 
   function getTableRowKey(_: TableRowData, index: number) {
@@ -238,7 +229,14 @@ export function useAdjustmentRequest({
   }
 }
 
-function makeInitialForm(records: PointRecord[]): AdjustmentRequestForm {
+function makeInitialForm(): AdjustmentRequestForm {
+  return {
+    justification: "",
+    records: [],
+  }
+}
+
+function buildCurrentForm(records: PointRecord[]) {
   return {
     justification: "",
     records: records.map((record) => ({ ...record })),
@@ -251,7 +249,10 @@ function getNextPointType(records: PointRecord[]) {
     : POINT_TYPES[0]
 }
 
-function buildAdjustmentRecords(initialRecords: PointRecord[], currentRecords: PointRecord[]) {
+function buildAdjustmentRecords(
+  initialRecords: PointRecord[],
+  currentRecords: PointRecord[]
+) {
   const nextRecords: Array<{
     timeEntryId?: number
     actionType: "CREATE" | "UPDATE" | "DELETE"
@@ -311,7 +312,10 @@ function buildAdjustmentRecords(initialRecords: PointRecord[], currentRecords: P
     nextRecords.push({
       actionType: "CREATE",
       targetKind: currentRecord.type === "Entrada" ? "ENTRY" : "EXIT",
-      newRecordedAt: makeDateTime(currentRecord.workdayDate, currentRecord.time),
+      newRecordedAt: makeDateTime(
+        currentRecord.workdayDate,
+        currentRecord.time
+      ),
     })
   }
 

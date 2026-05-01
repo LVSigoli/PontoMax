@@ -33,42 +33,52 @@ export const HolidaysProvider: React.FC<HolidaysProviderProps> = ({
       setIsLoading(true)
       const items = await getHolidays()
       setHolidays(items.map(mapHolidayApiToHoliday))
+    } catch (error) {
+      console.log(error)
     } finally {
       setIsLoading(false)
     }
   }
 
   async function removeHoliday(id: number) {
-    await deleteHoliday(id)
-    setHolidays((currentHolidays) =>
-      currentHolidays.filter((holiday) => holiday.id !== id)
-    )
+    try {
+      await deleteHoliday(id)
+      setHolidays((currentHolidays) =>
+        currentHolidays.filter((holiday) => holiday.id !== id)
+      )
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   async function saveHoliday(holiday: Holiday | null, form: HolidayForm) {
-    const payload = {
-      name: form.name,
-      date: form.date,
-      type: mapHolidayTypeToApi(form.type),
-    }
+    try {
+      const payload = {
+        name: form.name,
+        date: form.date,
+        type: mapHolidayTypeToApi(form.type),
+      }
 
-    if (holiday) {
-      const updatedHoliday = await updateHoliday(holiday.id, payload)
-      setHolidays((currentHolidays) =>
-        currentHolidays.map((currentHoliday) =>
-          currentHoliday.id === holiday.id
-            ? mapHolidayApiToHoliday(updatedHoliday)
-            : currentHoliday
+      if (holiday) {
+        const updatedHoliday = await updateHoliday(holiday.id, payload)
+        setHolidays((currentHolidays) =>
+          currentHolidays.map((currentHoliday) =>
+            currentHoliday.id === holiday.id
+              ? mapHolidayApiToHoliday(updatedHoliday)
+              : currentHoliday
+          )
         )
-      )
-      return
-    }
+        return
+      }
 
-    const createdHoliday = await createHoliday(payload)
-    setHolidays((currentHolidays) => [
-      ...currentHolidays,
-      mapHolidayApiToHoliday(createdHoliday),
-    ])
+      const createdHoliday = await createHoliday(payload)
+      setHolidays((currentHolidays) => [
+        ...currentHolidays,
+        mapHolidayApiToHoliday(createdHoliday),
+      ])
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   const value: HolidaysContextValue = {

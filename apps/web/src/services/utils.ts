@@ -1,21 +1,3 @@
-import axios from "axios"
-
-export function getErrorMessage(error: unknown, fallback: string) {
-  if (axios.isAxiosError(error)) {
-    const message = error.response?.data?.message
-
-    if (typeof message === "string" && message.trim()) {
-      return message
-    }
-  }
-
-  if (error instanceof Error && error.message.trim()) {
-    return error.message
-  }
-
-  return fallback
-}
-
 export function formatMinutes(value: number) {
   const sign = value < 0 ? "-" : value > 0 ? "+" : ""
   const absoluteValue = Math.abs(value)

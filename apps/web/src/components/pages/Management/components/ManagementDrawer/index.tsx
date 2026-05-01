@@ -15,7 +15,6 @@ import { Select } from "@/components/structure/Select"
 import { SidePanel } from "@/components/structure/SidePanel"
 import { Toggle } from "@/components/structure/Toggle"
 import { Typography } from "@/components/structure/Typography"
-import { getErrorMessage } from "@/services/utils"
 
 // Constants
 import { SCALE_OPTIONS } from "../../constants"
@@ -107,16 +106,12 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
     async function handleSave() {
       try {
         await saveEntity(view.id, element, form)
+
         handleClose()
-        if (view.id === "employees" && !element) {
-          onSuccess()
-        }
+
+        if (view.id === "employees" && !element) onSuccess()
       } catch (error) {
-        if (typeof window !== "undefined") {
-          window.alert(
-            getErrorMessage(error, "Nao foi possivel salvar este cadastro.")
-          )
-        }
+        console.log(error)
       }
     }
 

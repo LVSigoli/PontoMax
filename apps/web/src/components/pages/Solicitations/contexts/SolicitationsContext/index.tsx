@@ -33,21 +33,27 @@ export const SolicitationsProvider: React.FC<SolicitationsProviderProps> = ({
       setIsLoading(true)
       const items = await getAdjustmentRequests()
       setSolicitations(items.map(mapAdjustmentApiToSolicitation))
+    } catch (error) {
+      console.log(error)
     } finally {
       setIsLoading(false)
     }
   }
 
   async function updateSolicitationStatus(id: number, status: SolicitationStatus) {
-    const requestStatus = status === "Aprovado" ? "APPROVED" : "REJECTED"
+    try {
+      const requestStatus = status === "Aprovado" ? "APPROVED" : "REJECTED"
 
-    await reviewAdjustmentRequest(id, { status: requestStatus })
+      await reviewAdjustmentRequest(id, { status: requestStatus })
 
-    setSolicitations((currentSolicitations) =>
-      currentSolicitations.map((solicitation) =>
-        solicitation.id === id ? { ...solicitation, status } : solicitation
+      setSolicitations((currentSolicitations) =>
+        currentSolicitations.map((solicitation) =>
+          solicitation.id === id ? { ...solicitation, status } : solicitation
+        )
       )
-    )
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   const value: SolicitationsContextValue = {
