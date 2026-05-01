@@ -11,7 +11,6 @@ import { getOptionalRequestCompanyId, getRequestCompanyId } from '../../common/u
 import { validateRequest } from '../../common/validation/validate-request.js';
 import { prisma } from '../../lib/prisma.js';
 import { getDateOnly } from '../../common/utils/date.js';
-import { sendInviteEmail } from '../auth/auth-email.service.js';
 import { issuePasswordResetToken, makePasswordSetupUrl } from '../auth/password-reset.service.js';
 
 export const usersRouter = Router();
@@ -145,20 +144,55 @@ usersRouter.post(
       });
     }
 
-    const resetToken = await issuePasswordResetToken(user.id);
-    const passwordSetupUrl = makePasswordSetupUrl(resetToken);
-    const delivery = await sendInviteEmail({
-      to: user.email,
-      fullName: user.fullName,
-      temporaryPassword,
-      passwordSetupUrl,
+    const createdUser = await prisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+      include: {
+        company: true,
+        journeyAssignments: {
+          include: {
+            journey: true,
+          },
+          orderBy: {
+            validFrom: 'desc',
+          },
+          take: 1,
+        },
+      },
     });
 
+    const resetToken = await issuePasswordResetToken(user.id);
+    const passwordSetupUrl = makePasswordSetupUrl(resetToken);
+    const inviteMessage = [
+      'Convite de acesso ao PontoMax',
+      '',
+      `E-mail cadastrado: ${createdUser.email}`,
+      `Senha temporaria: ${temporaryPassword}`,
+      `URL de convite: ${passwordSetupUrl}`,
+      '',
+      'No primeiro acesso, a troca de senha sera obrigatoria.',
+    ].join('\n');
+
     response.status(201).json({
-      item: user,
-      notification: {
-        channel: delivery.channel,
-        previewPath: delivery.previewPath,
+      item: {
+        id: createdUser.id,
+        companyId: createdUser.companyId,
+        companyName: createdUser.company.name,
+        employeeCode: createdUser.employeeCode,
+        fullName: createdUser.fullName,
+        email: createdUser.email,
+        cpf: createdUser.cpf,
+        role: createdUser.role,
+        position: createdUser.position,
+        isActive: createdUser.isActive,
+        journeyId: createdUser.journeyAssignments[0]?.journeyId ?? null,
+        journeyName: createdUser.journeyAssignments[0]?.journey.name ?? null,
+      },
+      invite: {
+        email: createdUser.email,
+        temporaryPassword,
+        invitationUrl: passwordSetupUrl,
+        requiresPasswordChange: true,
+        copyText: inviteMessage,
       },
     });
   }),

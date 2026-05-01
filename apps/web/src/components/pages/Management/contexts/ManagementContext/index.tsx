@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
 
 // Services
+import type { UserInviteApiItem } from "@/services/domain"
 import {
   createCompany,
   createJourney,
@@ -17,6 +18,17 @@ import {
   updateUser,
 } from "@/services/domain"
 
+// Utils
+import {
+  buildCompanyPayload,
+  buildEmployeePayload,
+  buildJourneyPayload,
+  mapCompanyApiToCompany,
+  mapJourneyApiToJourney,
+  mapUserApiToEmployee,
+} from "../../utils"
+import { makeInitialInvite } from "./utils"
+
 // Types
 import type {
   Company,
@@ -29,31 +41,24 @@ import type {
   ManagementTabId,
 } from "../../types"
 import type { ManagementContextValue, ManagementProviderProps } from "./types"
-
-// Utils
-import {
-  buildCompanyPayload,
-  buildEmployeePayload,
-  buildJourneyPayload,
-  mapCompanyApiToCompany,
-  mapJourneyApiToJourney,
-  mapUserApiToEmployee,
-} from "../../utils"
-
 const ManagementContext = createContext<ManagementContextValue | null>(null)
 
 export const ManagementProvider: React.FC<ManagementProviderProps> = ({
   children,
 }) => {
+  // States
+  const [isLoading, setIsLoading] = useState(true)
+  const [journeys, setJourneys] = useState<Journey[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
-  const [journeys, setJourneys] = useState<Journey[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [invite, setInvite] = useState<UserInviteApiItem>(makeInitialInvite)
 
+  // Effects
   useEffect(() => {
     void loadManagementData()
   }, [])
 
+  // Functions
   async function loadManagementData() {
     try {
       setIsLoading(true)
@@ -165,15 +170,7 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
       mapUserApiToEmployee(createdEmployee),
     ])
 
-    if (
-      createdEmployeeResponse.notification?.channel === "file" &&
-      createdEmployeeResponse.notification.previewPath &&
-      typeof window !== "undefined"
-    ) {
-      window.alert(
-        `Convite gerado em modo desenvolvimento.\n\nCaixa de saida local:\n${createdEmployeeResponse.notification.previewPath}`
-      )
-    }
+    setInvite(createdEmployeeResponse.invite)
   }
 
   async function saveJourney(entity: Journey | null, form: JourneyForm) {
@@ -210,6 +207,7 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
     companies,
     employees,
     journeys,
+    invite,
     removeEntity,
     saveEntity,
   }

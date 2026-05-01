@@ -90,6 +90,7 @@ const ManagementContent: React.FC = () => {
 
       <ManagementDrawer
         ref={drawerRef}
+        onSuccess={() => console.log}
         element={selectedElement}
         view={activeTab}
       />

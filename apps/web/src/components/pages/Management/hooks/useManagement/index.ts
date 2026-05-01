@@ -6,38 +6,30 @@ import { MANAGEMENT_TABS } from "../../constants"
 
 // Utils
 import { useManagementContext } from "../../contexts/ManagementContext"
-import { formatTimeLabel, getCompanyName, getJourneyName } from "../../utils"
+import { makeInitialEntity, makeTableData } from "./utils"
 
 // Types
 import type { TableRowData } from "@/components/structure/Table/types"
 import type { ManagementDrawerMethods } from "../../components/ManagementDrawer/types"
-import type {
-  Company,
-  Employee,
-  Journey,
-  ManagementEntity,
-  ManagementTabId,
-  ManagementTabOption,
-} from "../../types"
+import type { ManagementEntity, ManagementTabOption } from "../../types"
 
 export function useManagement() {
   // Refs
   const drawerRef = useRef<ManagementDrawerMethods>(null)
 
   // States
-  const [activeTab, setActiveTab] = useState<ManagementTabOption>(
-    MANAGEMENT_TABS[0]
-  )
-  const [selectedElement, setSelectedElement] =
-    useState<ManagementEntity | null>(null)
   const [drawerRequestKey, setDrawerRequestKey] = useState(0)
+  const [activeTab, setActiveTab] = useState(MANAGEMENT_TABS[0])
+  const [selectedElement, setSelectedElement] = useState(makeInitialEntity)
 
-  // Constants
+  // Hooks
   const { companies, employees, journeys, removeEntity } =
     useManagementContext()
+
+  // Constants
   const activeItems = getActiveItems()
   const tableData = useMemo(
-    () => makeTableData(activeTab.id, companies, employees, journeys),
+    () => buildTableData(),
     [activeTab.id, companies, employees, journeys]
   )
 
@@ -56,6 +48,11 @@ export function useManagement() {
     return journeys
   }
 
+  function buildTableData() {
+    const params = { tab: activeTab.id, companies, employees, journeys }
+    return makeTableData(params)
+  }
+
   function getRowEntity(row: TableRowData) {
     const rowIndex = tableData.indexOf(row)
     return activeItems[rowIndex]
@@ -69,10 +66,7 @@ export function useManagement() {
     const entity = getRowEntity(row)
     if (!entity) return
 
-    if (actionId === "remove") {
-      removeEntity(activeTab.id, entity.id)
-      return
-    }
+    if (actionId === "remove") return removeEntity(activeTab.id, entity.id)
 
     if (actionId === "edit") {
       setSelectedElement(entity)
@@ -81,7 +75,7 @@ export function useManagement() {
   }
 
   function handleAddClick() {
-    setSelectedElement(null)
+    setSelectedElement(makeInitialEntity)
     setDrawerRequestKey((currentValue) => currentValue + 1)
   }
 
@@ -95,60 +89,18 @@ export function useManagement() {
 
   function handleTabChange(tab: ManagementTabOption) {
     setActiveTab(tab)
-    setSelectedElement(null)
+    setSelectedElement(makeInitialEntity)
   }
 
   return {
     activeTab,
+    tableData,
     drawerRef,
     selectedElement,
-    tableData,
-    handleActionClick,
+    getRowKey,
     handleAddClick,
     handleRowSelect,
     handleTabChange,
-    getRowKey,
+    handleActionClick,
   }
-}
-
-function makeTableData(
-  tab: ManagementTabId,
-  companies: Company[],
-  employees: Employee[],
-  journeys: Journey[]
-) {
-  if (tab === "companies") {
-    return companies.map<TableRowData>((company) => ({
-      Empresa: { value: company.name },
-      CNPJ: { value: company.cnpj },
-      Funcionarios: {
-        value: company.employees,
-        type: "badge",
-        color: "bg-success-50 text-success-700",
-      },
-    }))
-  }
-
-  if (tab === "employees") {
-    return employees.map<TableRowData>((employee) => ({
-      Nome: { value: employee.name },
-      Email: { value: employee.email },
-      Cargo: { value: employee.role },
-      Empresa: { value: getCompanyName(companies, employee.companyId) },
-      Jornada: { value: getJourneyName(journeys, employee.journeyId) },
-    }))
-  }
-
-  return journeys.map<TableRowData>((journey) => ({
-    Nome: { value: journey.name },
-    Entrada: { value: formatTimeLabel(journey.startTime) },
-    Saida: { value: formatTimeLabel(journey.endTime) },
-    Intervalo: { value: formatTimeLabel(journey.interval) },
-    Escala: { value: journey.scale },
-    Funcionarios: {
-      value: journey.employees,
-      type: "badge",
-      color: "bg-success-50 text-success-700",
-    },
-  }))
 }

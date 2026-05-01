@@ -3,9 +3,9 @@ import type {
   AdjustmentRequestApiItem,
   AnalyticsDashboardResponse,
   ApiItemResponse,
-  ApiItemWithNotificationResponse,
   ApiListResponse,
   CompanyApiItem,
+  CreateUserApiResponse,
   HolidayApiItem,
   JourneyApiItem,
   RegisterTimeRecordResponse,
@@ -81,7 +81,7 @@ export async function createUser(payload: {
   journeyId?: number
   journeyValidFrom?: string
 }) {
-  const response = await PONTO_MAX_API.post<ApiItemWithNotificationResponse<UserApiItem>>(
+  const response = await PONTO_MAX_API.post<CreateUserApiResponse>(
     "users",
     payload
   )
