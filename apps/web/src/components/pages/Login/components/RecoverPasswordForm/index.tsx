@@ -1,9 +1,6 @@
 // External Libraries
 import React from "react"
 
-// Assets
-import ClockIcon from "@/assets/icons/clock.svg"
-
 // Components
 import { Button } from "@/components/structure/Button"
 import { Icon } from "@/components/structure/Icon"
@@ -20,7 +17,7 @@ export const RecoverPasswordForm: React.FC<Props> = ({
     <div className="w-full max-w-100" aria-labelledby="recover-password-title">
       <div className="flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse">
-          <Icon src={ClockIcon} size="1.25rem" />
+          <Icon name="clock" size="1.25rem" />
         </div>
 
         <Typography variant="b1" fontWeight="bold" value="Recuperar senha" />

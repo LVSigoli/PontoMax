@@ -20,7 +20,13 @@ export const SearchInput: React.FC<Props> = ({
 
   return (
     <label className={`relative block ${className}`}>
-      {startIcon ? <Icon src={startIcon} size="1.25rem" /> : null}
+      {startIcon ? (
+        <Icon
+          name={startIcon}
+          size="1.25rem"
+          className="text-content-muted"
+        />
+      ) : null}
 
       <input
         type="search"

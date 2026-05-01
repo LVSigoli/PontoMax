@@ -8,9 +8,6 @@ import { Table } from "@/components/structure/Table"
 import { TextArea } from "@/components/structure/TextArea"
 import { Typography } from "@/components/structure/Typography"
 
-// Assets
-import PlusIcon from "@/assets/icons/plus.svg"
-
 // Utils
 import { ADJUSTMENT_ACTIONS } from "./constants"
 
@@ -89,7 +86,7 @@ export const AdjustmentRequestSidePanel = forwardRef<
 
           <Button
             variant="text"
-            icon={PlusIcon}
+            icon="plus"
             iconPlacement="start"
             color="primary"
             value="Adicionar registro"

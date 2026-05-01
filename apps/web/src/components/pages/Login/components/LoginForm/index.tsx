@@ -7,11 +7,6 @@ import { Icon } from "@/components/structure/Icon"
 import { Input } from "@/components/structure/Input"
 import { Typography } from "@/components/structure/Typography"
 
-// Assets
-import ClockIcon from "@/assets/icons/clock.svg"
-import LockIcon from "@/assets/icons/lock.svg"
-import MailIcon from "@/assets/icons/mail.svg"
-
 // Hooks
 import { useLogin } from "./hooks"
 
@@ -38,7 +33,7 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
     >
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse">
-          <Icon src={ClockIcon} size="1.25rem" />
+          <Icon name="clock" size="1.25rem" />
         </div>
 
         <Typography variant="b1" fontWeight="bold" value="PontoMax" />
@@ -52,7 +47,7 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
       <div className="space-y-4">
         <Input
           title="email"
-          icon={MailIcon}
+          icon="mail"
           value={credential.email}
           placeholder="seu@email.com.br"
           onChange={(v) => handleCredentialChange("email", v)}
@@ -60,7 +55,7 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
 
         <Input
           title="senha"
-          icon={LockIcon}
+          icon="lock"
           value={credential.password}
           placeholder="Informe sua senha"
           onIconClick={handleIconClick}

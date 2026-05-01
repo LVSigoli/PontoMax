@@ -1,6 +1,6 @@
-import type { StaticImageData } from "next/image"
-import type { Key, ReactNode } from "react"
+import type { Key, ReactElement, ReactNode } from "react"
 
+import type { IconName } from "../Icon"
 import type { SelectionOption } from "../Select/types"
 
 export type TableCellType =
@@ -67,7 +67,7 @@ export type TableRowData = Record<string, TableCellData>
 export interface TableAction {
   id: string
   label: string
-  icon: ReactNode | string | StaticImageData
+  icon: IconName | ReactElement
   color?: string
 }
 

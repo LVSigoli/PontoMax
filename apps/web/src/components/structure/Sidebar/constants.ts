@@ -4,7 +4,7 @@ export const SIDEBAR_ITEMS: NavigationItem[] = [
   {
     id: "point",
     label: "Ponto",
-    icon: "point",
+    icon: "timer",
     href: "/",
   },
   {
@@ -16,25 +16,25 @@ export const SIDEBAR_ITEMS: NavigationItem[] = [
   {
     id: "analytics",
     label: "Análises",
-    icon: "analytics",
+    icon: "analysis",
     href: "/analytics",
   },
   {
     id: "management",
     label: "Gerenciamento",
-    icon: "management",
+    icon: "company",
     href: "/management",
   },
   {
     id: "holydays",
     label: "Feriados",
-    icon: "holiday,",
+    icon: "flag",
     href: "/holydays",
   },
   {
     id: "solicitations",
     label: "Ajustes Pendentes",
-    icon: "solicitation",
+    icon: "update",
     href: "/solicitations",
   },
 ]

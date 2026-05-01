@@ -5,9 +5,6 @@ import React from "react"
 import { Icon } from "@/components/structure/Icon"
 import { Typography } from "@/components/structure/Typography"
 
-// Assets
-import ClockIcon from "@/assets/icons/clock.svg"
-
 interface Props {
   className?: string
   showBorder?: boolean
@@ -28,8 +25,8 @@ export const SidebarHeader: React.FC<Props> = ({
   return (
     <div className={containerClassName}>
       <div className="flex items-center gap-3">
-        <span className=" relative  size-8  rounded-lg bg-brand-600 text-sm font-bold">
-          <Icon src={ClockIcon} placement="center" />
+        <span className=" relative  size-8  rounded-lg bg-brand-600 text-content-inverse text-sm font-bold">
+          <Icon name="clock" placement="center" />
         </span>
 
         <div className="flex flex-col gap-2 align-center">

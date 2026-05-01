@@ -1,9 +1,6 @@
 // External Libraries
 import React, { useEffect, useRef } from "react"
 
-// Assets
-import UpdateIcon from "@/assets/icons/update.svg"
-
 // Components
 import { Header } from "@/components/structure/Header"
 import { Sidebar } from "@/components/structure/Sidebar"
@@ -33,7 +30,7 @@ const POINT_HISTORY_ACTIONS: TableAction[] = [
     id: "request-adjustment",
     label: "Solicitar ajuste",
     color: "text-warning-700",
-    icon: UpdateIcon,
+    icon: "update",
   },
 ]
 

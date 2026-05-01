@@ -34,14 +34,28 @@ export const Input: React.FC<Props> = ({
     if (!icon || iconPlacement !== "start") return null
 
     return (
-      <Icon size="1rem" src={icon} placement="start" onClick={onIconClick} />
+      <Icon
+        size="1rem"
+        name={icon}
+        placement="start"
+        className="text-content-muted"
+        onClick={onIconClick}
+      />
     )
   }
 
   function renderEndIcon() {
     if (!icon || iconPlacement !== "end") return null
 
-    return <Icon size="1rem" src={icon} placement="end" onClick={onIconClick} />
+    return (
+      <Icon
+        size="1rem"
+        name={icon}
+        placement="end"
+        className="text-content-muted"
+        onClick={onIconClick}
+      />
+    )
   }
 
   function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {

@@ -1,9 +1,9 @@
-import type { StaticImageData } from "next/image"
+import type { IconName } from "../Icon"
 
 export interface Props {
   label?: string
   multi?: boolean
-  icon?: string | StaticImageData
+  icon?: IconName
   placement?: IconPlacement
   className?: string
   buttonClassName?: string

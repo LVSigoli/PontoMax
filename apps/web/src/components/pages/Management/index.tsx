@@ -1,9 +1,6 @@
 // External Libraries
 import React from "react"
 
-// Assets
-import PlusIcon from "@/assets/icons/plus.svg"
-
 // Components
 import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
@@ -70,7 +67,7 @@ const ManagementContent: React.FC = () => {
 
               <Button
                 value="Adicionar Novo"
-                icon={PlusIcon}
+                icon="plus"
                 iconPlacement="start"
                 className="min-w-68"
                 onClick={handleAddClick}
