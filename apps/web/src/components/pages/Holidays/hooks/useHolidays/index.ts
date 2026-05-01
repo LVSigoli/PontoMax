@@ -6,11 +6,11 @@ import { useHolidaysContext } from "../../contexts/HolidaysContext"
 
 // Types
 import type { TableRowData } from "@/components/structure/Table/types"
-import type { Holiday } from "../../types"
 import type { HolidayDrawerMethods } from "../../components/HolidayDrawer/types"
+import type { Holiday } from "../../types"
 
 // Utils
-import { formatHolidayDate, getHolidayStatusClass } from "../../utils"
+import { buildTableData } from "./utils"
 
 export function useHolidays() {
   // Refs
@@ -22,20 +22,7 @@ export function useHolidays() {
 
   // Constants
   const { holidays, removeHoliday } = useHolidaysContext()
-  const tableData = useMemo(
-    () =>
-      holidays.map<TableRowData>((holiday) => ({
-        "Nome do feriado": { value: holiday.name },
-        Data: { value: formatHolidayDate(holiday.date) },
-        Tipo: { value: holiday.type },
-        Status: {
-          value: holiday.status,
-          type: "badge",
-          color: getHolidayStatusClass(holiday.status),
-        },
-      })),
-    [holidays]
-  )
+  const tableData = useMemo(() => buildTableData(holidays), [holidays])
 
   // Effects
   useEffect(() => {
@@ -58,10 +45,7 @@ export function useHolidays() {
     const holiday = getHolidayByRow(row)
     if (!holiday) return
 
-    if (actionId === "remove") {
-      removeHoliday(holiday.id)
-      return
-    }
+    if (actionId === "remove") return removeHoliday(holiday.id)
 
     if (actionId === "edit") openDrawer(holiday)
   }
@@ -72,6 +56,7 @@ export function useHolidays() {
 
   function handleRowSelect(row: TableRowData) {
     const holiday = getHolidayByRow(row)
+
     if (!holiday) return
 
     openDrawer(holiday)

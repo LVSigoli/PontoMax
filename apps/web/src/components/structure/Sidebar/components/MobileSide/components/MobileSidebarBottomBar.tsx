@@ -32,15 +32,16 @@ export const MobileSidebarBottomBar: React.FC<MobileSidebarBottomBarProps> = ({
           )
         })}
 
-        <button
-          type="button"
+        <div
           onClick={onOpen}
-          aria-expanded={isOpen}
           aria-controls="mobile-navigation-panel"
           className="flex min-h-12 items-center justify-center rounded-xl px-2 text-center text-xs font-semibold text-content-secondary transition hover:bg-surface-muted"
         >
-          Mais
-        </button>
+          <div className="w-full flex-col items-center  place-items-center">
+            <Icon name="plus" layout="inline" />
+            Mais
+          </div>
+        </div>
       </nav>
     </div>
   )

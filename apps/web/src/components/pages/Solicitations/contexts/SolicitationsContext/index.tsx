@@ -1,6 +1,9 @@
 // External Libraries
 import { createContext, useContext, useEffect, useState } from "react"
 
+// Contexts
+import { useToastContext } from "@/contexts/ToastContext"
+
 // Services
 import { getAdjustmentRequests, reviewAdjustmentRequest } from "@/services/domain"
 
@@ -12,7 +15,12 @@ import type {
 } from "./types"
 
 // Utils
+import { getErrorMessage } from "@/utils/getErrorMessage"
 import { mapAdjustmentApiToSolicitation } from "../../utils"
+import {
+  mapSolicitationStatusToRequestStatus,
+  updateSolicitationsStatus,
+} from "./utils"
 
 const SolicitationsContext = createContext<SolicitationsContextValue | null>(
   null
@@ -23,6 +31,7 @@ export const SolicitationsProvider: React.FC<SolicitationsProviderProps> = ({
 }) => {
   const [solicitations, setSolicitations] = useState<Solicitation[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const { showToast } = useToastContext()
 
   useEffect(() => {
     void loadSolicitations()
@@ -34,7 +43,13 @@ export const SolicitationsProvider: React.FC<SolicitationsProviderProps> = ({
       const items = await getAdjustmentRequests()
       setSolicitations(items.map(mapAdjustmentApiToSolicitation))
     } catch (error) {
-      console.log(error)
+      showToast({
+        variant: "error",
+        message: getErrorMessage(
+          error,
+          "Nao foi possivel carregar as solicitacoes de ajuste."
+        ),
+      })
     } finally {
       setIsLoading(false)
     }
@@ -42,17 +57,31 @@ export const SolicitationsProvider: React.FC<SolicitationsProviderProps> = ({
 
   async function updateSolicitationStatus(id: number, status: SolicitationStatus) {
     try {
-      const requestStatus = status === "Aprovado" ? "APPROVED" : "REJECTED"
+      const requestStatus = mapSolicitationStatusToRequestStatus(status)
 
       await reviewAdjustmentRequest(id, { status: requestStatus })
 
       setSolicitations((currentSolicitations) =>
-        currentSolicitations.map((solicitation) =>
-          solicitation.id === id ? { ...solicitation, status } : solicitation
-        )
+        updateSolicitationsStatus(currentSolicitations, id, status)
       )
+
+      showToast({
+        variant: "success",
+        message:
+          status === "Aprovado"
+            ? "Solicitacao aprovada com sucesso."
+            : "Solicitacao recusada com sucesso.",
+      })
     } catch (error) {
-      console.log(error)
+      showToast({
+        variant: "error",
+        message: getErrorMessage(
+          error,
+          "Nao foi possivel atualizar o status da solicitacao."
+        ),
+      })
+
+      throw error
     }
   }
 

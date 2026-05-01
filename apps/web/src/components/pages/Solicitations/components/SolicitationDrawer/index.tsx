@@ -60,18 +60,22 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
       [handleClose, handleOpen, handleToggle]
     )
 
-    function handleApprove() {
+    async function handleApprove() {
       if (!element || !isPending) return
 
-      updateSolicitationStatus(element.id, "Aprovado")
-      handleClose()
+      try {
+        await updateSolicitationStatus(element.id, "Aprovado")
+        handleClose()
+      } catch {}
     }
 
-    function handleRefuse() {
+    async function handleRefuse() {
       if (!element || !isPending) return
 
-      updateSolicitationStatus(element.id, "Recusado")
-      handleClose()
+      try {
+        await updateSolicitationStatus(element.id, "Recusado")
+        handleClose()
+      } catch {}
     }
 
     function renderFooter() {

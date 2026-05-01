@@ -1,36 +1,42 @@
 // External Libraries
 import { useEffect, useMemo, useRef, useState } from "react"
 
+// Contexts
+import { useToastContext } from "@/contexts/ToastContext"
+
 // Services
-import type { WorkdayApiItem } from "@/services/domain"
 import {
   getTimeRecordsOverview,
   getTodayTimeRecords,
   registerTimeRecord,
+  type WorkdayApiItem,
 } from "@/services/domain"
-import { formatHoursWithMinutes, formatMinutes } from "@/services/utils"
+import { formatHoursWithMinutes } from "@/services/utils"
 
 // Types
-import type { PointRecord, WorkdaySummary } from "../types"
+import type { PointRecord, WorkdaySummary } from "../../types"
+import type { AdjustmentRequestSidePanelMethods } from "../../components/modals/AdjustmentRequestSidePanel/types"
+import { ConfirmationModalMethods } from "../../components/modals/ConfirmationModal/types"
+import type { DayHistorySidePanelMethods } from "../../components/modals/DayHistorySidePanel/types"
 
 // Utils
+import { getErrorMessage } from "@/utils/getErrorMessage"
 import {
   formatPointDate,
   formatPointTime,
   mapWorkdayToPointRecords,
   mapWorkdayToSummary,
   WORKDAY_TIMEZONE,
-} from "../utils"
-
-// Types
-import type { AdjustmentRequestSidePanelMethods } from "../components/modals/AdjustmentRequestSidePanel/types"
-import { ConfirmationModalMethods } from "../components/modals/ConfirmationModal/types"
-import type { DayHistorySidePanelMethods } from "../components/modals/DayHistorySidePanel/types"
-
-const POINT_REGISTER_HISTORY_PAGE_SIZE = 6
+} from "../../utils"
+import {
+  buildBalanceLabel,
+  calculateWorkedSeconds,
+  formatDurationClock,
+  POINT_REGISTER_HISTORY_PAGE_SIZE,
+} from "./utils"
 
 export function usePointRegister() {
-  //Refs
+  // Refs
   const adjustmentRequestSidePanelRef =
     useRef<AdjustmentRequestSidePanelMethods>(null)
   const confirmationModalRef = useRef<ConfirmationModalMethods>(null)
@@ -50,6 +56,10 @@ export function usePointRegister() {
     PointRecord[]
   >([])
 
+  // Contexts
+  const { showToast } = useToastContext()
+
+  // Constants
   const currentDate = now ? formatPointDate(now) : "--"
   const currentTime = now ? formatPointTime(now) : "--:--:--"
 
@@ -83,21 +93,12 @@ export function usePointRegister() {
     [currentWorkday]
   )
 
-  const balanceLabel = useMemo(() => {
-    if (!currentWorkday || currentWorkday.timeEntries.length === 0) {
-      return "Aguardando registros"
-    }
+  const balanceLabel = useMemo(
+    () => buildBalanceLabel(currentWorkday),
+    [currentWorkday]
+  )
 
-    const balanceMinutes =
-      currentWorkday.workedMinutes - currentWorkday.scheduledMinutes
-
-    if (balanceMinutes >= 0) {
-      return `Saldo positivo ${formatMinutes(balanceMinutes)}`
-    }
-
-    return `Faltam ${formatMinutes(Math.abs(balanceMinutes))}`
-  }, [currentWorkday])
-
+  // Effects
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setNow(new Date())
@@ -118,41 +119,31 @@ export function usePointRegister() {
   }, [])
 
   // Functions
+  async function syncCurrentWorkday() {
+    const nextCurrentWorkday = await getTodayTimeRecords()
+    setCurrentWorkday(nextCurrentWorkday)
+  }
+
+  async function syncOverviewWorkdays() {
+    const overviewResponse = await getTimeRecordsOverview({
+      page: 1,
+      pageSize: POINT_REGISTER_HISTORY_PAGE_SIZE,
+    })
+
+    setOverviewWorkdays(overviewResponse.items)
+  }
+
   async function loadPointRegisterData() {
     try {
-      const [nextCurrentWorkday, overviewResponse] = await Promise.all([
-        getTodayTimeRecords(),
-        getTimeRecordsOverview({
-          page: 1,
-          pageSize: POINT_REGISTER_HISTORY_PAGE_SIZE,
-        }),
-      ])
-
-      setCurrentWorkday(nextCurrentWorkday)
-      setOverviewWorkdays(overviewResponse.items)
-    } catch (e) {
-      console.log(e)
-    }
-  }
-
-  async function loadCurrentWorkday() {
-    try {
-      const nextCurrentWorkday = await getTodayTimeRecords()
-      setCurrentWorkday(nextCurrentWorkday)
-    } catch (e) {
-      console.log(e)
-    }
-  }
-
-  async function loadOverviewWorkdays() {
-    try {
-      const overviewResponse = await getTimeRecordsOverview({
-        page: 1,
-        pageSize: POINT_REGISTER_HISTORY_PAGE_SIZE,
+      await Promise.all([syncCurrentWorkday(), syncOverviewWorkdays()])
+    } catch (error) {
+      showToast({
+        variant: "error",
+        message: getErrorMessage(
+          error,
+          "Nao foi possivel carregar os dados do registro de ponto."
+        ),
       })
-      setOverviewWorkdays(overviewResponse.items)
-    } catch (e) {
-      console.log(e)
     }
   }
 
@@ -161,9 +152,20 @@ export function usePointRegister() {
       await registerTimeRecord({
         timezone: WORKDAY_TIMEZONE,
       })
-      await loadCurrentWorkday()
-    } catch (e) {
-      console.log(e)
+
+      await Promise.all([syncCurrentWorkday(), syncOverviewWorkdays()])
+
+      showToast({
+        variant: "success",
+        message: "Ponto registrado com sucesso.",
+      })
+    } catch (error) {
+      showToast({
+        variant: "error",
+        message: getErrorMessage(error, "Nao foi possivel registrar o ponto."),
+      })
+
+      throw error
     }
   }
 
@@ -185,9 +187,19 @@ export function usePointRegister() {
   }
 
   async function handleAdjustmentRequestSubmitted() {
-    await loadOverviewWorkdays()
-    setAdjustmentRequestWorkdayDate(undefined)
-    setAdjustmentRequestRecords([])
+    try {
+      await syncOverviewWorkdays()
+      setAdjustmentRequestWorkdayDate(undefined)
+      setAdjustmentRequestRecords([])
+    } catch (error) {
+      showToast({
+        variant: "error",
+        message: getErrorMessage(
+          error,
+          "Nao foi possivel atualizar o historico de ponto."
+        ),
+      })
+    }
   }
 
   return {
@@ -210,55 +222,4 @@ export function usePointRegister() {
     handleConfirmationModalOpen,
     handleHistoryRecordSelect,
   }
-}
-
-function calculateWorkedSeconds(
-  entries: WorkdayApiItem["timeEntries"],
-  now: Date
-) {
-  let totalSeconds = 0
-  let openEntryAt: Date | null = null
-
-  for (const entry of [...entries].sort(
-    (left, right) =>
-      new Date(left.recordedAt).getTime() - new Date(right.recordedAt).getTime()
-  )) {
-    const recordedAt = new Date(entry.recordedAt)
-
-    if (Number.isNaN(recordedAt.getTime())) {
-      continue
-    }
-
-    if (entry.kind === "ENTRY") {
-      openEntryAt = recordedAt
-      continue
-    }
-
-    if (!openEntryAt) {
-      continue
-    }
-
-    totalSeconds += Math.max(
-      0,
-      Math.floor((recordedAt.getTime() - openEntryAt.getTime()) / 1000)
-    )
-    openEntryAt = null
-  }
-
-  if (openEntryAt) {
-    totalSeconds += Math.max(
-      0,
-      Math.floor((now.getTime() - openEntryAt.getTime()) / 1000)
-    )
-  }
-
-  return totalSeconds
-}
-
-function formatDurationClock(totalSeconds: number) {
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
 }

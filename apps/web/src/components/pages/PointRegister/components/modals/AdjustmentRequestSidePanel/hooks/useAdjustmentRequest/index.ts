@@ -1,6 +1,9 @@
 // External Libraries
 import { useEffect, useMemo, useRef, useState } from "react"
 
+// Contexts
+import { useToastContext } from "@/contexts/ToastContext"
+
 // Constants
 import { POINT_TYPES } from "../../constants"
 
@@ -11,6 +14,7 @@ import { createAdjustmentRequest } from "@/services/domain"
 import type { SelectionOption } from "@/components/structure/Select/types"
 import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
 import type { TableRowData } from "@/components/structure/Table/types"
+import { getErrorMessage } from "@/utils/getErrorMessage"
 import type { PointRecord } from "../../../../../types"
 import { AdjustmentRequestForm, UseAdjustmentRequestParams } from "./types"
 
@@ -26,6 +30,9 @@ export function useAdjustmentRequest({
   const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [form, setForm] = useState<AdjustmentRequestForm>(makeInitialForm)
+
+  // Contexts
+  const { showToast } = useToastContext()
 
   // Effects
   useEffect(() => {
@@ -127,9 +134,20 @@ export function useAdjustmentRequest({
 
       await onSubmitted?.()
 
+      showToast({
+        variant: "success",
+        message: "Solicitacao de ajuste enviada com sucesso.",
+      })
+
       sidePanelRef.current?.close()
     } catch (error) {
-      console.log(error)
+      showToast({
+        variant: "error",
+        message: getErrorMessage(
+          error,
+          "Nao foi possivel enviar a solicitacao de ajuste."
+        ),
+      })
     } finally {
       setIsSubmitting(false)
     }

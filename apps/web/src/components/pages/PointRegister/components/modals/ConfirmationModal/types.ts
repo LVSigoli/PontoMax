@@ -4,5 +4,5 @@ export type ConfirmationModalMethods = ModalMethods
 
 export interface ConfirmationModalProps {
   currentTime: string
-  onConfirm: () => void
+  onConfirm: () => Promise<void> | void
 }

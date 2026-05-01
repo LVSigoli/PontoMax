@@ -6,11 +6,12 @@ import { useSolicitationsContext } from "../../contexts/SolicitationsContext"
 
 // Types
 import type { SelectionOption } from "@/components/structure/Select/types"
-import type {
-  Solicitation,
-  SolicitationStatus,
-} from "../../types"
 import type { SolicitationDrawerMethods } from "../../components/SolicitationDrawer/types"
+import type { Solicitation } from "../../types"
+import type { SolicitationStatusFilter } from "./types"
+
+// Utils
+import { filterSolicitations } from "./utils"
 
 export function useSolicitations() {
   // Refs
@@ -18,7 +19,8 @@ export function useSolicitations() {
 
   // States
   const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [statusFilter, setStatusFilter] =
+    useState<SolicitationStatusFilter>("all")
   const [selectedElement, setSelectedElement] = useState<Solicitation | null>(
     null
   )
@@ -26,17 +28,10 @@ export function useSolicitations() {
 
   // Constants
   const { solicitations } = useSolicitationsContext()
-  const filteredSolicitations = useMemo(() => {
-    return solicitations.filter((solicitation) => {
-      const matchesSearch = solicitation.userName
-        .toLowerCase()
-        .includes(search.trim().toLowerCase())
-      const matchesStatus =
-        statusFilter === "all" || solicitation.status === statusFilter
-
-      return matchesSearch && matchesStatus
-    })
-  }, [search, solicitations, statusFilter])
+  const filteredSolicitations = useMemo(
+    () => filterSolicitations({ search, solicitations, statusFilter }),
+    [search, solicitations, statusFilter]
+  )
 
   // Effects
   useEffect(() => {
@@ -74,4 +69,4 @@ export function useSolicitations() {
   }
 }
 
-export type { SolicitationStatus }
+export type { SolicitationStatus } from "../../types"
