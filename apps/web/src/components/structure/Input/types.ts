@@ -9,6 +9,7 @@ export interface Props {
   type?: string
   mask?: MaskName
   placeholder: string
+  disabled?: boolean
   iconPlacement?: IconPlacement
   onChange: (v: string) => void
 }

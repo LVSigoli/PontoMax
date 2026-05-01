@@ -10,8 +10,11 @@ export const SearchInput: React.FC<Props> = ({
   placeHolder = "Buscar...",
   startIcon,
   className = "",
+  disabled = false,
 }) => {
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+    if (disabled) return
+
     search(event.target.value)
   }
 
@@ -23,7 +26,8 @@ export const SearchInput: React.FC<Props> = ({
         type="search"
         value={value}
         placeholder={placeHolder}
-        className={`h-11 w-full rounded-lg border border-border-default bg-surface-muted text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-border-focus focus:bg-surface-card ${
+        disabled={disabled}
+        className={`h-11 w-full rounded-lg border border-border-default bg-surface-muted text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-border-focus focus:bg-surface-card disabled:cursor-default disabled:caret-transparent disabled:pointer-events-none disabled:text-content-muted ${
           startIcon ? "pl-12 pr-4" : "px-4"
         }`}
         onChange={handleChange}

@@ -18,6 +18,7 @@ export const Input: React.FC<Props> = ({
   mask,
   type,
   placeholder,
+  disabled = false,
   iconPlacement = "start",
   onChange,
 }) => {
@@ -41,6 +42,8 @@ export const Input: React.FC<Props> = ({
   }
 
   function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    if (disabled) return
+
     const value = event.target.value
     if (!mask) return onChange(value)
 
@@ -60,7 +63,8 @@ export const Input: React.FC<Props> = ({
           type={type}
           value={value}
           placeholder={placeholder}
-          className={`h-11 w-full rounded-md border border-border-default bg-surface-card text-sm text-content-primary outline-none transition placeholder:text-content-muted ${getInputpadding()}`}
+          disabled={disabled}
+          className={`h-11 w-full rounded-md border border-border-default bg-surface-card text-sm text-content-primary outline-none transition placeholder:text-content-muted disabled:cursor-default disabled:caret-transparent disabled:pointer-events-none disabled:bg-surface-muted disabled:text-content-muted ${getInputpadding()}`}
           onChange={handleInputChange}
         />
 

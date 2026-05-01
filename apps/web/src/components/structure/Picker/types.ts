@@ -7,4 +7,5 @@ export interface Props {
   label?: string
   placeholder?: string
   className?: string
+  disabled?: boolean
 }

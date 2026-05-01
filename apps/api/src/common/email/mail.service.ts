@@ -28,6 +28,10 @@ export async function sendMail(params: SendMailParams): Promise<MailDeliveryResu
     };
   }
 
+  if (env.NODE_ENV === 'production') {
+    throw new Error('Missing RESEND_API_KEY for production e-mail delivery.');
+  }
+
   return writeMailToOutbox(params);
 }
 

@@ -71,7 +71,7 @@ pnpm run format:check
 
 ## Banco E Ambiente
 
-O projeto agora esta preparado para `PostgreSQL`, pensando em deploy real com `Railway` para a API e `Vercel` para o frontend.
+O projeto agora esta preparado para `PostgreSQL`, pensando em deploy real com `Neon` para o banco e `Vercel` para frontend e API.
 
 Fluxo recomendado para ambiente local ou homologacao:
 
@@ -90,13 +90,15 @@ Detalhes do setup:
 
 - banco padrao: `PostgreSQL`
 - `DATABASE_URL` e obrigatoria
+- `DIRECT_URL` e recomendada para migrations no Neon
 - `pnpm run db:prepare`: gera o client Prisma, aplica as migrations e roda a seed demo
 - migration inicial: `prisma/migrations/20260430195000_init_postgres/migration.sql`
 
-Exemplo de `DATABASE_URL` local:
+Exemplo de conexoes no Neon:
 
 ```bash
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/pontomax?schema=public"
+DATABASE_URL="postgresql://USER:PASSWORD@EP-EXAMPLE-pooler.REGION.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+DIRECT_URL="postgresql://USER:PASSWORD@EP-EXAMPLE.REGION.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 ```
 
 ## Credenciais Demo
@@ -106,14 +108,14 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/pontomax?schema=publ
 
 ## Deploy Recomendado
 
-- frontend `apps/web`: `Vercel`
-- backend `apps/api`: `Railway`
-- banco: `PostgreSQL`
+- frontend `apps/web`: projeto `Vercel`
+- backend `apps/api`: projeto `Vercel` com `Express`
+- banco: `Neon Postgres`
 
 Variaveis principais:
 
-- Vercel: `NEXT_PUBLIC_API_URL`
-- Railway/API: `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`, `APP_URL`, `MAIL_FROM`, `RESEND_API_KEY`
+- Vercel/web: `NEXT_PUBLIC_API_URL`
+- Vercel/api: `DATABASE_URL`, `DIRECT_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN`, `APP_URL`, `MAIL_FROM`, `RESEND_API_KEY`
 
 ## Diretrizes Tecnicas
 

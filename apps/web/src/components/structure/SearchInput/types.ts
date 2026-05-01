@@ -4,4 +4,5 @@ export interface Props {
   placeHolder?: string
   startIcon?: string
   className?: string
+  disabled?: boolean
 }

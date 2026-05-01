@@ -13,9 +13,12 @@ export const Picker: React.FC<Props> = ({
   label,
   placeholder,
   className = "",
+  disabled = false,
   onChange,
 }) => {
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+    if (disabled) return
+
     onChange(event.target.value)
   }
 
@@ -28,7 +31,8 @@ export const Picker: React.FC<Props> = ({
           type={getPickerInputType(type)}
           value={formatPickerValue(value)}
           placeholder={placeholder}
-          className="h-11 w-full rounded-md border border-border-default bg-surface-card px-3 pr-10 text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-border-focus"
+          disabled={disabled}
+          className="h-11 w-full rounded-md border border-border-default bg-surface-card px-3 pr-10 text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-border-focus disabled:cursor-default disabled:caret-transparent disabled:pointer-events-none disabled:bg-surface-muted disabled:text-content-muted"
           onChange={handleChange}
         />
 
