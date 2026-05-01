@@ -1,6 +1,5 @@
 import cors from "cors"
 import express from "express"
-import * as helmet from "helmet"
 
 import { errorHandlerMiddleware } from "./common/middlewares/error-handler.middleware.js"
 import { notFoundMiddleware } from "./common/middlewares/not-found.middleware.js"
@@ -10,7 +9,6 @@ import { modulesRouter } from "./modules/index.js"
 export function createApp() {
   const app = express()
 
-  app.use(helmet.default())
   app.use(cors())
   app.use(express.json())
 
