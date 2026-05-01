@@ -1,3 +1,5 @@
+import { createRequire } from "node:module"
+
 import cors from "cors"
 import express from "express"
 
@@ -6,9 +8,13 @@ import { notFoundMiddleware } from "./common/middlewares/not-found.middleware.js
 import { env } from "./config/env.js"
 import { modulesRouter } from "./modules/index.js"
 
+const require = createRequire(import.meta.url)
+const helmet = require("helmet")
+
 export function createApp() {
   const app = express()
 
+  app.use(helmet())
   app.use(cors())
   app.use(express.json())
 
