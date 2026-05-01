@@ -10,12 +10,20 @@ export const Icon: React.FC<Props> = ({
   alt = "",
   size = "1rem",
   placement = "start",
+  onClick,
 }) => {
   const placementClass = {
     center: "left-1/2 -translate-x-1/2",
     end: "right-3",
     start: "left-3",
   }[placement]
+
+  const cursorStyles = onClick ? "cursor-pointer" : "cursor-default"
+
+  // Functions
+  function handleClick() {
+    if (onClick) onClick()
+  }
 
   return (
     <Image
@@ -24,7 +32,8 @@ export const Icon: React.FC<Props> = ({
       width={16}
       height={16}
       style={{ width: size, height: size }}
-      className={`pointer-events-none absolute top-1/2 -translate-y-1/2 object-contain text-content-muted ${placementClass}`}
+      className={` absolute top-1/2 -translate-y-1/2 object-contain text-content-muted ${placementClass} ${cursorStyles}`}
+      onClick={handleClick}
     />
   )
 }

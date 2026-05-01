@@ -21,6 +21,7 @@ export const Input: React.FC<Props> = ({
   disabled = false,
   iconPlacement = "start",
   onChange,
+  onIconClick,
 }) => {
   function getInputpadding() {
     if (!icon) return "pl-2"
@@ -32,13 +33,15 @@ export const Input: React.FC<Props> = ({
   function renderStartIcon() {
     if (!icon || iconPlacement !== "start") return null
 
-    return <Icon size="1rem" src={icon} placement="start" />
+    return (
+      <Icon size="1rem" src={icon} placement="start" onClick={onIconClick} />
+    )
   }
 
   function renderEndIcon() {
     if (!icon || iconPlacement !== "end") return null
 
-    return <Icon size="1rem" src={icon} placement="end" />
+    return <Icon size="1rem" src={icon} placement="end" onClick={onIconClick} />
   }
 
   function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {

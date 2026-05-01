@@ -1,6 +1,6 @@
 import type { MaskName } from "@/services/maskModule"
 
-type IconPlacement = "start" | "end" | "left" | "right"
+type IconPlacement = "start" | "end"
 
 export interface Props {
   title: string
@@ -12,4 +12,5 @@ export interface Props {
   disabled?: boolean
   iconPlacement?: IconPlacement
   onChange: (v: string) => void
+  onIconClick?: () => void
 }

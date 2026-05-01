@@ -5,4 +5,5 @@ export interface Props {
   size?: string
   alt?: string
   placement?: "start" | "end" | "center"
+  onClick?: () => void
 }

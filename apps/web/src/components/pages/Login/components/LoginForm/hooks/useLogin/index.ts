@@ -1,7 +1,7 @@
 // External Libraries
-import { useState } from "react"
-import type { FormEvent } from "react"
 import { useRouter } from "next/router"
+import type { FormEvent } from "react"
+import { useState } from "react"
 
 // Contexts
 import { useAuth } from "@/contexts/AuthContext"
@@ -10,9 +10,9 @@ import { useAuth } from "@/contexts/AuthContext"
 import { makeInitialCredential } from "./utils"
 
 // Types
-import { Credential, UseLoginResult } from "./types"
+import { Credential } from "./types"
 
-export function useLogin(): UseLoginResult {
+export function useLogin() {
   // Hooks
   const router = useRouter()
   const { login } = useAuth()
@@ -21,6 +21,7 @@ export function useLogin(): UseLoginResult {
   const [credential, setCredential] = useState(makeInitialCredential)
   const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPassWordType, setIsPasswordType] = useState(true)
 
   // Functions
   function handleCredentialChange(key: keyof Credential, value: string) {
@@ -30,6 +31,10 @@ export function useLogin(): UseLoginResult {
       ...currentCredential,
       [key]: value,
     }))
+  }
+
+  function handleIconClick() {
+    setIsPasswordType((prev) => !prev)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -65,7 +70,9 @@ export function useLogin(): UseLoginResult {
       await router.push("/")
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Nao foi possivel realizar o login.",
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel realizar o login."
       )
     } finally {
       setIsSubmitting(false)
@@ -76,7 +83,9 @@ export function useLogin(): UseLoginResult {
     credential,
     errorMessage,
     isSubmitting,
+    isPassWordType,
     handleCredentialChange,
     handleSubmit,
+    handleIconClick,
   }
 }

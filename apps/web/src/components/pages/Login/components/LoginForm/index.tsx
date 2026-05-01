@@ -22,14 +22,20 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
   // Hooks
   const {
     credential,
-    errorMessage,
     isSubmitting,
-    handleCredentialChange,
+    errorMessage,
+    isPassWordType,
     handleSubmit,
+    handleIconClick,
+    handleCredentialChange,
   } = useLogin()
 
   return (
-    <form className="w-full max-w-90" aria-labelledby="login-title" onSubmit={handleSubmit}>
+    <form
+      className="w-full max-w-90"
+      aria-labelledby="login-title"
+      onSubmit={handleSubmit}
+    >
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse">
           <Icon src={ClockIcon} size="1.25rem" />
@@ -40,12 +46,6 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
         <Typography
           variant="b2"
           value="Sistema de Gestao de Ponto Eletronico"
-        />
-
-        <Typography
-          className="mt-3 text-center text-content-muted"
-          variant="caption"
-          value="Demo: demo@pontomax.com.br | senha: 123456"
         />
       </div>
 
@@ -61,9 +61,10 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
         <Input
           title="senha"
           icon={LockIcon}
-          type="password"
           value={credential.password}
           placeholder="Informe sua senha"
+          onIconClick={handleIconClick}
+          type={isPassWordType ? "password" : "text"}
           onChange={(v) => handleCredentialChange("password", v)}
         />
       </div>
