@@ -4,7 +4,6 @@ import { Icon } from "@/components/structure/Icon"
 import type { MobileSidebarBottomBarProps } from "../types"
 
 export const MobileSidebarBottomBar: React.FC<MobileSidebarBottomBarProps> = ({
-  isOpen,
   items,
   onOpen,
   isItemActive,
