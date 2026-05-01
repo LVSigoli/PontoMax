@@ -1,8 +1,13 @@
 import Link from "next/link"
 
+import { Icon } from "@/components/structure/Icon"
 import { Props } from "./types"
 
-export const SidebarItem: React.FC<Props> = ({ isActive, item, onClick }) => {
+export const SidebarItem: React.FC<Props> = ({
+  isActive,
+  item,
+  onClick,
+}) => {
   // Constants
   const itemStyle = isActive
     ? "bg-brand-50 text-brand-700"
@@ -20,7 +25,16 @@ export const SidebarItem: React.FC<Props> = ({ isActive, item, onClick }) => {
 
   return (
     <Link className={className} href={item.href} onClick={onClick}>
-      {item.label}
+      <div className="w-full flex flex-row items-center gap-1.5">
+        <Icon
+          name={item.icon}
+          size="1rem"
+          layout="inline"
+          className="text-current"
+        />
+
+        {item.label}
+      </div>
     </Link>
   )
 }

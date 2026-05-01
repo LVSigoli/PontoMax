@@ -1,4 +1,4 @@
-import type { NavigationItem } from "./types"
+import type { NavigationItem } from "../types"
 
 export const SIDEBAR_ITEMS: NavigationItem[] = [
   {
@@ -13,6 +13,9 @@ export const SIDEBAR_ITEMS: NavigationItem[] = [
     icon: "history",
     href: "/history",
   },
+]
+
+export const ADMIN_ITEMS: NavigationItem[] = [
   {
     id: "analytics",
     label: "Análises",
@@ -37,4 +40,12 @@ export const SIDEBAR_ITEMS: NavigationItem[] = [
     icon: "update",
     href: "/solicitations",
   },
+]
+
+// Constants
+export const ADMIN_ROLES = [
+  "PLATFORM_ADMIN",
+  "CLIENT_ADMIN",
+  "COMPANY_ADMIN",
+  "MANAGER",
 ]

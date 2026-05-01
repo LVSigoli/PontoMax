@@ -18,10 +18,10 @@ export function useLogin() {
   const { login } = useAuth()
 
   // States
-  const [credential, setCredential] = useState(makeInitialCredential)
   const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPassWordType, setIsPasswordType] = useState(true)
+  const [credential, setCredential] = useState(makeInitialCredential)
 
   // Functions
   function handleCredentialChange(key: keyof Credential, value: string) {
@@ -55,6 +55,8 @@ export function useLogin() {
       setErrorMessage("")
 
       const response = await login({ email, password })
+
+      if (!response) return
 
       if (response.requiresPasswordChange) {
         await router.push({

@@ -16,11 +16,6 @@ export interface AuthSession {
   user: AuthUser
 }
 
-export interface LoginPayload {
-  email: string
-  password: string
-}
-
 export interface PasswordChangeRequiredLogin {
   requiresPasswordChange: true
   resetToken: string
@@ -29,3 +24,8 @@ export interface PasswordChangeRequiredLogin {
 }
 
 export type LoginResponse = AuthSession | PasswordChangeRequiredLogin
+
+export interface LoginPayload {
+  email: string
+  password: string
+}
