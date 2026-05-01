@@ -25,11 +25,16 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
     handleCredentialChange,
   } = useLogin()
 
+  async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    await handleSubmit()
+  }
+
   return (
     <form
       className="w-full max-w-90"
       aria-labelledby="login-title"
-      onSubmit={handleSubmit}
+      onSubmit={handleFormSubmit}
     >
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse">
@@ -75,6 +80,7 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
       <Button
         fitWidth
         variant="text"
+        type="button"
         value="Esqueci minha senha"
         onClick={onForgotPasswordClick}
       />

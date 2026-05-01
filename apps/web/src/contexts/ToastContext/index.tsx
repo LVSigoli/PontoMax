@@ -20,12 +20,12 @@ interface ToastItem extends Required<ShowToastParams> {
   id: number
 }
 
-const TOAST_DURATION = 3000
+const TOAST_DURATION = 5000
 
 const TOAST_VARIANTS: Record<ToastVariant, string> = {
-  success: "border-success-200 bg-success-500 text-white",
-  error: "border-danger-200 bg-danger-50 text-danger-800",
-  warning: "border-warning-200 bg-warning-50 text-warning-800",
+  success: "bg-success-500 text-white border-none",
+  error: "bg-danger-500 text-white border-none",
+  warning: "bg-warning-500 text-white border-none",
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
@@ -91,7 +91,7 @@ export const ToastProvider: React.FC<Props> = ({ children }) => {
     <ToastContext.Provider value={value}>
       {children}
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[120] flex items-center justify-center px-4">
+      <div className="pointer-events-none border-none outline-none fixed inset-x-0 bottom-4 z-[120] flex items-center justify-center px-4">
         <div className="flex w-full max-w-sm flex-col gap-3">
           {toasts.map((toast) => (
             <div

@@ -12,14 +12,14 @@ import "@/styles/globals.css"
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <AuthProvider>
-      <ToastProvider>
+    <ToastProvider>
+      <AuthProvider>
         <ModalProvider>
           <SidePanelProvider>
             <Component {...pageProps} />
           </SidePanelProvider>
         </ModalProvider>
-      </ToastProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </ToastProvider>
   )
 }

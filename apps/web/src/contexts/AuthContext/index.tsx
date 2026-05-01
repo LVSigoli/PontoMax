@@ -29,6 +29,7 @@ interface Props {
 }
 
 export const AuthProvider: React.FC<Props> = ({ children }) => {
+  // States
   const [session, setSession] = useState<AuthSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -73,18 +74,14 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
   }
 
   async function login(payload: LoginPayload) {
-    try {
-      const nextSession = await postLogin(payload)
+    const nextSession = await postLogin(payload)
 
-      if (!nextSession.requiresPasswordChange) {
-        saveAuthSession(nextSession)
-        setSession(nextSession)
-      }
-
-      return nextSession
-    } catch (e) {
-      console.log(e)
+    if (!nextSession.requiresPasswordChange) {
+      saveAuthSession(nextSession)
+      setSession(nextSession)
     }
+
+    return nextSession
   }
 
   async function logout() {

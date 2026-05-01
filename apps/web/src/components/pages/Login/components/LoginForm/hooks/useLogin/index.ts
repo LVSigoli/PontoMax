@@ -1,6 +1,5 @@
 // External Libraries
 import { useRouter } from "next/router"
-import type { FormEvent } from "react"
 import { useState } from "react"
 
 // Contexts
@@ -10,12 +9,14 @@ import { useAuth } from "@/contexts/AuthContext"
 import { makeInitialCredential } from "./utils"
 
 // Types
+import { useToastContext } from "@/contexts/ToastContext"
 import { Credential } from "./types"
 
 export function useLogin() {
   // Hooks
   const router = useRouter()
   const { login } = useAuth()
+  const { showToast } = useToastContext()
 
   // States
   const [errorMessage, setErrorMessage] = useState("")
@@ -37,9 +38,7 @@ export function useLogin() {
     setIsPasswordType((prev) => !prev)
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
+  async function handleSubmit() {
     if (isSubmitting) return
 
     const email = credential.email.trim().toLowerCase()
@@ -52,7 +51,6 @@ export function useLogin() {
 
     try {
       setIsSubmitting(true)
-      setErrorMessage("")
 
       const response = await login({ email, password })
 
@@ -71,11 +69,8 @@ export function useLogin() {
 
       await router.push("/")
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Nao foi possivel realizar o login."
-      )
+      console.log(error)
+      showToast({ variant: "error", message: "Erro ao realizar login" })
     } finally {
       setIsSubmitting(false)
     }
