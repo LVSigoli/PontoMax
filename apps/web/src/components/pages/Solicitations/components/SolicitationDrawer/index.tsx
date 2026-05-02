@@ -6,7 +6,6 @@ import { Button } from "@/components/structure/Button"
 import { SidePanel } from "@/components/structure/SidePanel"
 import { Table } from "@/components/structure/Table"
 import { TextArea } from "@/components/structure/TextArea"
-import { Typography } from "@/components/structure/Typography"
 
 // Contexts
 import { useSolicitationsContext } from "../../contexts/SolicitationsContext"
@@ -17,7 +16,7 @@ import type { TableRowData } from "@/components/structure/Table/types"
 import type { Props, SolicitationDrawerMethods } from "./types"
 
 // Utils
-import { getPointTypeClass } from "../../utils"
+import { formatSolicitationDate, getPointTypeClass } from "../../utils"
 
 export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
   ({ element }, ref) => {
@@ -28,6 +27,9 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
     const { updateSolicitationStatus } = useSolicitationsContext()
 
     const isPending = element?.status === "Pendente"
+    const subtitle = element
+      ? `${element.userName} • ${formatSolicitationDate(element.requestDate)}`
+      : "Revise os registros e a justificativa da solicitacao"
 
     const tableData =
       element?.points.map<TableRowData>((point) => ({
@@ -110,17 +112,13 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
     return (
       <SidePanel
         ref={sidePanelRef}
-        widthClassName="max-w-[504px]"
+        title="Solicitacao de ajuste"
+        subtitle={subtitle}
         className="bg-surface-page"
+        widthClassName="max-w-[504px]"
       >
         <div className="flex min-h-full flex-col">
           <div className="flex-1 overflow-y-auto px-4 py-7 sm:px-5">
-            <Typography
-              variant="h4"
-              value="SOLICITACAO DE AJUSTE"
-              className="uppercase tracking-[0.08em]"
-            />
-
             <Table
               data={tableData}
               minWidth="100%"

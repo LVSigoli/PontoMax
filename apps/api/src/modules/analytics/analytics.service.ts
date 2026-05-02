@@ -1,8 +1,14 @@
 import { subDays } from './date-helpers.js';
 
+import type { Journey, UserJourneyAssignment } from '@prisma/client';
+
 import { prisma } from '../../lib/prisma.js';
 import { getDateOnly } from '../../common/utils/date.js';
 import { getUserWorkdaySummary } from '../time-records/time-records.service.js';
+
+type JourneyAssignmentWithJourney = UserJourneyAssignment & {
+  journey: Journey;
+};
 
 function getDateKey(value: Date) {
   return value.toISOString().slice(0, 10);
@@ -23,13 +29,96 @@ function formatShortDayLabel(value: Date) {
     .replace(',', '');
 }
 
+function diffInDays(start: Date, end: Date) {
+  return Math.floor((end.getTime() - start.getTime()) / 86400000);
+}
+
+function findJourneyAssignmentForDate(
+  assignments: JourneyAssignmentWithJourney[],
+  userId: number,
+  date: Date,
+) {
+  const dateTime = date.getTime();
+
+  for (let index = assignments.length - 1; index >= 0; index -= 1) {
+    const assignment = assignments[index];
+
+    if (assignment.userId !== userId) {
+      continue;
+    }
+
+    const validFrom = assignment.validFrom.getTime();
+    const validTo = assignment.validTo ? assignment.validTo.getTime() : null;
+
+    if (validFrom <= dateTime && (validTo === null || validTo >= dateTime)) {
+      return assignment;
+    }
+  }
+
+  return null;
+}
+
+function isScheduledWorkday(assignment: JourneyAssignmentWithJourney, date: Date) {
+  const scaleCode = assignment.journey.scaleCode.trim().toUpperCase();
+
+  if (scaleCode === '5X2') {
+    const weekday = date.getUTCDay();
+    return weekday >= 1 && weekday <= 5;
+  }
+
+  if (scaleCode === '6X1') {
+    return date.getUTCDay() !== 0;
+  }
+
+  if (scaleCode === '12X36') {
+    return diffInDays(assignment.validFrom, date) % 2 === 0;
+  }
+
+  const cycleMatch = scaleCode.match(/^(\d+)X(\d+)$/);
+
+  if (!cycleMatch) {
+    return false;
+  }
+
+  const workDays = Number(cycleMatch[1]);
+  const offDays = Number(cycleMatch[2]);
+
+  if (workDays <= 0 || offDays <= 0 || workDays > 7 || offDays > 7) {
+    return false;
+  }
+
+  const cycleLength = workDays + offDays;
+  const dayIndex = diffInDays(assignment.validFrom, date) % cycleLength;
+
+  return dayIndex < workDays;
+}
+
+function getExpectedScheduledMinutes(
+  assignments: JourneyAssignmentWithJourney[],
+  userId: number,
+  date: Date,
+  isHoliday: boolean,
+) {
+  if (isHoliday) {
+    return 0;
+  }
+
+  const assignment = findJourneyAssignmentForDate(assignments, userId, date);
+
+  if (!assignment) {
+    return 0;
+  }
+
+  return isScheduledWorkday(assignment, date) ? assignment.journey.dailyWorkMinutes : 0;
+}
+
 export async function getAnalyticsDashboard(companyId?: number) {
   const today = getDateOnly(new Date());
   const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
   const sixCompletedDaysAgo = subDays(today, 6);
   const fiveCompletedDaysAgo = subDays(today, 5);
 
-  const [companyEmployees, todayWorkdays, monthlyWorkdays, monthlyAdjustments, recentWorkdays, activeUsers] =
+  const [companyEmployees, todayWorkdays, monthlyWorkdays, monthlyAdjustments, recentWorkdays, activeUsers, assignments] =
     await Promise.all([
       prisma.user.count({
         where: {
@@ -90,12 +179,39 @@ export async function getAnalyticsDashboard(companyId?: number) {
           },
         },
       }),
+      prisma.userJourneyAssignment.findMany({
+        where: {
+          user: {
+            companyId: companyId ?? undefined,
+            isActive: true,
+          },
+          validFrom: {
+            lt: today,
+          },
+          OR: [{ validTo: null }, { validTo: { gte: monthStart } }],
+        },
+        include: {
+          journey: true,
+        },
+        orderBy: {
+          validFrom: 'asc',
+        },
+      }),
     ]);
 
   const presentEmployees = todayWorkdays.filter((workday) =>
     workday.timeEntries.some((entry) => entry.kind === 'ENTRY'),
   ).length;
-  const overtimeMinutes = monthlyWorkdays.reduce((total, workday) => total + workday.overtimeMinutes, 0);
+  const overtimeMinutes = monthlyWorkdays.reduce((total, workday) => {
+    const scheduledMinutes = getExpectedScheduledMinutes(
+      assignments,
+      workday.userId,
+      workday.date,
+      workday.isHoliday,
+    );
+
+    return total + Math.max(0, workday.workedMinutes - scheduledMinutes);
+  }, 0);
   const inconsistentWorkdays = monthlyWorkdays.filter(
     (workday) => workday.status === 'INCONSISTENT' || workday.status === 'PENDING_ADJUSTMENT',
   ).length;

@@ -5,7 +5,9 @@ import { forwardRef, useImperativeHandle, useRef } from "react"
 import { SidePanel } from "@/components/structure/SidePanel"
 import { Table } from "@/components/structure/Table"
 import { Typography } from "@/components/structure/Typography"
-import { formatWorkdayDate } from "../../../utils"
+
+// Utils
+import { buildTableData, getTextLabel } from "./utils"
 
 // Types
 import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
@@ -19,16 +21,14 @@ export const DayHistorySidePanel = forwardRef<
   DayHistorySidePanelMethods,
   DayHistorySidePanelProps
 >(({ record }, ref) => {
+  // Refs
   const sidePanelRef = useRef<SidePanelMethods>(null)
 
-  const tableData: TableRowData[] = record
-    ? record.records.map((item) => ({
-        Horario: { value: item.time },
-        Tipo: { value: item.type },
-        Status: { value: item.status, type: "badge" },
-      }))
-    : []
+  // Constants
+  const tableData: TableRowData[] = buildTableData(record)
+  const subtitle = getTextLabel(record)
 
+  //  Hooks
   useImperativeHandle(
     ref,
     () => ({
@@ -40,23 +40,13 @@ export const DayHistorySidePanel = forwardRef<
   )
 
   return (
-    <SidePanel ref={sidePanelRef} widthClassName="max-w-lg">
+    <SidePanel
+      ref={sidePanelRef}
+      title="Histórico do dia"
+      subtitle={subtitle}
+      widthClassName="max-w-lg"
+    >
       <div className="flex min-h-full flex-col gap-6 p-6">
-        <header className="border-b border-border-subtle pb-5">
-          <Typography variant="h4" value="Historico do dia" />
-          <Typography
-            variant="b2"
-            className="mt-1"
-            value={
-              record
-                ? `Resumo de ${formatWorkdayDate(record.workdayDate, {
-                    withYear: true,
-                  })}`
-                : "Selecione um registro para visualizar"
-            }
-          />
-        </header>
-
         {record ? (
           <div className="grid gap-3 rounded-xl bg-surface-muted p-4">
             <div className="flex items-center justify-between gap-4">
@@ -67,8 +57,10 @@ export const DayHistorySidePanel = forwardRef<
                 value={record.workedHours}
               />
             </div>
+
             <div className="flex items-center justify-between gap-4">
               <Typography variant="b2" value="Horas extras" />
+
               <Typography
                 variant="b2"
                 fontWeight={700}
@@ -77,6 +69,7 @@ export const DayHistorySidePanel = forwardRef<
             </div>
             <div className="flex items-center justify-between gap-4">
               <Typography variant="b2" value="Horas faltantes" />
+
               <Typography
                 variant="b2"
                 fontWeight={700}
@@ -88,6 +81,7 @@ export const DayHistorySidePanel = forwardRef<
 
         <section className="grid gap-3">
           <Typography variant="b1" fontWeight={700} value="Registros do dia" />
+
           <Table
             data={tableData}
             minWidth="420px"

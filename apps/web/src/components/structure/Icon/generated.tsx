@@ -29,7 +29,8 @@ export const ICON_NAMES = [
   "bookmark",
   "user",
   "building",
-  "trash"
+  "trash",
+  "close"
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -286,6 +287,15 @@ export const TrashIcon = createIcon(
   "<path d=\"M2.05063 6.48418C1.20573 5.35763 2.00954 3.75 3.41772 3.75H14.5823C15.9905 3.75 16.7943 5.35763 15.9494 6.48418C15.3331 7.30584 15 8.3052 15 9.33228V15.75C15 17.9591 13.2091 19.75 11 19.75H7C4.79086 19.75 3 17.9591 3 15.75V9.33228C3 8.3052 2.66688 7.30584 2.05063 6.48418Z\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M11 14.75L11 8.75\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M7 14.75L7 8.75\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M13 3.75L12.4558 2.11754C12.1836 1.30086 11.4193 0.75 10.5585 0.75H7.44152C6.58066 0.75 5.81638 1.30086 5.54415 2.11754L5 3.75\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/>"
 );
 
+export const CloseIcon = createIcon(
+  {
+  "xmlns": "http://www.w3.org/2000/svg",
+  "viewBox": "0 0 24 24",
+  "fill": "none"
+},
+  "<rect x=\"2\" y=\"2\" width=\"20\" height=\"20\" rx=\"5\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M9.8787 14.1215L14.1213 9.87891\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M9.8787 9.87845L14.1213 14.1211\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"
+);
+
 export const ICON_COMPONENTS = {
   "analysis": AnalysisIcon,
   "chart": ChartIcon,
@@ -312,4 +322,5 @@ export const ICON_COMPONENTS = {
   "user": UserIcon,
   "building": BuildingIcon,
   "trash": TrashIcon,
+  "close": CloseIcon,
 } satisfies Record<IconName, IconComponent>;

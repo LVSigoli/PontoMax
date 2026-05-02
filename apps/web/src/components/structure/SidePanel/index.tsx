@@ -5,15 +5,18 @@ import { forwardRef, useId, useImperativeHandle } from "react"
 import { useSidePanelContext } from "@/contexts/SidePanelContext"
 
 // Types
+import { Header } from "./components/Header"
 import type { SidePanelMethods, SidePanelProps } from "./types"
 
 export const SidePanel = forwardRef<SidePanelMethods, SidePanelProps>(
   (
     {
+      id,
+      title,
+      subtitle,
       children,
       className = "",
       closeOnBackdropClick = true,
-      id,
       widthClassName = "max-w-xl",
     },
     ref
@@ -61,7 +64,15 @@ export const SidePanel = forwardRef<SidePanelMethods, SidePanelProps>(
         <aside
           className={`relative z-10 h-full w-full ${widthClassName} overflow-y-auto border-l border-border-subtle bg-surface-overlay shadow-[-24px_0_80px_rgba(15,23,42,0.18)] ${className}`}
         >
-          {children}
+          <div className="flex-1 overflow-y-auto px-4 py-7 sm:px-5">
+            <Header
+              title={title}
+              subtitle={subtitle}
+              onClose={closeSidePanel}
+            />
+
+            {children}
+          </div>
         </aside>
       </div>
     )
