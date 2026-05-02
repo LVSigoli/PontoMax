@@ -13,7 +13,7 @@ O PontoMax é multiempresa. Um cliente contratante pode possuir uma ou mais empr
 ## Credenciais Demo
 
 - `demo@pontomax.com.br`
-- `123456
+- `123456`
 
 ## Modulos
 
