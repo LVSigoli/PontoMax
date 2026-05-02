@@ -1,9 +1,9 @@
+import type { PickerType } from "@/components/structure/Picker/types"
 import type {
   TableCellData,
   TableCellRenderData,
   TableCellType,
 } from "../../types"
-import type { PickerType } from "@/components/structure/Picker"
 
 export function normalizeTableCell(cell: TableCellData): TableCellRenderData {
   return {
