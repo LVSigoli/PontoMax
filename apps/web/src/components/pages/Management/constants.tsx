@@ -6,17 +6,17 @@ export const MANAGEMENT_TABS: ManagementTabOption[] = [
   {
     id: "companies",
     label: "Empresas",
-    icon: <span aria-hidden="true">▦</span>,
+    icon: "building",
   },
   {
     id: "employees",
     label: "Funcionarios",
-    icon: <span aria-hidden="true">♙</span>,
+    icon: "user",
   },
   {
     id: "journeys",
     label: "Jornadas",
-    icon: <span aria-hidden="true">◷</span>,
+    icon: "clock",
   },
 ]
 
@@ -118,13 +118,13 @@ export const MANAGEMENT_ACTIONS: TableAction[] = [
     id: "edit",
     label: "Editar",
     color: "text-content-secondary",
-    icon: <span aria-hidden="true">✎</span>,
+    icon: "edit",
   },
   {
     id: "remove",
     label: "Remover",
     color: "text-danger-700",
-    icon: <span aria-hidden="true">⌫</span>,
+    icon: "trash",
   },
 ]
 

@@ -1,8 +1,9 @@
-import { WorkdayOverviewSummaryApiItem } from "@/services/domain"
 import { formatMinutes } from "@/services/utils"
-import { UserAnalysisItem } from "../../../types"
 
-export function buildAnalysissItems(
+import type { WorkdayOverviewSummaryApiItem } from "@/services/domain"
+import type { UserAnalysisItem } from "../../../types"
+
+export function buildAnalysisItems(
   summary: WorkdayOverviewSummaryApiItem
 ): UserAnalysisItem[] {
   return [

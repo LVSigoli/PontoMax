@@ -19,7 +19,10 @@ export const Input: React.FC<Props> = ({
   type,
   placeholder,
   disabled = false,
+  variant = "default",
   iconPlacement = "start",
+  className = "",
+  fieldClassName = "",
   onChange,
   onIconClick,
 }) => {
@@ -27,6 +30,14 @@ export const Input: React.FC<Props> = ({
     if (!icon) return "pl-2"
 
     return iconPlacement === "end" ? "pl-2 pr-10" : "pl-10 pr-3"
+  }
+
+  function getFieldClassName() {
+    if (variant === "table") {
+      return "h-9 border-transparent bg-transparent font-semibold focus:border-border-focus focus:bg-surface-page disabled:bg-transparent disabled:opacity-60"
+    }
+
+    return "h-11 border-border-default bg-surface-card disabled:bg-surface-muted"
   }
 
   // Functions
@@ -70,8 +81,8 @@ export const Input: React.FC<Props> = ({
   }
 
   return (
-    <label className="block">
-      <Typography variant="b2" value={title} />
+    <label className={`block ${className}`}>
+      {title ? <Typography variant="b2" value={title} /> : null}
 
       <span className="relative block">
         {renderStartIcon()}
@@ -81,7 +92,7 @@ export const Input: React.FC<Props> = ({
           value={value}
           placeholder={placeholder}
           disabled={disabled}
-          className={`h-11 w-full rounded-md border border-border-default bg-surface-card text-sm text-content-primary outline-none transition placeholder:text-content-muted disabled:cursor-default disabled:caret-transparent disabled:pointer-events-none disabled:bg-surface-muted disabled:text-content-muted ${getInputpadding()}`}
+          className={`w-full rounded-md text-sm text-content-primary outline-none transition placeholder:text-content-muted disabled:cursor-default disabled:caret-transparent disabled:pointer-events-none disabled:text-content-muted ${getInputpadding()} ${getFieldClassName()} ${fieldClassName}`}
           onChange={handleInputChange}
         />
 

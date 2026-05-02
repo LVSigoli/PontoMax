@@ -1,4 +1,8 @@
+//  External Libraries
+import React from "react"
+
 // Components
+import { Icon } from "@/components/structure/Icon"
 import { Typography } from "@/components/structure/Typography"
 
 // Types
@@ -17,7 +21,7 @@ export const MetricCard: React.FC<Props> = ({ metric }) => {
           aria-hidden="true"
           className={`flex size-12 shrink-0 items-center justify-center rounded-full text-lg font-bold ${typeStyle.iconClassName}`}
         >
-          {typeStyle.icon}
+          <Icon name={typeStyle.icon} layout="inline" />
         </span>
 
         <Typography variant="b1" value={metric.label} className="max-w-44" />

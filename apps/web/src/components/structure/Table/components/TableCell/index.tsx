@@ -15,9 +15,11 @@ export const TableCell = <T extends TableRowData>({
   onAction,
   onChange,
 }: TableCellProps<T>) => {
+  // Constants
   const normalizedCell = normalizeTableCell(cell)
   const colorClass = normalizedCell.color ?? "text-content-secondary"
 
+  // Functions
   if (normalizedCell.type === "badge") {
     return (
       <span

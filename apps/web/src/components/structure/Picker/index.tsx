@@ -1,11 +1,23 @@
 // Components
-import { Typography } from "@/components/structure/Typography"
+import { DatePickerPanel } from "./components/DatePickerPanel"
+import { DateTimePickerPanel } from "./components/DateTimePickerPanel"
+import { IntervalPickerPanel } from "./components/IntervalPickerPanel"
+import { PickerField } from "./components/PickerField"
+import { PickerPanel } from "./components/PickerPanel"
+import { TimePickerPanel } from "./components/TimePickerPanel"
+
+// Hooks
+import { usePicker } from "./hooks/usePicker"
+
+// Utils
+import {
+  getPickerDisplayValue,
+  getPickerIconName,
+  getPickerPlaceholder,
+} from "./utils"
 
 // Types
 import type { Props } from "./types"
-
-// Utils
-import { formatPickerValue, getPickerInputType } from "./utils"
 
 export const Picker: React.FC<Props> = ({
   type,
@@ -13,38 +25,94 @@ export const Picker: React.FC<Props> = ({
   label,
   placeholder,
   className = "",
+  fieldClassName = "",
+  panelClassName = "",
   disabled = false,
+  variant = "default",
   onChange,
 }) => {
-  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-    if (disabled) return
+  // Hooks
+  const {
+    isOpen,
+    panelRef,
+    triggerRef,
+    containerRef,
+    panelPosition,
+    closePicker,
+    handleToggle,
+  } = usePicker({ disabled, type })
 
-    onChange(event.target.value)
+  // Constants
+  const displayValue = getPickerDisplayValue(type, value, variant)
+  const iconName = getPickerIconName(type)
+  const fieldPlaceholder = placeholder ?? getPickerPlaceholder(type, variant)
+
+  // Functions
+
+  function renderPanel() {
+    if (type === "date") {
+      return (
+        <DatePickerPanel
+          value={value}
+          onChange={onChange}
+          onClose={closePicker}
+        />
+      )
+    }
+
+    if (type === "time") {
+      return (
+        <TimePickerPanel
+          value={value}
+          onChange={onChange}
+          onClose={closePicker}
+        />
+      )
+    }
+
+    if (type === "interval") {
+      return (
+        <IntervalPickerPanel
+          value={value}
+          onChange={onChange}
+          onClose={closePicker}
+        />
+      )
+    }
+
+    return (
+      <DateTimePickerPanel
+        value={value}
+        onChange={onChange}
+        onClose={closePicker}
+      />
+    )
   }
 
   return (
-    <label className={`block ${className}`}>
-      {label ? <Typography variant="b2" value={label} /> : null}
+    <div ref={containerRef} className={className}>
+      <PickerField
+        ref={triggerRef}
+        disabled={disabled}
+        iconName={iconName}
+        isOpen={isOpen}
+        label={label}
+        placeholder={fieldPlaceholder}
+        value={displayValue}
+        variant={variant}
+        className={fieldClassName}
+        onClick={handleToggle}
+      />
 
-      <span className="relative block">
-        <input
-          type={getPickerInputType(type)}
-          value={formatPickerValue(value)}
-          placeholder={placeholder}
-          disabled={disabled}
-          className="h-11 w-full rounded-md border border-border-default bg-surface-card px-3 pr-10 text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-border-focus disabled:cursor-default disabled:caret-transparent disabled:pointer-events-none disabled:bg-surface-muted disabled:text-content-muted"
-          onChange={handleChange}
-        />
-
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute right-3 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-full border border-content-primary text-xs text-content-primary"
+      {!isOpen || typeof document === "undefined" ? null : (
+        <PickerPanel
+          panelRef={panelRef}
+          position={panelPosition}
+          className={panelClassName}
         >
-          {type === "date" || type === "dateTime" ? "□" : ""}
-        </span>
-      </span>
-    </label>
+          {renderPanel()}
+        </PickerPanel>
+      )}
+    </div>
   )
 }
-
-export type { PickerType } from "./types"

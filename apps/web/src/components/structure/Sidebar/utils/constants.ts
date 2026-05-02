@@ -19,25 +19,25 @@ export const ADMIN_ITEMS: NavigationItem[] = [
   {
     id: "analytics",
     label: "Análises",
-    icon: "analysis",
+    icon: "chart",
     href: "/analytics",
   },
   {
     id: "management",
     label: "Gerenciamento",
-    icon: "company",
+    icon: "settings",
     href: "/management",
   },
   {
     id: "holydays",
     label: "Feriados",
-    icon: "flag",
+    icon: "calendar",
     href: "/holydays",
   },
   {
     id: "solicitations",
     label: "Ajustes Pendentes",
-    icon: "update",
+    icon: "bookmark",
     href: "/solicitations",
   },
 ]

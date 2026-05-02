@@ -15,6 +15,13 @@
   "registerOut": "registerOut.svg",
   "search": "search.svg",
   "timer": "timer.svg",
-  "union": "union.svg",
-  "update": "update.svg"
+  "edit": "union.svg",
+  "update": "update.svg",
+  "settings": "settings.svg",
+  "calendar": "calendar.svg",
+  "danger": "danger.svg",
+  "bookmark": "bookmark.svg",
+  "user": "user.svg",
+  "building": "building.svg",
+  "trash": "trash.svg"
 }

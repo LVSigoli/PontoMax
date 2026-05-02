@@ -19,7 +19,7 @@ export const Sidebar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Constants
-  const sidebarItems = useMemo(() => buildNavigationItem(user), [user])
+  const sidebarItems = useMemo(() => buildNavigationItem(user), [user?.role])
   const primaryMobileItems = useMemo(
     () => sidebarItems.slice(0, 2),
     [sidebarItems]

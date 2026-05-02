@@ -33,13 +33,13 @@ export const AdjustmentRequestSidePanel = forwardRef<
     handleAddRecord,
     handleCancel,
     handleClose,
-      handleConfirm,
-      handleJustificationChange,
-      handleOpen,
-      getTableRowKey,
-      handleTableActionClick,
-      handleTableCellChange,
-      handleToggle,
+    handleConfirm,
+    handleJustificationChange,
+    handleOpen,
+    getTableRowKey,
+    handleTableActionClick,
+    handleTableCellChange,
+    handleToggle,
   } = useAdjustmentRequest({ onSubmitted, records, workdayDate })
 
   useImperativeHandle(
