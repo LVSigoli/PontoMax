@@ -23,5 +23,6 @@
   "bookmark": "bookmark.svg",
   "user": "user.svg",
   "building": "building.svg",
-  "trash": "trash.svg"
+  "trash": "trash.svg",
+  "close": "close.svg"
 }

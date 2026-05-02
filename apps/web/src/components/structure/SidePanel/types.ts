@@ -12,4 +12,6 @@ export interface SidePanelProps {
   closeOnBackdropClick?: boolean
   id?: string
   widthClassName?: string
+  title: string
+  subtitle?: string
 }

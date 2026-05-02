@@ -55,76 +55,64 @@ export const AdjustmentRequestSidePanel = forwardRef<
   return (
     <SidePanel
       ref={sidePanelRef}
-      widthClassName="max-w-[456px]"
       className="bg-surface-page "
+      widthClassName="max-w-[456px]"
+      title="Solicitação de ajuste"
+      subtitle="Solicite o ajuste dos horários necessários"
     >
       <div className="flex min-h-full flex-col">
-        <div className="flex-1 overflow-y-auto px-4 py-7 sm:px-5">
+        <Table
+          data={tableRows}
+          allowActions
+          minWidth="360px"
+          sideScroll={false}
+          actions={ADJUSTMENT_ACTIONS}
+          getRowKey={getTableRowKey}
+          className="mt-5 overflow-hidden rounded-xl border border-border-subtle bg-surface-card"
+          onActionClick={handleTableActionClick}
+          onCellChange={handleTableCellChange}
+        />
+
+        <Button
+          variant="text"
+          icon="plus"
+          iconPlacement="start"
+          color="primary"
+          value="Adicionar registro"
+          onClick={handleAddRecord}
+        />
+
+        <TextArea
+          label="Justificativa"
+          value={form.justification}
+          onChange={handleJustificationChange}
+        />
+
+        {errorMessage ? (
           <Typography
-            variant="h4"
-            fontWeight={800}
-            className="uppercase tracking-[0.02em]"
-            value="Solicitação de ajuste"
+            variant="legal"
+            value={errorMessage}
+            className="mt-3 text-danger-700"
           />
-
-          <Typography
-            variant="b1"
-            value="Solicite o ajuste dos horários necessários"
-          />
-
-          <Table
-            data={tableRows}
-            allowActions
-            minWidth="360px"
-            sideScroll={false}
-            actions={ADJUSTMENT_ACTIONS}
-            getRowKey={getTableRowKey}
-            className="mt-5 overflow-hidden rounded-xl border border-border-subtle bg-surface-card"
-            onActionClick={handleTableActionClick}
-            onCellChange={handleTableCellChange}
-          />
-
-          <Button
-            variant="text"
-            icon="plus"
-            iconPlacement="start"
-            color="primary"
-            value="Adicionar registro"
-            onClick={handleAddRecord}
-          />
-
-          <TextArea
-            label="Justificativa"
-            value={form.justification}
-            onChange={handleJustificationChange}
-          />
-
-          {errorMessage ? (
-            <Typography
-              variant="legal"
-              value={errorMessage}
-              className="mt-3 text-danger-700"
-            />
-          ) : null}
-        </div>
-
-        <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
-          <Button
-            fitWidth
-            value="Cancelar"
-            color="danger"
-            variant="outlined"
-            onClick={handleCancel}
-          />
-
-          <Button
-            fitWidth
-            value="Salvar"
-            loading={isSubmitting}
-            onClick={handleConfirm}
-          />
-        </footer>
+        ) : null}
       </div>
+
+      <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
+        <Button
+          fitWidth
+          value="Cancelar"
+          color="danger"
+          variant="outlined"
+          onClick={handleCancel}
+        />
+
+        <Button
+          fitWidth
+          value="Salvar"
+          loading={isSubmitting}
+          onClick={handleConfirm}
+        />
+      </footer>
     </SidePanel>
   )
 })

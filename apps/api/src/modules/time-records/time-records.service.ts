@@ -65,6 +65,18 @@ function mapWorkedStatus(params: {
   return "CLOSED" as const
 }
 
+function getScheduledMinutesForDate(
+  assignment: JourneyAssignmentWithJourney | null,
+  date: Date,
+  isHoliday: boolean
+) {
+  if (isHoliday || !assignment) {
+    return 0
+  }
+
+  return isScheduledWorkday(assignment, date) ? assignment.journey.dailyWorkMinutes : 0
+}
+
 export async function ensureWorkday(params: {
   companyId: number
   userId: number
@@ -93,6 +105,11 @@ export async function ensureWorkday(params: {
       isActive: true,
     },
   })
+  const scheduledMinutes = getScheduledMinutesForDate(
+    assignment,
+    date,
+    Boolean(holiday)
+  )
 
   return prisma.workday.upsert({
     where: {
@@ -104,7 +121,7 @@ export async function ensureWorkday(params: {
     update: {
       holidayId: holiday?.id ?? null,
       isHoliday: Boolean(holiday),
-      scheduledMinutes: assignment?.journey.dailyWorkMinutes ?? 0,
+      scheduledMinutes,
     },
     create: {
       companyId: params.companyId,
@@ -112,7 +129,7 @@ export async function ensureWorkday(params: {
       date,
       holidayId: holiday?.id ?? null,
       isHoliday: Boolean(holiday),
-      scheduledMinutes: assignment?.journey.dailyWorkMinutes ?? 0,
+      scheduledMinutes,
     },
   })
 }
@@ -175,7 +192,11 @@ export async function getTodayWorkdaySnapshot(params: {
     )
   }
 
-  const scheduledMinutes = assignment?.journey.dailyWorkMinutes ?? 0
+  const scheduledMinutes = getScheduledMinutesForDate(
+    assignment,
+    date,
+    Boolean(holiday)
+  )
 
   return serializeWorkday({
     id: makeSyntheticWorkdayId(date),
@@ -282,24 +303,7 @@ export async function getUserWorkdaySummary(params: {
     },
   })
 
-  const holidays = await prisma.holiday.findMany({
-    where: {
-      companyId: params.companyId,
-      isActive: true,
-      date: {
-        gte:
-          workdays.length > 0
-            ? getStoredDateOnly(
-                [...workdays].sort((left, right) => left.date.getTime() - right.date.getTime())[0]!
-                  .date
-              )
-            : today,
-        lt: today,
-      },
-    },
-  })
-
-  const [pendingAdjustments, holidayKeys] = await Promise.all([
+  const [pendingAdjustments] = await Promise.all([
     prisma.adjustmentRequest.count({
       where: {
         companyId: params.companyId,
@@ -307,7 +311,6 @@ export async function getUserWorkdaySummary(params: {
         status: "PENDING",
       },
     }),
-    Promise.resolve(new Set(holidays.map((holiday) => getDateKey(getStoredDateOnly(holiday.date))))),
   ])
   const assignments = await getJourneyAssignmentsForRange({
     userId: params.userId,
@@ -342,26 +345,9 @@ export async function getUserWorkdaySummary(params: {
       workday.timeEntries?.some((entry) => entry.kind === "ENTRY")
   ).length
 
-  const relevantWorkdays = normalizedWorkdays.filter((workday) => {
-    if (shouldIgnoreWorkdayInSummary(workday)) {
-      return false
-    }
-
-    const date = getStoredDateOnly(workday.date)
-    const assignment = findJourneyAssignmentForDate(assignments, date)
-
-    if (!assignment) {
-      return false
-    }
-
-    const dateKey = getDateKey(date)
-
-    if (holidayKeys.has(dateKey)) {
-      return false
-    }
-
-    return isScheduledWorkday(assignment, date)
-  })
+  const relevantWorkdays = normalizedWorkdays.filter(
+    (workday) => !shouldIgnoreWorkdayInSummary(workday)
+  )
 
   const summary = relevantWorkdays.reduce<Omit<WorkdayOverviewSummary, "pendingAdjustments">>(
     (summary, workday) => {
@@ -407,17 +393,36 @@ export async function recalculateWorkday(workdayId: number) {
       recordedAt: entry.recordedAt,
     }))
   )
-  const overtimeMinutes = Math.max(0, workedMinutes - workday.scheduledMinutes)
-  const missingMinutes = Math.max(0, workday.scheduledMinutes - workedMinutes)
+  const assignment = await prisma.userJourneyAssignment.findFirst({
+    where: {
+      userId: workday.userId,
+      validFrom: { lte: workday.date },
+      OR: [{ validTo: null }, { validTo: { gte: workday.date } }],
+    },
+    include: {
+      journey: true,
+    },
+    orderBy: {
+      validFrom: "desc",
+    },
+  })
+  const scheduledMinutes = getScheduledMinutesForDate(
+    assignment,
+    getStoredDateOnly(workday.date),
+    workday.isHoliday
+  )
+  const overtimeMinutes = Math.max(0, workedMinutes - scheduledMinutes)
+  const missingMinutes = Math.max(0, scheduledMinutes - workedMinutes)
   const status = mapWorkedStatus({
     totalEntries: workday.timeEntries.length,
     workedMinutes,
-    scheduledMinutes: workday.scheduledMinutes,
+    scheduledMinutes,
   })
 
   return prisma.workday.update({
     where: { id: workdayId },
     data: {
+      scheduledMinutes,
       workedMinutes,
       overtimeMinutes,
       missingMinutes,
@@ -646,19 +651,25 @@ function normalizeWorkdayForTimezone<T extends WorkdayLike>(
       ),
     }))
   )
-  const overtimeMinutes = Math.max(0, workedMinutes - workday.scheduledMinutes)
-  const missingMinutes = Math.max(0, workday.scheduledMinutes - workedMinutes)
+  const scheduledMinutes = getScheduledMinutesForDate(
+    workdayAssignment,
+    getStoredDateOnly(workday.date),
+    workday.isHoliday
+  )
+  const overtimeMinutes = Math.max(0, workedMinutes - scheduledMinutes)
+  const missingMinutes = Math.max(0, scheduledMinutes - workedMinutes)
   const status =
     workday.status === "PENDING_ADJUSTMENT" || workday.status === "ADJUSTED"
       ? workday.status
       : mapWorkedStatus({
           totalEntries: timeEntries.length,
           workedMinutes,
-          scheduledMinutes: workday.scheduledMinutes,
+          scheduledMinutes,
         })
 
   return {
     ...workday,
+    scheduledMinutes,
     workedMinutes,
     overtimeMinutes,
     missingMinutes,

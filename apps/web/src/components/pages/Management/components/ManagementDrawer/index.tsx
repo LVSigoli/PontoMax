@@ -287,21 +287,15 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
     return (
       <SidePanel
         ref={sidePanelRef}
+        title={drawerTitle}
+        subtitle={description}
         widthClassName="max-w-[504px]"
         className="bg-surface-page"
       >
         <div className="flex min-h-full flex-col">
           <div className="flex-1 overflow-y-auto px-4 py-7 sm:px-5">
-            <Typography variant="h4" value={drawerTitle} />
-
-            <Typography
-              variant="h4"
-              value={description}
-              className="mt-12 text-xl font-medium"
-            />
-
             <form
-              className="mt-4 grid gap-3"
+              className="grid gap-3"
               onSubmit={(event) => event.preventDefault()}
             >
               {renderForm()}
