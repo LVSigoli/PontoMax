@@ -1,9 +1,9 @@
-import type { ReactNode } from "react"
+import { IconName } from "../Icon/generated"
 
 export interface TextSwitchOption {
   id: string
   label: string
-  icon?: ReactNode
+  icon?: IconName
 }
 
 export interface Props<T extends TextSwitchOption = TextSwitchOption> {

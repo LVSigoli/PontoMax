@@ -1,9 +1,6 @@
 // External Libraries
 import React from "react"
 
-// Assets
-import PlusIcon from "@/assets/icons/plus.svg"
-
 // Components
 import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
@@ -19,6 +16,7 @@ import { MANAGEMENT_ACTIONS, MANAGEMENT_TABS } from "./constants"
 import { ManagementProvider } from "./contexts/ManagementContext"
 
 // Hooks
+import { InviteModal } from "./components/InviteModal"
 import { useManagement } from "./hooks/useManagement"
 
 // Types
@@ -34,15 +32,18 @@ export const Management: React.FC = () => {
 const ManagementContent: React.FC = () => {
   // Hooks
   const {
+    invite,
     activeTab,
-    selectedElement,
     tableData,
     drawerRef,
+    inviteModalRef,
+    selectedElement,
+    getRowKey,
     handleActionClick,
     handleAddClick,
     handleRowSelect,
     handleTabChange,
-    getRowKey,
+    handleInviteSuccess,
   } = useManagement()
 
   return (
@@ -66,7 +67,7 @@ const ManagementContent: React.FC = () => {
 
               <Button
                 value="Adicionar Novo"
-                icon={PlusIcon}
+                icon="plus"
                 iconPlacement="start"
                 className="min-w-68"
                 onClick={handleAddClick}
@@ -90,9 +91,12 @@ const ManagementContent: React.FC = () => {
 
       <ManagementDrawer
         ref={drawerRef}
-        element={selectedElement}
         view={activeTab}
+        element={selectedElement}
+        onSuccess={handleInviteSuccess}
       />
+
+      <InviteModal ref={inviteModalRef} invite={invite} />
     </main>
   )
 }

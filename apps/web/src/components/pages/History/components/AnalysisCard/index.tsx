@@ -5,7 +5,8 @@ import { Typography } from "@/components/structure/Typography"
 import type { Props } from "./types"
 
 // Utils
-import { getAnalysisTypeStyle } from "../../utils"
+import { Icon } from "@/components/structure/Icon"
+import { getAnalysisTypeStyle } from "./utils"
 
 export const AnalysisCard: React.FC<Props> = ({ item }) => {
   const typeStyle = getAnalysisTypeStyle(item.type)
@@ -17,7 +18,7 @@ export const AnalysisCard: React.FC<Props> = ({ item }) => {
           aria-hidden="true"
           className={`flex size-11 shrink-0 items-center justify-center rounded-full text-lg font-bold ${typeStyle.iconClassName}`}
         >
-          {typeStyle.icon}
+          <Icon name={typeStyle.icon} layout="inline" />
         </span>
 
         <Typography variant="b1" value={item.label} />

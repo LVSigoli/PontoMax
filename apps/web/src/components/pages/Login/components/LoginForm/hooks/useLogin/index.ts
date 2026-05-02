@@ -1,7 +1,6 @@
 // External Libraries
-import { useState } from "react"
-import type { FormEvent } from "react"
 import { useRouter } from "next/router"
+import { useState } from "react"
 
 // Contexts
 import { useAuth } from "@/contexts/AuthContext"
@@ -10,17 +9,20 @@ import { useAuth } from "@/contexts/AuthContext"
 import { makeInitialCredential } from "./utils"
 
 // Types
-import { Credential, UseLoginResult } from "./types"
+import { useToastContext } from "@/contexts/ToastContext"
+import { Credential } from "./types"
 
-export function useLogin(): UseLoginResult {
+export function useLogin() {
   // Hooks
   const router = useRouter()
   const { login } = useAuth()
+  const { showToast } = useToastContext()
 
   // States
-  const [credential, setCredential] = useState(makeInitialCredential)
   const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPassWordType, setIsPasswordType] = useState(true)
+  const [credential, setCredential] = useState(makeInitialCredential)
 
   // Functions
   function handleCredentialChange(key: keyof Credential, value: string) {
@@ -32,9 +34,11 @@ export function useLogin(): UseLoginResult {
     }))
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  function handleIconClick() {
+    setIsPasswordType((prev) => !prev)
+  }
 
+  async function handleSubmit() {
     if (isSubmitting) return
 
     const email = credential.email.trim().toLowerCase()
@@ -47,9 +51,10 @@ export function useLogin(): UseLoginResult {
 
     try {
       setIsSubmitting(true)
-      setErrorMessage("")
 
       const response = await login({ email, password })
+
+      if (!response) return
 
       if (response.requiresPasswordChange) {
         await router.push({
@@ -64,9 +69,8 @@ export function useLogin(): UseLoginResult {
 
       await router.push("/")
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Nao foi possivel realizar o login.",
-      )
+      console.log(error)
+      showToast({ variant: "error", message: "Erro ao realizar login" })
     } finally {
       setIsSubmitting(false)
     }
@@ -76,7 +80,9 @@ export function useLogin(): UseLoginResult {
     credential,
     errorMessage,
     isSubmitting,
+    isPassWordType,
     handleCredentialChange,
     handleSubmit,
+    handleIconClick,
   }
 }

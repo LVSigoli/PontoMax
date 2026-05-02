@@ -1,10 +1,6 @@
 // External Libraries
 import React from "react"
 
-// Assets
-import ClockIcon from "@/assets/icons/clock.svg"
-import LockIcon from "@/assets/icons/lock.svg"
-
 // Components
 import { Button } from "@/components/structure/Button"
 import { Icon } from "@/components/structure/Icon"
@@ -25,7 +21,11 @@ export const ReplacePasswordForm: React.FC<Props> = ({
     credential,
     errorMessage,
     handleCredentialChange,
+    handleConfirmPasswordIconClick,
+    handlePasswordIconClick,
     handleSubmit,
+    isConfirmPasswordHidden,
+    isPasswordHidden,
     isSubmitting,
     successMessage,
   } = useReplacePassword()
@@ -43,7 +43,7 @@ export const ReplacePasswordForm: React.FC<Props> = ({
     >
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse ">
-          <Icon src={ClockIcon} size="1.25rem" />
+          <Icon name="clock" size="1.25rem" />
         </div>
 
         <Typography variant="b1" fontWeight="bold" value="Nova senha" />
@@ -57,19 +57,21 @@ export const ReplacePasswordForm: React.FC<Props> = ({
       <div className="space-y-4">
         <Input
           title="nova senha"
-          type="password"
-          icon={LockIcon}
+          icon="lock"
           value={credential.password}
           placeholder="Informe sua nova senha"
+          type={isPasswordHidden ? "password" : "text"}
+          onIconClick={handlePasswordIconClick}
           onChange={(value) => handleCredentialChange("password", value)}
         />
 
         <Input
           title="confirmar senha"
-          type="password"
-          icon={LockIcon}
+          icon="lock"
           value={credential.confirmPassword}
           placeholder="Confirme sua nova senha"
+          type={isConfirmPasswordHidden ? "password" : "text"}
+          onIconClick={handleConfirmPasswordIconClick}
           onChange={(value) => handleCredentialChange("confirmPassword", value)}
         />
       </div>

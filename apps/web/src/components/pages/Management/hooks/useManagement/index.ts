@@ -6,38 +6,34 @@ import { MANAGEMENT_TABS } from "../../constants"
 
 // Utils
 import { useManagementContext } from "../../contexts/ManagementContext"
-import { formatTimeLabel, getCompanyName, getJourneyName } from "../../utils"
+import { makeTableData } from "./utils"
 
 // Types
 import type { TableRowData } from "@/components/structure/Table/types"
+import type { InviteModalMethods } from "../../components/InviteModal/types"
 import type { ManagementDrawerMethods } from "../../components/ManagementDrawer/types"
-import type {
-  Company,
-  Employee,
-  Journey,
-  ManagementEntity,
-  ManagementTabId,
-  ManagementTabOption,
-} from "../../types"
+import type { ManagementEntity, ManagementTabOption } from "../../types"
 
 export function useManagement() {
   // Refs
+  const inviteModalRef = useRef<InviteModalMethods>(null)
   const drawerRef = useRef<ManagementDrawerMethods>(null)
 
   // States
-  const [activeTab, setActiveTab] = useState<ManagementTabOption>(
-    MANAGEMENT_TABS[0]
-  )
+  const [drawerRequestKey, setDrawerRequestKey] = useState(0)
+  const [activeTab, setActiveTab] = useState(MANAGEMENT_TABS[0])
   const [selectedElement, setSelectedElement] =
     useState<ManagementEntity | null>(null)
-  const [drawerRequestKey, setDrawerRequestKey] = useState(0)
+  const [shouldOpenInviteModal, setShouldOpenInviteModal] = useState(false)
+
+  // Hooks
+  const { companies, employees, journeys, invite, removeEntity } =
+    useManagementContext()
 
   // Constants
-  const { companies, employees, journeys, removeEntity } =
-    useManagementContext()
   const activeItems = getActiveItems()
   const tableData = useMemo(
-    () => makeTableData(activeTab.id, companies, employees, journeys),
+    () => buildTableData(),
     [activeTab.id, companies, employees, journeys]
   )
 
@@ -48,12 +44,24 @@ export function useManagement() {
     drawerRef.current?.open()
   }, [drawerRequestKey])
 
+  useEffect(() => {
+    if (!shouldOpenInviteModal || !invite.copyText) return
+
+    inviteModalRef.current?.open()
+    setShouldOpenInviteModal(false)
+  }, [invite.copyText, shouldOpenInviteModal])
+
   // Functions
   function getActiveItems(): ManagementEntity[] {
     if (activeTab.id === "companies") return companies
     if (activeTab.id === "employees") return employees
 
     return journeys
+  }
+
+  function buildTableData() {
+    const params = { tab: activeTab.id, companies, employees, journeys }
+    return makeTableData(params)
   }
 
   function getRowEntity(row: TableRowData) {
@@ -69,10 +77,7 @@ export function useManagement() {
     const entity = getRowEntity(row)
     if (!entity) return
 
-    if (actionId === "remove") {
-      removeEntity(activeTab.id, entity.id)
-      return
-    }
+    if (actionId === "remove") return removeEntity(activeTab.id, entity.id)
 
     if (actionId === "edit") {
       setSelectedElement(entity)
@@ -98,57 +103,22 @@ export function useManagement() {
     setSelectedElement(null)
   }
 
+  function handleInviteSuccess() {
+    setShouldOpenInviteModal(true)
+  }
+
   return {
+    invite,
     activeTab,
-    drawerRef,
-    selectedElement,
     tableData,
-    handleActionClick,
+    drawerRef,
+    inviteModalRef,
+    selectedElement,
+    getRowKey,
     handleAddClick,
     handleRowSelect,
     handleTabChange,
-    getRowKey,
+    handleActionClick,
+    handleInviteSuccess,
   }
-}
-
-function makeTableData(
-  tab: ManagementTabId,
-  companies: Company[],
-  employees: Employee[],
-  journeys: Journey[]
-) {
-  if (tab === "companies") {
-    return companies.map<TableRowData>((company) => ({
-      Empresa: { value: company.name },
-      CNPJ: { value: company.cnpj },
-      Funcionarios: {
-        value: company.employees,
-        type: "badge",
-        color: "bg-success-50 text-success-700",
-      },
-    }))
-  }
-
-  if (tab === "employees") {
-    return employees.map<TableRowData>((employee) => ({
-      Nome: { value: employee.name },
-      Email: { value: employee.email },
-      Cargo: { value: employee.role },
-      Empresa: { value: getCompanyName(companies, employee.companyId) },
-      Jornada: { value: getJourneyName(journeys, employee.journeyId) },
-    }))
-  }
-
-  return journeys.map<TableRowData>((journey) => ({
-    Nome: { value: journey.name },
-    Entrada: { value: formatTimeLabel(journey.startTime) },
-    Saida: { value: formatTimeLabel(journey.endTime) },
-    Intervalo: { value: formatTimeLabel(journey.interval) },
-    Escala: { value: journey.scale },
-    Funcionarios: {
-      value: journey.employees,
-      type: "badge",
-      color: "bg-success-50 text-success-700",
-    },
-  }))
 }

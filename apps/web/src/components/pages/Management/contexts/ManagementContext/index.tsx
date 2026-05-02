@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
 
 // Services
+import type { UserInviteApiItem } from "@/services/domain"
 import {
   createCompany,
   createJourney,
@@ -17,6 +18,17 @@ import {
   updateUser,
 } from "@/services/domain"
 
+// Utils
+import {
+  buildCompanyPayload,
+  buildEmployeePayload,
+  buildJourneyPayload,
+  mapCompanyApiToCompany,
+  mapJourneyApiToJourney,
+  mapUserApiToEmployee,
+} from "../../utils"
+import { makeInitialInvite } from "./utils"
+
 // Types
 import type {
   Company,
@@ -29,31 +41,24 @@ import type {
   ManagementTabId,
 } from "../../types"
 import type { ManagementContextValue, ManagementProviderProps } from "./types"
-
-// Utils
-import {
-  buildCompanyPayload,
-  buildEmployeePayload,
-  buildJourneyPayload,
-  mapCompanyApiToCompany,
-  mapJourneyApiToJourney,
-  mapUserApiToEmployee,
-} from "../../utils"
-
 const ManagementContext = createContext<ManagementContextValue | null>(null)
 
 export const ManagementProvider: React.FC<ManagementProviderProps> = ({
   children,
 }) => {
+  // States
+  const [isLoading, setIsLoading] = useState(true)
+  const [journeys, setJourneys] = useState<Journey[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
-  const [journeys, setJourneys] = useState<Journey[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [invite, setInvite] = useState<UserInviteApiItem>(makeInitialInvite)
 
+  // Effects
   useEffect(() => {
     void loadManagementData()
   }, [])
 
+  // Functions
   async function loadManagementData() {
     try {
       setIsLoading(true)
@@ -68,32 +73,39 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
       setCompanies(companyItems.map(mapCompanyApiToCompany))
       setEmployees(employeeItems.map(mapUserApiToEmployee))
       setJourneys(journeyItems.map(mapJourneyApiToJourney))
+    } catch (error) {
+      console.log(error)
     } finally {
       setIsLoading(false)
     }
   }
 
   async function removeEntity(view: ManagementTabId, id: number) {
-    if (view === "companies") {
-      await deleteCompany(id)
-      setCompanies((currentCompanies) =>
-        currentCompanies.filter((company) => company.id !== id)
-      )
-      return
-    }
+    try {
+      if (view === "companies") {
+        await deleteCompany(id)
+        setCompanies((currentCompanies) =>
+          currentCompanies.filter((company) => company.id !== id)
+        )
+        return
+      }
 
-    if (view === "employees") {
-      await deleteUser(id)
-      setEmployees((currentEmployees) =>
-        currentEmployees.filter((employee) => employee.id !== id)
-      )
-      return
-    }
+      if (view === "employees") {
+        await deleteUser(id)
+        setEmployees((currentEmployees) =>
+          currentEmployees.filter((employee) => employee.id !== id)
+        )
+        return
+      }
 
-    await deleteJourney(id)
-    setJourneys((currentJourneys) =>
-      currentJourneys.filter((journey) => journey.id !== id)
-    )
+      await deleteJourney(id)
+      setJourneys((currentJourneys) =>
+        currentJourneys.filter((journey) => journey.id !== id)
+      )
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
   }
 
   async function saveEntity(
@@ -115,94 +127,101 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
   }
 
   async function saveCompany(entity: Company | null, form: CompanyForm) {
-    const resolvedClientId =
-      typeof form.clientId === "number" && form.clientId > 0
-        ? form.clientId
-        : (companies[0]?.clientId ?? 1)
-    const payload = buildCompanyPayload({
-      ...form,
-      clientId: resolvedClientId,
-    })
+    try {
+      const resolvedClientId =
+        typeof form.clientId === "number" && form.clientId > 0
+          ? form.clientId
+          : (companies[0]?.clientId ?? 1)
+      const payload = buildCompanyPayload({
+        ...form,
+        clientId: resolvedClientId,
+      })
 
-    if (entity) {
-      const updatedCompany = await updateCompany(entity.id, payload)
-      setCompanies((currentCompanies) =>
-        currentCompanies.map((company) =>
-          company.id === entity.id
-            ? mapCompanyApiToCompany(updatedCompany)
-            : company
+      if (entity) {
+        const updatedCompany = await updateCompany(entity.id, payload)
+        setCompanies((currentCompanies) =>
+          currentCompanies.map((company) =>
+            company.id === entity.id
+              ? mapCompanyApiToCompany(updatedCompany)
+              : company
+          )
         )
-      )
-      return
-    }
+        return
+      }
 
-    const createdCompany = await createCompany(payload)
-    setCompanies((currentCompanies) => [
-      ...currentCompanies,
-      mapCompanyApiToCompany(createdCompany),
-    ])
+      const createdCompany = await createCompany(payload)
+      setCompanies((currentCompanies) => [
+        ...currentCompanies,
+        mapCompanyApiToCompany(createdCompany),
+      ])
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
   }
 
   async function saveEmployee(entity: Employee | null, form: EmployeeForm) {
-    const payload = buildEmployeePayload(form)
+    try {
+      const payload = buildEmployeePayload(form)
 
-    if (entity) {
-      const updatedEmployee = await updateUser(entity.id, payload)
-      setEmployees((currentEmployees) =>
-        currentEmployees.map((employee) =>
-          employee.id === entity.id
-            ? mapUserApiToEmployee(updatedEmployee)
-            : employee
+      if (entity) {
+        const updatedEmployee = await updateUser(entity.id, payload)
+        setEmployees((currentEmployees) =>
+          currentEmployees.map((employee) =>
+            employee.id === entity.id
+              ? mapUserApiToEmployee(updatedEmployee)
+              : employee
+          )
         )
-      )
-      return
-    }
+        return
+      }
 
-    const createdEmployeeResponse = await createUser(payload)
-    const createdEmployee = createdEmployeeResponse.item
-    setEmployees((currentEmployees) => [
-      ...currentEmployees,
-      mapUserApiToEmployee(createdEmployee),
-    ])
+      const createdEmployeeResponse = await createUser(payload)
+      const createdEmployee = createdEmployeeResponse.item
+      setEmployees((currentEmployees) => [
+        ...currentEmployees,
+        mapUserApiToEmployee(createdEmployee),
+      ])
 
-    if (
-      createdEmployeeResponse.notification?.channel === "file" &&
-      createdEmployeeResponse.notification.previewPath &&
-      typeof window !== "undefined"
-    ) {
-      window.alert(
-        `Convite gerado em modo desenvolvimento.\n\nCaixa de saida local:\n${createdEmployeeResponse.notification.previewPath}`
-      )
+      setInvite(createdEmployeeResponse.invite)
+    } catch (error) {
+      console.log(error)
+      throw error
     }
   }
 
   async function saveJourney(entity: Journey | null, form: JourneyForm) {
-    const resolvedCompanyId =
-      typeof form.companyId === "number" && form.companyId > 0
-        ? form.companyId
-        : companies[0]?.id
-    const payload = buildJourneyPayload({
-      ...form,
-      companyId: resolvedCompanyId,
-    })
+    try {
+      const resolvedCompanyId =
+        typeof form.companyId === "number" && form.companyId > 0
+          ? form.companyId
+          : companies[0]?.id
+      const payload = buildJourneyPayload({
+        ...form,
+        companyId: resolvedCompanyId,
+      })
 
-    if (entity) {
-      const updatedJourney = await updateJourney(entity.id, payload)
-      setJourneys((currentJourneys) =>
-        currentJourneys.map((journey) =>
-          journey.id === entity.id
-            ? mapJourneyApiToJourney(updatedJourney)
-            : journey
+      if (entity) {
+        const updatedJourney = await updateJourney(entity.id, payload)
+        setJourneys((currentJourneys) =>
+          currentJourneys.map((journey) =>
+            journey.id === entity.id
+              ? mapJourneyApiToJourney(updatedJourney)
+              : journey
+          )
         )
-      )
-      return
-    }
+        return
+      }
 
-    const createdJourney = await createJourney(payload)
-    setJourneys((currentJourneys) => [
-      ...currentJourneys,
-      mapJourneyApiToJourney(createdJourney),
-    ])
+      const createdJourney = await createJourney(payload)
+      setJourneys((currentJourneys) => [
+        ...currentJourneys,
+        mapJourneyApiToJourney(createdJourney),
+      ])
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
   }
 
   const value: ManagementContextValue = {
@@ -210,6 +229,7 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
     companies,
     employees,
     journeys,
+    invite,
     removeEntity,
     saveEntity,
   }

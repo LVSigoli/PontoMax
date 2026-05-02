@@ -1,6 +1,10 @@
-import type { PointRecordStatus, PointRecordType, WorkdaySummary } from "./types"
 import type { TimeEntryApiItem, WorkdayApiItem } from "@/services/domain"
 import { formatHoursWithMinutes, formatTimeLabel } from "@/services/utils"
+import type {
+  PointRecordStatus,
+  PointRecordType,
+  WorkdaySummary,
+} from "./types"
 
 export const WORKDAY_TIMEZONE = "America/Sao_Paulo"
 
@@ -83,13 +87,9 @@ export function formatWorkdayDate(
 }
 
 export function isBusinessDay(value: string) {
-  const [year, month, day] = getWorkdayDateKey(value)
-    .split("-")
-    .map(Number)
+  const [year, month, day] = getWorkdayDateKey(value).split("-").map(Number)
 
-  if (!year || !month || !day) {
-    return false
-  }
+  if (!year || !month || !day) return false
 
   const weekday = new Date(Date.UTC(year, month - 1, day, 12)).getUTCDay()
 
@@ -103,9 +103,7 @@ export function mapWorkdayStatusToPointStatus(
     return "Pendente"
   }
 
-  if (status === "ADJUSTED") {
-    return "Aprovado"
-  }
+  if (status === "ADJUSTED") return "Aprovado"
 
   return "Registrado"
 }

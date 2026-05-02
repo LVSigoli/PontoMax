@@ -16,8 +16,7 @@ import {
 import { authenticate } from '../../common/auth/auth.middleware.js';
 import { toUserRole } from '../../common/constants/domain-enums.js';
 import { durationToMilliseconds } from '../../common/utils/duration.js';
-import { sendPasswordResetEmail } from './auth-email.service.js';
-import { createTokenHash, issuePasswordResetToken, makePasswordSetupUrl } from './password-reset.service.js';
+import { createTokenHash, issuePasswordResetToken } from './password-reset.service.js';
 
 export const authRouter = Router();
 
@@ -239,31 +238,9 @@ authRouter.post(
   '/forgot-password',
   validateRequest(forgotPasswordSchema),
   asyncHandler(async (request, response) => {
-    const user = await prisma.user.findUnique({
-      where: {
-        email: request.body.email.trim().toLowerCase(),
-      },
-    });
-
-    if (!user) {
-      response.json({
-        message: 'If the account exists, a reset token has been generated.',
-      });
-      return;
-    }
-
-    const resetToken = await issuePasswordResetToken(user.id);
-    const passwordSetupUrl = makePasswordSetupUrl(resetToken);
-    const delivery = await sendPasswordResetEmail({
-      to: user.email,
-      fullName: user.fullName,
-      passwordSetupUrl,
-    });
-
     response.json({
-      message: 'If the account exists, password reset instructions have been sent.',
-      developmentResetUrl: delivery.channel === 'file' ? passwordSetupUrl : undefined,
-      previewPath: delivery.previewPath,
+      message:
+        'Para recuperar sua senha, entre em contato com um administrador da sua empresa e solicite um novo link de acesso.',
     });
   }),
 );

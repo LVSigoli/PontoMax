@@ -1,8 +1,11 @@
-import type { StaticImageData } from "next/image"
+import type { SVGProps } from "react"
 
-export interface Props {
-  src: string | StaticImageData
-  size?: string
-  alt?: string
+import type { IconName } from "./generated"
+
+export interface Props extends Omit<SVGProps<SVGSVGElement>, "name"> {
+  name: IconName
+  size?: string | number
+  layout?: "absolute" | "inline"
   placement?: "start" | "end" | "center"
+  positionClassName?: string
 }

@@ -1,7 +1,11 @@
+// Components
 import { Select } from "@/components/structure/Select"
 
-import type { TableCellRenderData } from "../../../../types"
+// Utils
 import { getCellStringValue } from "../../utils"
+
+// Types
+import type { TableCellRenderData } from "../../../../types"
 
 interface Props {
   cell: TableCellRenderData
@@ -9,10 +13,12 @@ interface Props {
 }
 
 export const TableSelectCell: React.FC<Props> = ({ cell, onChange }) => {
+  // Constants
   const options = cell.options ?? []
   const value = getCellStringValue(cell.value)
   const selectedItem = options.filter((option) => option.value === value)
 
+  // Functions
   function handleSelectionChange(selection: typeof options) {
     const selectedValue = selection[0]?.value
 

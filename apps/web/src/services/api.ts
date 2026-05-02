@@ -1,5 +1,5 @@
-import axios from "axios"
 import type { InternalAxiosRequestConfig } from "axios"
+import axios from "axios"
 
 import {
   clearAuthSession,
@@ -8,7 +8,6 @@ import {
   postRefresh,
   saveAuthSession,
 } from "./auth"
-import { getErrorMessage } from "./utils"
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3333"
@@ -39,7 +38,11 @@ PONTO_MAX_API.interceptors.response.use(
       | (InternalAxiosRequestConfig & { _retry?: boolean })
       | undefined
 
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true
 
       const nextAccessToken = await refreshAccessToken()
@@ -54,8 +57,6 @@ PONTO_MAX_API.interceptors.response.use(
       clearAuthSession()
       window.location.href = "/login"
     }
-
-    return Promise.reject(new Error(getErrorMessage(error, "Nao foi possivel concluir a requisicao.")))
   }
 )
 

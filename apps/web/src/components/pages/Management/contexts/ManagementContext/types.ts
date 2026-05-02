@@ -1,3 +1,4 @@
+import { UserInviteApiItem } from "@/services/domain"
 import type { ReactNode } from "react"
 import type {
   Company,
@@ -8,10 +9,12 @@ import type {
 } from "../../types"
 
 export interface ManagementContextValue {
+  invite: UserInviteApiItem
   isLoading: boolean
   companies: Company[]
   employees: Employee[]
   journeys: Journey[]
+
   removeEntity: (view: ManagementTabId, id: number) => Promise<void>
   saveEntity: (
     view: ManagementTabId,

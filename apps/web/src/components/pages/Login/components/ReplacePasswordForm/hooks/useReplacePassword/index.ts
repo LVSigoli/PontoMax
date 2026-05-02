@@ -1,10 +1,9 @@
 // External Libraries
-import { useState } from "react"
 import { useRouter } from "next/router"
+import { useState } from "react"
 
 // Services
 import { postResetPassword } from "@/services/auth"
-import { getErrorMessage } from "@/services/utils"
 
 // Types
 import type { ReplacePasswordCredential } from "./types"
@@ -21,6 +20,8 @@ export function useReplacePassword() {
   const [errorMessage, setErrorMessage] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPasswordHidden, setIsPasswordHidden] = useState(true)
+  const [isConfirmPasswordHidden, setIsConfirmPasswordHidden] = useState(true)
 
   function handleCredentialChange(
     key: keyof ReplacePasswordCredential,
@@ -29,6 +30,14 @@ export function useReplacePassword() {
     setErrorMessage("")
     setSuccessMessage("")
     setCredential({ ...credential, [key]: value })
+  }
+
+  function handlePasswordIconClick() {
+    setIsPasswordHidden((currentValue) => !currentValue)
+  }
+
+  function handleConfirmPasswordIconClick() {
+    setIsConfirmPasswordHidden((currentValue) => !currentValue)
   }
 
   async function handleSubmit() {
@@ -61,11 +70,11 @@ export function useReplacePassword() {
         password: credential.password,
       })
 
-      setSuccessMessage("Senha atualizada com sucesso. Voce ja pode fazer login.")
-    } catch (error) {
-      setErrorMessage(
-        getErrorMessage(error, "Nao foi possivel atualizar a senha.")
+      setSuccessMessage(
+        "Senha atualizada com sucesso. Voce ja pode fazer login."
       )
+    } catch (error) {
+      console.log(error)
     } finally {
       setIsSubmitting(false)
     }
@@ -76,7 +85,11 @@ export function useReplacePassword() {
     errorMessage,
     successMessage,
     isSubmitting,
+    isPasswordHidden,
+    isConfirmPasswordHidden,
     handleCredentialChange,
     handleSubmit,
+    handlePasswordIconClick,
+    handleConfirmPasswordIconClick,
   }
 }

@@ -7,11 +7,6 @@ import { Icon } from "@/components/structure/Icon"
 import { Input } from "@/components/structure/Input"
 import { Typography } from "@/components/structure/Typography"
 
-// Assets
-import ClockIcon from "@/assets/icons/clock.svg"
-import LockIcon from "@/assets/icons/lock.svg"
-import MailIcon from "@/assets/icons/mail.svg"
-
 // Hooks
 import { useLogin } from "./hooks"
 
@@ -22,17 +17,28 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
   // Hooks
   const {
     credential,
-    errorMessage,
     isSubmitting,
-    handleCredentialChange,
+    errorMessage,
+    isPassWordType,
     handleSubmit,
+    handleIconClick,
+    handleCredentialChange,
   } = useLogin()
 
+  async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    await handleSubmit()
+  }
+
   return (
-    <form className="w-full max-w-90" aria-labelledby="login-title" onSubmit={handleSubmit}>
+    <form
+      className="w-full max-w-90"
+      aria-labelledby="login-title"
+      onSubmit={handleFormSubmit}
+    >
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse">
-          <Icon src={ClockIcon} size="1.25rem" />
+          <Icon name="clock" size="1.25rem" />
         </div>
 
         <Typography variant="b1" fontWeight="bold" value="PontoMax" />
@@ -41,18 +47,12 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
           variant="b2"
           value="Sistema de Gestao de Ponto Eletronico"
         />
-
-        <Typography
-          className="mt-3 text-center text-content-muted"
-          variant="caption"
-          value="Demo: demo@pontomax.com.br | senha: 123456"
-        />
       </div>
 
       <div className="space-y-4">
         <Input
           title="email"
-          icon={MailIcon}
+          icon="mail"
           value={credential.email}
           placeholder="seu@email.com.br"
           onChange={(v) => handleCredentialChange("email", v)}
@@ -60,10 +60,11 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
 
         <Input
           title="senha"
-          icon={LockIcon}
-          type="password"
+          icon="lock"
           value={credential.password}
           placeholder="Informe sua senha"
+          onIconClick={handleIconClick}
+          type={isPassWordType ? "password" : "text"}
           onChange={(v) => handleCredentialChange("password", v)}
         />
       </div>
@@ -79,6 +80,7 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
       <Button
         fitWidth
         variant="text"
+        type="button"
         value="Esqueci minha senha"
         onClick={onForgotPasswordClick}
       />

@@ -55,6 +55,18 @@ export interface UserApiItem {
   journeyName: string | null
 }
 
+export interface UserInviteApiItem {
+  email: string
+  temporaryPassword: string
+  invitationUrl: string
+  requiresPasswordChange: boolean
+  copyText: string
+}
+
+export interface CreateUserApiResponse extends ApiItemResponse<UserApiItem> {
+  invite: UserInviteApiItem
+}
+
 export interface JourneyApiItem {
   id: number
   companyId: number

@@ -1,9 +1,7 @@
-// External Libraries
-import type { StaticImageData } from "next/image"
-import Image from "next/image"
 import React from "react"
 
 // Types
+import { Icon } from "@/components/structure/Icon"
 import { Props } from "./types"
 
 export const ActionItem: React.FC<Props> = ({ action, onActionClick }) => {
@@ -34,26 +32,9 @@ export const ActionItem: React.FC<Props> = ({ action, onActionClick }) => {
 }
 
 function renderActionIcon(icon: Props["action"]["icon"]) {
-  if (isImageSource(icon)) {
-    return (
-      <Image
-        src={icon}
-        alt=""
-        width={16}
-        height={16}
-        className="block size-4 object-contain"
-      />
-    )
+  if (typeof icon === "string") {
+    return <Icon name={icon} layout="inline" size="1rem" />
   }
 
   return icon
-}
-
-function isImageSource(
-  icon: Props["action"]["icon"]
-): icon is string | StaticImageData {
-  return (
-    typeof icon === "string" ||
-    (typeof icon === "object" && icon !== null && "src" in icon)
-  )
 }

@@ -1,9 +1,6 @@
 // External Libraries
 import React from "react"
 
-// Assets
-import UpdateIcon from "@/assets/icons/update.svg"
-
 // Components
 import { Table } from "@/components/structure/Table"
 import { Typography } from "@/components/structure/Typography"
@@ -24,7 +21,7 @@ const POINT_HISTORY_ACTIONS: TableAction[] = [
     id: "request-adjustment",
     label: "Solicitar ajuste",
     color: "text-warning-700",
-    icon: UpdateIcon,
+    icon: "update",
   },
 ]
 

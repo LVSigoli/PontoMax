@@ -9,9 +9,6 @@ import { Sidebar } from "@/components/structure/Sidebar"
 import { SolicitationCard } from "./components/SolicitationCard"
 import { SolicitationDrawer } from "./components/SolicitationDrawer"
 
-// Assets
-import SearchIcon from "@/assets/icons/search.svg"
-
 // Utils
 import { SOLICITATION_STATUS_OPTIONS } from "./constants"
 
@@ -57,7 +54,7 @@ const SolicitationsContent: React.FC = () => {
                 value={search}
                 placeHolder="Busque por usuario..."
                 className="w-full max-w-xl"
-                startIcon={SearchIcon}
+                startIcon="search"
               />
 
               <div className="flex w-full max-w-50 items-center gap-2 rounded-lg bg-surface-muted px-3">

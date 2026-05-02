@@ -1,5 +1,8 @@
+import { Input } from "@/components/structure/Input"
+import { Picker } from "@/components/structure/Picker"
+
 import type { TableCellRenderData } from "../../../../types"
-import { getCellInputType, getCellStringValue } from "../../utils"
+import { getCellStringValue, getTablePickerType } from "../../utils"
 
 interface Props {
   cell: TableCellRenderData
@@ -7,19 +10,28 @@ interface Props {
 }
 
 export const TableInputCell: React.FC<Props> = ({ cell, onChange }) => {
-  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-    onChange?.(event.target.value)
+  if (cell.type === "input") {
+    return (
+      <Input
+        value={getCellStringValue(cell.value)}
+        placeholder={cell.placeholder}
+        disabled={cell.disabled}
+        variant="table"
+        fieldClassName={cell.className}
+        onChange={(value) => onChange?.(value)}
+      />
+    )
   }
 
   return (
-    <input
-      type={getCellInputType(cell.type)}
+    <Picker
+      type={getTablePickerType(cell.type)}
       value={getCellStringValue(cell.value)}
       placeholder={cell.placeholder}
       disabled={cell.disabled}
-      className={`h-9 w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 text-sm font-semibold text-content-muted outline-none transition placeholder:text-content-muted focus:border-border-focus focus:bg-surface-page disabled:cursor-default disabled:caret-transparent disabled:pointer-events-none disabled:opacity-60 ${cell.className ?? ""}`}
-      onClick={(event) => event.stopPropagation()}
-      onChange={handleChange}
+      variant="table"
+      fieldClassName={cell.className}
+      onChange={(value) => onChange?.(value)}
     />
   )
 }

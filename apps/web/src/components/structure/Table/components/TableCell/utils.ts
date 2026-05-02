@@ -1,16 +1,9 @@
+import type { PickerType } from "@/components/structure/Picker/types"
 import type {
   TableCellData,
   TableCellRenderData,
   TableCellType,
 } from "../../types"
-
-const INPUT_TYPE_BY_CELL_TYPE: Partial<Record<TableCellType, string>> = {
-  "data-picker": "date",
-  "date-picker": "date",
-  "date-time-picker": "datetime-local",
-  input: "text",
-  "time-picker": "time",
-}
 
 export function normalizeTableCell(cell: TableCellData): TableCellRenderData {
   return {
@@ -20,8 +13,11 @@ export function normalizeTableCell(cell: TableCellData): TableCellRenderData {
   }
 }
 
-export function getCellInputType(type: TableCellType) {
-  return INPUT_TYPE_BY_CELL_TYPE[type] ?? "text"
+export function getTablePickerType(type: TableCellType): PickerType {
+  if (type === "data-picker" || type === "date-picker") return "date"
+  if (type === "date-time-picker") return "dateTime"
+
+  return "time"
 }
 
 export function getCellStringValue(value: TableCellRenderData["value"]) {

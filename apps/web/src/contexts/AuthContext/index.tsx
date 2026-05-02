@@ -10,8 +10,8 @@ import React, {
 // Services
 import {
   clearAuthSession,
-  getCurrentUser,
   getAuthSession,
+  getCurrentUser,
   getRefreshToken,
   postLogin,
   postLogout,
@@ -29,13 +29,26 @@ interface Props {
 }
 
 export const AuthProvider: React.FC<Props> = ({ children }) => {
+  // States
   const [session, setSession] = useState<AuthSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Constants
+  const user = useMemo<AuthenticatedUser | null>(() => {
+    if (!session) return null
+
+    return {
+      ...session.user,
+      groups: new Set(session.user.groups),
+    }
+  }, [session?.user])
+
+  // Effects
   useEffect(() => {
     void hydrateSession()
   }, [])
 
+  // Functions
   async function hydrateSession() {
     const currentSession = getAuthSession()
 
@@ -46,15 +59,12 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     }
 
     try {
-      const user = await getCurrentUser()
-      setSession({
-        ...currentSession,
-        user,
-      })
-      saveAuthSession({
-        ...currentSession,
-        user,
-      })
+      const response = await getCurrentUser()
+
+      const user = response?.user
+
+      setSession({ ...currentSession, user })
+      saveAuthSession({ ...currentSession, user })
     } catch {
       clearAuthSession()
       setSession(null)
@@ -74,24 +84,18 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     return nextSession
   }
 
-  function logout() {
-    const refreshToken = getRefreshToken()
-    if (refreshToken) {
-      void postLogout(refreshToken).catch(() => undefined)
-    }
+  async function logout() {
+    try {
+      const refreshToken = getRefreshToken()
 
-    clearAuthSession()
-    setSession(null)
+      if (refreshToken) await postLogout(refreshToken)
+    } catch (e) {
+      console.log(e)
+    } finally {
+      clearAuthSession()
+      setSession(null)
+    }
   }
-
-  const user = useMemo<AuthenticatedUser | null>(() => {
-    if (!session) return null
-
-    return {
-      ...session.user,
-      groups: new Set(session.user.groups),
-    }
-  }, [session])
 
   const value = useMemo<AuthContextValues>(
     () => ({

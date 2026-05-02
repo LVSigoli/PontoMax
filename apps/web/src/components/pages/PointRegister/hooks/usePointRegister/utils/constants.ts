@@ -1,0 +1,1 @@
+export const POINT_REGISTER_HISTORY_PAGE_SIZE = 5

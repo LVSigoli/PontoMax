@@ -2,8 +2,8 @@ import type {
   CompanyForm,
   EmployeeForm,
   JourneyForm,
-  ManagementForm,
   ManagementEntity,
+  ManagementForm,
   ManagementTabOption,
 } from "../../types"
 
@@ -18,6 +18,7 @@ export interface ManagementDrawerMethods {
 export interface Props {
   element: ManagementEntity | null
   view: ManagementTabOption
+  onSuccess: () => void
 }
 
 export type CompanyFormData = CompanyForm

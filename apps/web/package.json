@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "icons:generate": "node scripts/generate-icons.mjs",
+    "predev": "pnpm icons:generate",
+    "prebuild": "pnpm icons:generate",
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",

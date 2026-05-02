@@ -1,5 +1,5 @@
 // External Libraries
-import { forwardRef, useImperativeHandle, useRef } from "react"
+import { forwardRef, useImperativeHandle, useRef, useState } from "react"
 
 // Components
 import { Button } from "@/components/structure/Button"
@@ -16,15 +16,23 @@ export const ConfirmationModal = forwardRef<
 >(({ currentTime, onConfirm }, ref) => {
   // Refs
   const modalRef = useRef<ModalMethods>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   // Functions
   function handleCancel() {
     modalRef.current?.close()
   }
 
-  function handleConfirm() {
-    onConfirm()
-    modalRef.current?.close()
+  async function handleConfirm() {
+    try {
+      setIsLoading(true)
+      await onConfirm()
+      modalRef.current?.close()
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   useImperativeHandle(
@@ -59,8 +67,9 @@ export const ConfirmationModal = forwardRef<
           />
           <Button
             fitWidth
-            value="Confirmar"
             variant="filled"
+            value="Confirmar"
+            loading={isLoading}
             onClick={handleConfirm}
           />
         </div>

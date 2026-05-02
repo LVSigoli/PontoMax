@@ -1,27 +1,28 @@
+import { IconName } from "@/components/structure/Icon"
 import type { AnalyticsMetricType, EmployeeHourBalance } from "./types"
 
 export function getMetricTypeStyle(type: AnalyticsMetricType) {
   const styles: Record<
     AnalyticsMetricType,
     {
-      icon: string
+      icon: IconName
       iconClassName: string
     }
   > = {
     "extra-hours": {
-      icon: "◷",
+      icon: "clock",
       iconClassName: "bg-success-600 text-content-inverse",
     },
     issues: {
-      icon: "!",
+      icon: "danger",
       iconClassName: "bg-danger-600 text-content-inverse",
     },
     pending: {
-      icon: "▣",
+      icon: "bookmark",
       iconClassName: "bg-warning-600 text-content-inverse",
     },
     present: {
-      icon: "♙",
+      icon: "employees",
       iconClassName: "bg-brand-600 text-content-inverse",
     },
   }

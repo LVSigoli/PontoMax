@@ -33,18 +33,18 @@ import type {
 } from "./types"
 
 // Utils
+import { useManagementContext } from "../../contexts/ManagementContext"
 import {
   getEntityLabel,
   makeCompanyForm,
   makeCompanyOptions,
   makeEmployeeForm,
-  makeJourneyOptions,
   makeJourneyForm,
+  makeJourneyOptions,
 } from "../../utils"
-import { useManagementContext } from "../../contexts/ManagementContext"
 
 export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
-  ({ element, view }, ref) => {
+  ({ element, view, onSuccess }, ref) => {
     // Refs
     const sidePanelRef = useRef<SidePanelMethods>(null)
 
@@ -103,9 +103,16 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
       }))
     }
 
-    function handleSave() {
-      saveEntity(view.id, element, form)
-      handleClose()
+    async function handleSave() {
+      try {
+        await saveEntity(view.id, element, form)
+
+        handleClose()
+
+        if (view.id === "employees" && !element) onSuccess()
+      } catch (error) {
+        console.log(error)
+      }
     }
 
     function renderForm() {
@@ -310,7 +317,7 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
               onClick={handleCancel}
             />
 
-            <Button fitWidth value="Salvar" onClick={handleSave} />
+            <Button fitWidth value="Salvar" onClick={() => void handleSave()} />
           </footer>
         </div>
       </SidePanel>

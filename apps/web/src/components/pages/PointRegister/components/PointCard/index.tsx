@@ -1,6 +1,3 @@
-// Assets
-import ClockIcon from "@/assets/icons/clock.svg"
-
 // Components
 import { Button } from "@/components/structure/Button"
 import { Icon } from "@/components/structure/Icon"
@@ -27,7 +24,7 @@ export const PointCard: React.FC<Props> = ({
         <div className="flex w-full items-center justify-center gap-3">
           <div className="flex flex-row items-center gap-2 rounded-xl bg-surface-muted px-4 py-3">
             <div className="relative flex size-10 items-center justify-center rounded-lg bg-brand-600 text-content-inverse">
-              <Icon src={ClockIcon} size="1.1rem" />
+              <Icon name="clock" size="1.1rem" />
             </div>
 
             <Typography

@@ -6,7 +6,7 @@ import { Props } from "./types"
 
 export const ContextMenu: React.FC<Props> = ({ onLogout }) => {
   return (
-    <div className="absolute bottom-16 right-4 z-20 min-w-36 rounded-lg border border-border-subtle bg-surface-card p-1 shadow-[0_18px_45px_rgba(15,23,42,0.12)] cursor-pointer">
+    <div className="absolute bottom-10 right-4 z-20 min-w-36 rounded-lg border border-border-subtle bg-surface-card p-1 shadow-[0_18px_45px_rgba(15,23,42,0.12)] cursor-pointer">
       <button
         type="button"
         onClick={onLogout}

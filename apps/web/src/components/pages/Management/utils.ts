@@ -164,15 +164,24 @@ export function buildCompanyPayload(form: CompanyForm & { clientId: number }) {
 }
 
 export function buildEmployeePayload(form: EmployeeForm) {
+  const companyId =
+    typeof form.companyId === "number" && form.companyId > 0
+      ? form.companyId
+      : undefined
+  const journeyId =
+    typeof form.journeyId === "number" && form.journeyId > 0
+      ? form.journeyId
+      : undefined
+
   return {
-    companyId: form.companyId || undefined,
-    fullName: form.name,
-    email: form.email,
+    companyId,
+    fullName: form.name.trim(),
+    email: form.email.trim().toLowerCase(),
     cpf: form.cpf,
-    position: form.role,
+    position: form.role.trim() || undefined,
     role: form.managerAccess ? "COMPANY_ADMIN" : "EMPLOYEE",
-    journeyId: form.journeyId || undefined,
-    journeyValidFrom: new Date().toISOString().slice(0, 10),
+    journeyId,
+    journeyValidFrom: journeyId ? new Date().toISOString().slice(0, 10) : undefined,
   }
 }
 

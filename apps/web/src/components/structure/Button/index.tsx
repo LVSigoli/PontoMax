@@ -40,13 +40,13 @@ export const Button: React.FC<Props> = ({
   function renderStartIcon() {
     if (!icon || normalizedIconPlacement !== "start" || loading) return null
 
-    return <Icon size="1rem" src={icon} placement="start" />
+    return <Icon size="1rem" name={icon} placement="start" />
   }
 
   function renderEndIcon() {
     if (!icon || normalizedIconPlacement !== "end" || loading) return null
 
-    return <Icon size="1rem" src={icon} placement="end" />
+    return <Icon size="1rem" name={icon} placement="end" />
   }
 
   return (

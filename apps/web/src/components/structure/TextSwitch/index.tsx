@@ -1,4 +1,5 @@
 // Types
+import { Icon } from "../Icon"
 import type { Props, TextSwitchOption } from "./types"
 
 export const TextSwitch = <T extends TextSwitchOption>({
@@ -23,7 +24,7 @@ export const TextSwitch = <T extends TextSwitchOption>({
           >
             {option.icon ? (
               <span className="flex size-4 items-center justify-center">
-                {option.icon}
+                <Icon name={option.icon} layout="inline" />
               </span>
             ) : null}
             {option.label}

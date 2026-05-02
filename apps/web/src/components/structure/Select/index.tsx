@@ -1,5 +1,3 @@
-// External Libraries
-import Image from "next/image"
 import React from "react"
 
 // Components
@@ -67,19 +65,26 @@ export const Select: React.FC<Props> = ({
   function renderStartIcon() {
     if (!icon || placement !== "start") return null
 
-    return <Icon size="1rem" src={icon} placement="start" />
+    return (
+      <Icon
+        size="1rem"
+        name={icon}
+        placement="start"
+        className="text-content-muted"
+      />
+    )
   }
 
   function renderEndIcon() {
     if (!icon || placement !== "end") return null
 
     return (
-      <Image
-        src={icon}
-        alt=""
-        width={16}
-        height={16}
-        className="pointer-events-none absolute right-9 top-1/2 size-4 -translate-y-1/2 object-contain text-content-muted"
+      <Icon
+        size="1rem"
+        name={icon}
+        placement="end"
+        positionClassName="right-9"
+        className="text-content-muted"
       />
     )
   }
