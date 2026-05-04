@@ -2,7 +2,6 @@ import type {
   CalendarDay,
   DurationDraft,
   PickerFieldProps,
-  PickerPeriod,
   PickerType,
   PickerVariant,
   TimeDraft,
@@ -13,7 +12,7 @@ const PICKER_PANEL_DIMENSIONS: Record<
   { width: number; height: number }
 > = {
   date: { width: 280, height: 320 },
-  time: { width: 180, height: 180 },
+  time: { width: 280, height: 180 },
   interval: { width: 180, height: 164 },
   dateTime: { width: 280, height: 440 },
 }
@@ -163,21 +162,16 @@ export function parseTimeDraft(value: string | Date): TimeDraft {
   const timeValue = parseTimeValue(value)
   if (!timeValue) {
     return {
-      hour: "",
-      minute: "",
-      period: "AM",
+      hour: "00",
+      minute: "00",
     }
   }
 
   const [hours = "00", minutes = "00"] = timeValue.split(":")
-  const numericHours = Number(hours)
-  const period: PickerPeriod = numericHours >= 12 ? "PM" : "AM"
-  const normalizedHours = numericHours % 12 || 12
 
   return {
-    hour: hours ? padNumber(String(normalizedHours)) : "",
+    hour: hours ? padNumber(hours) : "",
     minute: minutes ? padNumber(minutes) : "",
-    period,
   }
 }
 
@@ -199,24 +193,15 @@ export function buildTimeValue(draft: TimeDraft) {
   if (
     Number.isNaN(hourValue) ||
     Number.isNaN(minuteValue) ||
-    hourValue < 1 ||
-    hourValue > 12 ||
+    hourValue < 0 ||
+    hourValue > 23 ||
     minuteValue < 0 ||
     minuteValue > 59
   ) {
     return ""
   }
 
-  const normalizedHours =
-    draft.period === "PM"
-      ? hourValue === 12
-        ? 12
-        : hourValue + 12
-      : hourValue === 12
-        ? 0
-        : hourValue
-
-  return `${padNumber(String(normalizedHours))}:${padNumber(String(minuteValue))}`
+  return `${padNumber(String(hourValue))}:${padNumber(String(minuteValue))}`
 }
 
 export function buildDurationValue(draft: DurationDraft) {

@@ -12,7 +12,7 @@ export const BUTTON_VARIANTS: Record<
       "border border-brand-600 bg-brand-600 text-content-inverse shadow-[0_12px_24px_rgba(37,99,235,0.25)] hover:bg-brand-700",
     outlined:
       "border border-brand-600 bg-transparent text-brand-600 hover:bg-brand-50",
-    text: "border border-transparent bg-transparent px-0 text-brand-600 hover:text-brand-700",
+    text: "border border-transparent bg-transparent px-0 text-brand-600 hover:text-brand-700 p-0",
   },
   danger: {
     filled:

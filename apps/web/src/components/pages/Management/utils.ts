@@ -190,6 +190,7 @@ export function buildJourneyPayload(form: JourneyForm) {
     form.dailyWorkMinutes && form.dailyWorkMinutes > 0
       ? form.dailyWorkMinutes
       : calculateJourneyWorkMinutes(form.startTime, form.endTime, form.interval)
+  const isFlexible = form.flexible
 
   return {
     companyId:
@@ -199,12 +200,12 @@ export function buildJourneyPayload(form: JourneyForm) {
     name: form.name,
     description: form.description || undefined,
     scaleCode: form.scale,
-    flexibleSchedule: form.flexible,
+    flexibleSchedule: isFlexible,
     dailyWorkMinutes,
     weeklyWorkMinutes: form.weeklyWorkMinutes ?? undefined,
-    expectedEntryTime: form.startTime || undefined,
-    expectedExitTime: form.endTime || undefined,
-    breakMinutes: clockToMinutes(form.interval),
+    expectedEntryTime: isFlexible ? null : form.startTime || undefined,
+    expectedExitTime: isFlexible ? null : form.endTime || undefined,
+    breakMinutes: isFlexible ? 0 : clockToMinutes(form.interval),
     toleranceMinutes: form.toleranceMinutes ?? 10,
     nightShift: form.nightShift ?? false,
     isActive: form.isActive ?? true,
@@ -222,14 +223,14 @@ function formatApiTime(value?: string | null) {
   return datePart.slice(0, 5)
 }
 
-function minutesToClock(value: number) {
+export function minutesToClock(value: number) {
   const hours = Math.floor(value / 60)
   const minutes = value % 60
 
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`
 }
 
-function clockToMinutes(value: string) {
+export function clockToMinutes(value: string) {
   if (!value) return 0
 
   const [hours = "0", minutes = "0"] = value.split(":")

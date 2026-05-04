@@ -1,8 +1,12 @@
+// External Libraries
 import { useState } from "react"
 
+// Components
+import { Button } from "@/components/structure/Button"
 import { Typography } from "@/components/structure/Typography"
-
 import { TimeFields } from "../TimeFields"
+
+// Utils
 import {
   buildCalendarDays,
   buildDateTimeFromParts,
@@ -17,7 +21,9 @@ import {
   parseDateValue,
   parseTimeDraft,
 } from "../../utils"
-import type { PickerPeriod, TimeDraft } from "../../types"
+
+// Types
+import type { TimeDraft } from "../../types"
 
 interface Props {
   value: string | Date
@@ -66,7 +72,6 @@ export const DateTimePickerPanel: React.FC<Props> = ({
 
   function handleSelectDate(date: Date) {
     setSelectedDate(date)
-    syncValue(date, draft)
   }
 
   function handleHourChange(value: string) {
@@ -76,7 +81,6 @@ export const DateTimePickerPanel: React.FC<Props> = ({
     }
 
     setDraft(nextDraft)
-    syncValue(selectedDate, nextDraft)
   }
 
   function handleMinuteChange(value: string) {
@@ -86,17 +90,15 @@ export const DateTimePickerPanel: React.FC<Props> = ({
     }
 
     setDraft(nextDraft)
-    syncValue(selectedDate, nextDraft)
   }
 
   function handleHourBlur() {
     const nextDraft = {
       ...draft,
-      hour: clampInputValue(draft.hour, 1, 12),
+      hour: clampInputValue(draft.hour, 0, 23),
     }
 
     setDraft(nextDraft)
-    syncValue(selectedDate, nextDraft)
   }
 
   function handleMinuteBlur() {
@@ -106,27 +108,26 @@ export const DateTimePickerPanel: React.FC<Props> = ({
     }
 
     setDraft(nextDraft)
-    syncValue(selectedDate, nextDraft)
-  }
-
-  function handlePeriodChange(period: PickerPeriod) {
-    const nextDraft = {
-      ...draft,
-      period,
-    }
-
-    setDraft(nextDraft)
-    syncValue(selectedDate, nextDraft)
   }
 
   function handleClear() {
     setSelectedDate(null)
     setDraft({
-      hour: "",
-      minute: "",
-      period: "AM",
+      hour: "00",
+      minute: "00",
     })
     onChange("")
+    onClose()
+  }
+
+  function handleConfirm() {
+    const sanitizedDraft = {
+      hour: clampInputValue(draft.hour, 0, 23),
+      minute: clampInputValue(draft.minute, 0, 59),
+    }
+
+    setDraft(sanitizedDraft)
+    syncValue(selectedDate, sanitizedDraft)
     onClose()
   }
 
@@ -193,24 +194,22 @@ export const DateTimePickerPanel: React.FC<Props> = ({
           label="Hora"
           hour={draft.hour}
           minute={draft.minute}
-          period={draft.period}
-          showPeriod
           onHourBlur={handleHourBlur}
           onHourChange={handleHourChange}
           onMinuteBlur={handleMinuteBlur}
           onMinuteChange={handleMinuteChange}
-          onPeriodChange={handlePeriodChange}
         />
       </div>
 
-      <footer className="border-t border-border-default px-4 py-3">
-        <button
-          type="button"
-          className="w-full text-sm font-medium text-content-secondary transition hover:text-brand-600"
+      <footer className="flex items-center justify-between gap-3 border-t border-border-default px-4 py-3">
+        <Button
+          variant="text"
+          value="Limpar"
+          className="text-content-secondary"
           onClick={handleClear}
-        >
-          Limpar
-        </button>
+        />
+
+        <Button variant="text" value="Confirmar" onClick={handleConfirm} />
       </footer>
     </div>
   )

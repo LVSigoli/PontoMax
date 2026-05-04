@@ -1,6 +1,8 @@
 // External Libraries
+import React from "react"
 
 // Components
+import { Button } from "@/components/structure/Button"
 import { Typography } from "@/components/structure/Typography"
 import { TimeFields } from "../TimeFields"
 
@@ -19,11 +21,11 @@ export const TimePickerPanel: React.FC<Props> = (props) => {
   const {
     draft,
     handleClear,
+    handleConfirm,
     handleHourBlur,
     handleHourChange,
     handleMinuteBlur,
     handleMinuteChange,
-    handlePeriodChange,
   } = useTimePickcerPanel(props)
 
   return (
@@ -33,22 +35,22 @@ export const TimePickerPanel: React.FC<Props> = (props) => {
       <TimeFields
         hour={draft.hour}
         minute={draft.minute}
-        period={draft.period}
-        showPeriod
         onHourBlur={handleHourBlur}
         onHourChange={handleHourChange}
         onMinuteBlur={handleMinuteBlur}
         onMinuteChange={handleMinuteChange}
-        onPeriodChange={handlePeriodChange}
       />
 
-      <button
-        type="button"
-        className="justify-self-start text-sm font-medium text-content-secondary transition hover:text-brand-600"
-        onClick={handleClear}
-      >
-        Limpar
-      </button>
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          variant="text"
+          value="Limpar"
+          className="text-content-secondary"
+          onClick={handleClear}
+        />
+
+        <Button variant="text" value="Confirmar" onClick={handleConfirm} />
+      </div>
     </div>
   )
 }
