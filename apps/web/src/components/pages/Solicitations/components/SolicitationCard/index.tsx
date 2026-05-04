@@ -5,6 +5,7 @@ import { Typography } from "@/components/structure/Typography"
 import type { Props } from "./types"
 
 // Utils
+import { Icon } from "@/components/structure/Icon"
 import { formatSolicitationDate, getSolicitationStatusClass } from "../../utils"
 
 export const SolicitationCard: React.FC<Props> = ({
@@ -23,7 +24,7 @@ export const SolicitationCard: React.FC<Props> = ({
             aria-hidden="true"
             className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700"
           >
-            ♙
+            <Icon name="user" layout="inline" size="1rem" />
           </span>
 
           <Typography variant="b1" value={solicitation.userName} />
@@ -39,11 +40,15 @@ export const SolicitationCard: React.FC<Props> = ({
       </div>
 
       <div className="grid gap-2">
-        <Typography
-          variant="b3"
-          value={`▣ ${formatSolicitationDate(solicitation.requestDate)}`}
-          className="text-content-secondary"
-        />
+        <div className="flex flex-row items-left gap-1">
+          <Icon name="calendar" layout="inline" size="1rem" />
+
+          <Typography
+            variant="b3"
+            value={` ${formatSolicitationDate(solicitation.requestDate)}`}
+            className="text-content-secondary"
+          />
+        </div>
 
         <Typography
           variant="legal"
