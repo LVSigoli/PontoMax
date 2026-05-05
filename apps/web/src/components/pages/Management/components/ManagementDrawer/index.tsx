@@ -205,7 +205,9 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
 
       const journeyForm = form as JourneyFormData
       const companyOptions = makeCompanyOptions(companies)
-      const dailyWorkloadValue = minutesToClock(journeyForm.dailyWorkMinutes ?? 0)
+      const dailyWorkloadValue = minutesToClock(
+        journeyForm.dailyWorkMinutes ?? 0
+      )
 
       return (
         <>
@@ -231,7 +233,7 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
 
           {journeyForm.flexible ? (
             <Picker
-              type="interval"
+              type="time"
               label="Informe a quantidade de horas a serem trabalhadas"
               value={dailyWorkloadValue}
               onChange={(value) =>

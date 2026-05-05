@@ -181,7 +181,7 @@ export function buildEmployeePayload(form: EmployeeForm) {
     position: form.role.trim() || undefined,
     role: form.managerAccess ? "COMPANY_ADMIN" : "EMPLOYEE",
     journeyId,
-    journeyValidFrom: journeyId ? new Date().toISOString().slice(0, 10) : undefined,
+    journeyValidFrom: journeyId ? formatLocalDateForApi(new Date()) : undefined,
   }
 }
 
@@ -248,4 +248,12 @@ function calculateJourneyWorkMinutes(startTime: string, endTime: string, interva
   const total = end >= start ? end - start : 24 * 60 - start + end
 
   return Math.max(0, total - breakMinutes)
+}
+
+function formatLocalDateForApi(value: Date) {
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, "0")
+  const day = String(value.getDate()).padStart(2, "0")
+
+  return `${year}-${month}-${day}`
 }

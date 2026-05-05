@@ -251,7 +251,38 @@ usersRouter.patch(
       });
     }
 
-    response.json({ item: user });
+    const updatedUser = await prisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+      include: {
+        company: true,
+        journeyAssignments: {
+          include: {
+            journey: true,
+          },
+          orderBy: {
+            validFrom: 'desc',
+          },
+          take: 1,
+        },
+      },
+    });
+
+    response.json({
+      item: {
+        id: updatedUser.id,
+        companyId: updatedUser.companyId,
+        companyName: updatedUser.company.name,
+        employeeCode: updatedUser.employeeCode,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        cpf: updatedUser.cpf,
+        role: updatedUser.role,
+        position: updatedUser.position,
+        isActive: updatedUser.isActive,
+        journeyId: updatedUser.journeyAssignments[0]?.journeyId ?? null,
+        journeyName: updatedUser.journeyAssignments[0]?.journey.name ?? null,
+      },
+    });
   }),
 );
 
