@@ -1,14 +1,19 @@
 # PontoMax
 
-PontoMax e uma aplicacao web para registro e gestao de ponto eletronico em pequenas e medias empresas. O sistema foi pensado para reduzir controles manuais, melhorar a confiabilidade dos registros e oferecer uma visao gerencial clara sobre jornadas, horas extras, feriados, escalas e solicitacoes de ajuste.
+PontoMax é uma aplicacao web para registro e gestao de ponto eletronico em pequenas e medias empresas. O sistema foi pensado para reduzir controles manuais, melhorar a confiabilidade dos registros e oferecer uma visão gerencial clara sobre jornadas, horas extras, feriados, escalas e solicitacoes de ajuste.
 
 ## Objetivo
 
-O produto atende empresas que precisam controlar a jornada de seus colaboradores de forma simples, confiavel e flexivel. A experiencia principal deve ser rapida para o funcionario registrar ponto e robusta para gestores acompanharem inconsistencias, solicitacoes e indicadores operacionais.
+O produto atende empresas que precisam controlar a jornada de seus colaboradores de forma símples, confiável e flexível. A experiência principal deve ser rápida para o funcionario registrar ponto e robusta para gestores acompanharem inconsistencias, solicitacoes e indicadores operacionais.
 
 ## Contexto De Dominio
 
-O PontoMax e multiempresa. Um cliente contratante pode possuir uma ou mais empresas no sistema, e cada empresa mantem seus proprios usuarios, jornadas, feriados e registros.
+O PontoMax é multiempresa. Um cliente contratante pode possuir uma ou mais empresas no sistema, e cada empresa mantem seus proprios usuarios, jornadas, feriados e registros.
+
+## Credenciais Demo
+
+- `demo@pontomax.com.br`
+- `123456`
 
 ## Modulos
 
@@ -51,8 +56,3 @@ pnpm run format:check
 ## Banco E Ambiente
 
 O projeto usa `PostgreSQL`, com `Neon` para o banco e `Vercel` para frontend e API.
-
-## Credenciais Demo
-
-- `demo@pontomax.com.br`
-- `123456`

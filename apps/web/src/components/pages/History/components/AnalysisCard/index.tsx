@@ -24,19 +24,19 @@ export const AnalysisCard: React.FC<Props> = ({ item }) => {
         <Typography variant="b1" value={item.label} />
       </div>
 
-      <div className="grid gap-1 pl-16">
+      <div className="flex flex-row items-center gap-1">
         <Typography
           variant="h4"
           value={item.data}
-          className="text-center sm:text-left"
-        />
-
-        <Typography
-          variant="legal"
-          value={item.subtitle}
-          className="max-w-55 text-content-muted"
+          className="text-center w-full sm:tex-left sm:pl-8 sm:pr-8"
         />
       </div>
+
+      <Typography
+        variant="legal"
+        value={item.subtitle}
+        className="text-content-muted"
+      />
     </article>
   )
 }
