@@ -1,7 +1,7 @@
 import type { HolidayApiItem } from "../../types"
 
 export interface HttpRequest {
-  companyId?: number
+  companyIds?: number[]
   name: string
   date: string
   type: HolidayApiItem["type"]

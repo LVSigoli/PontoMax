@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
 // Contexts
+import { useAuth } from "@/contexts/AuthContext"
+import { useToastContext } from "@/contexts/ToastContext"
 import { useHolidaysContext } from "../../contexts/HolidaysContext"
 
 // Types
@@ -21,6 +23,8 @@ export function useHolidays() {
   const [drawerRequestKey, setDrawerRequestKey] = useState(0)
 
   // Constants
+  const { user } = useAuth()
+  const { showToast } = useToastContext()
   const { holidays, removeHoliday } = useHolidaysContext()
   const tableData = useMemo(() => buildTableData(holidays), [holidays])
 
@@ -44,6 +48,7 @@ export function useHolidays() {
   function handleActionClick(actionId: string, row: TableRowData) {
     const holiday = getHolidayByRow(row)
     if (!holiday) return
+    if (!canManageHoliday(holiday)) return
 
     if (actionId === "remove") return removeHoliday(holiday.id)
 
@@ -58,6 +63,7 @@ export function useHolidays() {
     const holiday = getHolidayByRow(row)
 
     if (!holiday) return
+    if (!canManageHoliday(holiday)) return
 
     openDrawer(holiday)
   }
@@ -65,6 +71,19 @@ export function useHolidays() {
   function openDrawer(holiday: Holiday | null) {
     setSelectedElement(holiday)
     setDrawerRequestKey((currentValue) => currentValue + 1)
+  }
+
+  function canManageHoliday(holiday: Holiday) {
+    if (holiday.type !== "Nacional" || user?.role === "PLATFORM_ADMIN") {
+      return true
+    }
+
+    showToast({
+      variant: "warning",
+      message: "Somente administradores da plataforma podem gerenciar feriados nacionais.",
+    })
+
+    return false
   }
 
   return {

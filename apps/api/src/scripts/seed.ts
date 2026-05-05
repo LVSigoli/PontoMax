@@ -99,22 +99,24 @@ async function main() {
     },
   });
 
-  await prisma.holiday.upsert({
+  const nationalHolidayDate = new Date('2026-01-01T00:00:00.000Z');
+  const currentNationalHoliday = await prisma.holiday.findFirst({
     where: {
-      companyId_date_name: {
-        companyId: company.id,
-        date: new Date('2026-01-01T00:00:00.000Z'),
-        name: 'Confraternizacao Universal',
-      },
-    },
-    update: {},
-    create: {
-      companyId: company.id,
       name: 'Confraternizacao Universal',
-      date: new Date('2026-01-01T00:00:00.000Z'),
+      date: nationalHolidayDate,
       type: 'NATIONAL',
     },
   });
+
+  if (!currentNationalHoliday) {
+    await prisma.holiday.create({
+      data: {
+        name: 'Confraternizacao Universal',
+        date: nationalHolidayDate,
+        type: 'NATIONAL',
+      },
+    });
+  }
 
   console.log('Seed finished successfully.');
 }

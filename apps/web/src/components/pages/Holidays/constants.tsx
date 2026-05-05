@@ -5,6 +5,8 @@ import type { Holiday, HolidayType } from "./types"
 export const INITIAL_HOLIDAYS: Holiday[] = [
   {
     id: 1,
+    companyIds: [],
+    companies: [],
     name: "FERIADO",
     date: "2026-01-01",
     type: "Nacional",
@@ -12,6 +14,8 @@ export const INITIAL_HOLIDAYS: Holiday[] = [
   },
   {
     id: 2,
+    companyIds: [1],
+    companies: [{ id: 1, name: "PontoMax" }],
     name: "FERIADO",
     date: "2026-01-01",
     type: "Municipal",
@@ -19,6 +23,8 @@ export const INITIAL_HOLIDAYS: Holiday[] = [
   },
   {
     id: 3,
+    companyIds: [1],
+    companies: [{ id: 1, name: "PontoMax" }],
     name: "FERIADO",
     date: "2026-01-01",
     type: "Estadual",
@@ -26,6 +32,8 @@ export const INITIAL_HOLIDAYS: Holiday[] = [
   },
   {
     id: 4,
+    companyIds: [],
+    companies: [],
     name: "FERIADO",
     date: "2026-01-01",
     type: "Nacional",
