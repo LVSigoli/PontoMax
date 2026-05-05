@@ -1,13 +1,18 @@
 // External Libraries
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useMemo } from "react"
+import { useSWRConfig } from "swr"
 
 // Services
 import {
   createHoliday,
   deleteHoliday,
-  getHolidays,
   updateHoliday,
 } from "@/services/domain"
+import {
+  swrKeyStartsWith,
+  swrKeys,
+  useHolidaysSWR,
+} from "@/hooks/swr"
 
 // Types
 import type { Holiday, HolidayForm } from "../../types"
@@ -21,31 +26,26 @@ const HolidaysContext = createContext<HolidaysContextValue | null>(null)
 export const HolidaysProvider: React.FC<HolidaysProviderProps> = ({
   children,
 }) => {
-  const [holidays, setHolidays] = useState<Holiday[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { mutate: mutateSWRCache } = useSWRConfig()
+  const { data: holidayItems = [], isLoading } = useHolidaysSWR()
+  const holidays = useMemo(
+    () => holidayItems.map(mapHolidayApiToHoliday),
+    [holidayItems]
+  )
 
-  useEffect(() => {
-    void loadHolidays()
-  }, [])
-
-  async function loadHolidays() {
-    try {
-      setIsLoading(true)
-      const items = await getHolidays()
-      setHolidays(items.map(mapHolidayApiToHoliday))
-    } catch (error) {
-      console.log(error)
-    } finally {
-      setIsLoading(false)
-    }
+  async function revalidateHolidayData() {
+    await Promise.all([
+      mutateSWRCache(swrKeyStartsWith(swrKeys.holidays.list())),
+      mutateSWRCache(swrKeyStartsWith(swrKeys.timeRecords.today())),
+      mutateSWRCache(swrKeyStartsWith(swrKeys.timeRecords.summary())),
+      mutateSWRCache(swrKeyStartsWith(swrKeys.analytics.dashboard())),
+    ])
   }
 
   async function removeHoliday(id: number) {
     try {
       await deleteHoliday(id)
-      setHolidays((currentHolidays) =>
-        currentHolidays.filter((holiday) => holiday.id !== id)
-      )
+      await revalidateHolidayData()
     } catch (error) {
       console.log(error)
     }
@@ -60,22 +60,13 @@ export const HolidaysProvider: React.FC<HolidaysProviderProps> = ({
       }
 
       if (holiday) {
-        const updatedHoliday = await updateHoliday(holiday.id, payload)
-        setHolidays((currentHolidays) =>
-          currentHolidays.map((currentHoliday) =>
-            currentHoliday.id === holiday.id
-              ? mapHolidayApiToHoliday(updatedHoliday)
-              : currentHoliday
-          )
-        )
+        await updateHoliday(holiday.id, payload)
+        await revalidateHolidayData()
         return
       }
 
-      const createdHoliday = await createHoliday(payload)
-      setHolidays((currentHolidays) => [
-        ...currentHolidays,
-        mapHolidayApiToHoliday(createdHoliday),
-      ])
+      await createHoliday(payload)
+      await revalidateHolidayData()
     } catch (error) {
       console.log(error)
     }

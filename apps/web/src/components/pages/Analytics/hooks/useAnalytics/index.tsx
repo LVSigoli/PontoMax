@@ -1,11 +1,12 @@
 // External Libraries
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 //  Components
 import type { SelectionOption } from "@/components/structure/Select/types"
 
 // Hooks
 import { useAuth } from "@/contexts/AuthContext"
+import { useAnalyticsDashboardSWR, useCompaniesSWR } from "@/hooks/swr"
 
 // Utils
 import {
@@ -14,10 +15,8 @@ import {
   buildCompanyOptions,
 } from "./utils"
 
-// Services
-import { getAnalyticsDashboard, getCompanies } from "@/services/domain"
-
 // Types
+import { getErrorMessage } from "@/utils/getErrorMessage"
 import type {
   AnalyticsMetric,
   EmployeeHourBalance,
@@ -26,79 +25,61 @@ import type {
 } from "../../types"
 
 export function useAnalytics() {
-  //  States
-  const [metrics, setMetrics] = useState<AnalyticsMetric[]>([])
-  const [balances, setBalances] = useState<EmployeeHourBalance[]>([])
-  const [solicitationChart, setSolicitationChart] = useState<
-    SolicitationChartItem[]
-  >([])
-  const [workedHours, setWorkedHours] = useState<WorkedHoursItem[]>([])
-  const [companyOptions, setCompanyOptions] = useState<SelectionOption[]>([])
   const [selectedCompanyId, setSelectedCompanyId] = useState("all")
-  const [errorMessage, setErrorMessage] = useState("")
 
   // Hooks
   const { user } = useAuth()
 
   // Constants
   const isPlatformAdmin = user?.role === "PLATFORM_ADMIN"
+  const selectedCompanyParams =
+    isPlatformAdmin && selectedCompanyId !== "all"
+      ? { companyId: Number(selectedCompanyId) }
+      : undefined
+
+  // Hooks
+  const { data: companies = [] } = useCompaniesSWR({ enabled: isPlatformAdmin })
+  const { data: dashboard, error } = useAnalyticsDashboardSWR(
+    selectedCompanyParams,
+    { enabled: Boolean(user) }
+  )
+
+  // Constants
+  const metrics = useMemo<AnalyticsMetric[]>(
+    () => (dashboard ? buildAnalyticsMetrics(dashboard) : []),
+    [dashboard]
+  )
+  const balances = useMemo<EmployeeHourBalance[]>(
+    () => (dashboard ? buildBalances(dashboard) : []),
+    [dashboard]
+  )
+  const solicitationChart = useMemo<SolicitationChartItem[]>(
+    () => dashboard?.solicitationChart ?? [],
+    [dashboard]
+  )
+  const workedHours = useMemo<WorkedHoursItem[]>(
+    () => dashboard?.workedHours ?? [],
+    [dashboard]
+  )
+  const companyOptions = useMemo(
+    () => (isPlatformAdmin ? buildCompanyOptions(companies) : []),
+    [companies, isPlatformAdmin]
+  )
+  const errorMessage = useMemo(
+    () =>
+      error
+        ? getErrorMessage(
+            error,
+            "Nao foi possivel carregar os dados do painel."
+          )
+        : "",
+    [error]
+  )
   const selectedCompanyOption = useMemo(() => {
     return companyOptions.filter((option) => option.value === selectedCompanyId)
-  }, [selectedCompanyId])
+  }, [companyOptions, selectedCompanyId])
 
-  // Effects
-  useEffect(() => {
-    if (!user) return
-
-    void loadDashboard()
-  }, [selectedCompanyId, user])
-
-  useEffect(() => {
-    if (!isPlatformAdmin) {
-      setCompanyOptions([])
-      setSelectedCompanyId("all")
-      return
-    }
-
-    void loadCompanies()
-  }, [isPlatformAdmin])
-
-  async function loadCompanies() {
-    try {
-      const companies = await getCompanies()
-
-      const options = buildCompanyOptions(companies)
-
-      setCompanyOptions(options)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  async function loadDashboard() {
-    try {
-      setErrorMessage("")
-
-      const dashboard = await getAnalyticsDashboard(
-        isPlatformAdmin && selectedCompanyId !== "all"
-          ? { companyId: Number(selectedCompanyId) }
-          : undefined
-      )
-
-      const dashboardMetrics = buildAnalyticsMetrics(dashboard)
-      const balances = buildBalances(dashboard)
-
-      setMetrics(dashboardMetrics)
-
-      setBalances(balances)
-
-      setSolicitationChart(dashboard.solicitationChart)
-      setWorkedHours(dashboard.workedHours)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
+  // Functions
   function handleCompanyFilterChange(selection: SelectionOption[]) {
     const nextCompanyId = selection[0]?.value
 

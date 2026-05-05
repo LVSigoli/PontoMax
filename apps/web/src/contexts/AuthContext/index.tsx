@@ -1,22 +1,24 @@
 // External Libraries
 import React, {
+  useCallback,
   createContext,
   useContext,
   useEffect,
   useMemo,
   useState,
 } from "react"
+import { useSWRConfig } from "swr"
 
 // Services
 import {
   clearAuthSession,
   getAuthSession,
-  getCurrentUser,
   getRefreshToken,
   postLogin,
   postLogout,
   saveAuthSession,
 } from "@/services/auth"
+import { swrKeys, useCurrentUserSWR } from "@/hooks/swr"
 
 // Types
 import { AuthSession, LoginPayload } from "@/types"
@@ -31,47 +33,56 @@ interface Props {
 export const AuthProvider: React.FC<Props> = ({ children }) => {
   // States
   const [session, setSession] = useState<AuthSession | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [hasHydratedSession, setHasHydratedSession] = useState(false)
+
+  // Hooks
+  const { mutate: mutateSWRCache } = useSWRConfig()
+
+  const shouldLoadCurrentUser = hasHydratedSession && Boolean(session)
+
+  const { data, isLoading, isValidating } = useCurrentUserSWR({
+    enabled: shouldLoadCurrentUser,
+    onError: () => {
+      clearAuthSession()
+      setSession(null)
+    },
+    onSuccess: (response) => {
+      setSession((currentSession) => {
+        if (!currentSession) return currentSession
+
+        const nextSession = {
+          ...currentSession,
+          user: response.user,
+        }
+
+        saveAuthSession(nextSession)
+
+        return nextSession
+      })
+    },
+  })
 
   // Constants
+  const isSessionLoading =
+    !hasHydratedSession || (shouldLoadCurrentUser && isLoading)
   const user = useMemo<AuthenticatedUser | null>(() => {
-    if (!session) return null
+    const currentUser = data?.user ?? session?.user
+
+    if (!currentUser) return null
 
     return {
-      ...session.user,
-      groups: new Set(session.user.groups),
+      ...currentUser,
+      groups: new Set(currentUser.groups),
     }
-  }, [session?.user])
+  }, [data?.user, session?.user])
 
   // Effects
   useEffect(() => {
-    void hydrateSession()
-  }, [])
-
-  // Functions
-  async function hydrateSession() {
     const currentSession = getAuthSession()
 
-    if (!currentSession) {
-      setSession(null)
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const response = await getCurrentUser()
-
-      const user = response?.user
-
-      setSession({ ...currentSession, user })
-      saveAuthSession({ ...currentSession, user })
-    } catch {
-      clearAuthSession()
-      setSession(null)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    setSession(currentSession)
+    setHasHydratedSession(true)
+  }, [])
 
   async function login(payload: LoginPayload) {
     const nextSession = await postLogin(payload)
@@ -79,12 +90,20 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     if (!nextSession.requiresPasswordChange) {
       saveAuthSession(nextSession)
       setSession(nextSession)
+      setHasHydratedSession(true)
+      await mutateSWRCache(
+        swrKeys.auth.currentUser(),
+        { user: nextSession.user },
+        {
+          revalidate: false,
+        }
+      )
     }
 
     return nextSession
   }
 
-  async function logout() {
+  const logout = useCallback(async () => {
     try {
       const refreshToken = getRefreshToken()
 
@@ -94,20 +113,24 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     } finally {
       clearAuthSession()
       setSession(null)
+      await mutateSWRCache(swrKeys.auth.currentUser(), undefined, {
+        populateCache: false,
+        revalidate: false,
+      })
     }
-  }
+  }, [mutateSWRCache])
 
   const value = useMemo<AuthContextValues>(
     () => ({
-      isLoading,
-      isValidating: isLoading,
+      isLoading: isSessionLoading,
+      isValidating,
       isAuthenticated: Boolean(user),
       session,
       user,
       login,
       logout,
     }),
-    [isLoading, session, user]
+    [isSessionLoading, isValidating, session, user, logout]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

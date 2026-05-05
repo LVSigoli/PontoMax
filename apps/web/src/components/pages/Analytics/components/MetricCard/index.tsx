@@ -30,6 +30,7 @@ export const MetricCard: React.FC<Props> = ({ metric }) => {
       <div className="grid gap-1 pl-16">
         <Typography variant="h4" value={metric.data} />
       </div>
+
       <Typography
         variant="legal"
         value={metric.subtitle}

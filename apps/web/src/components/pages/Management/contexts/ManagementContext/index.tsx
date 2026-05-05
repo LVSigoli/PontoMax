@@ -1,5 +1,6 @@
 // External Libraries
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useMemo, useState } from "react"
+import { useSWRConfig } from "swr"
 
 // Services
 import type { UserInviteApiItem } from "@/services/domain"
@@ -10,13 +11,17 @@ import {
   deleteCompany,
   deleteJourney,
   deleteUser,
-  getCompanies,
-  getJourneys,
-  getUsers,
   updateCompany,
   updateJourney,
   updateUser,
 } from "@/services/domain"
+import {
+  swrKeyStartsWith,
+  swrKeys,
+  useCompaniesSWR,
+  useJourneysSWR,
+  useUsersSWR,
+} from "@/hooks/swr"
 
 // Utils
 import {
@@ -47,61 +52,56 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
   children,
 }) => {
   // States
-  const [isLoading, setIsLoading] = useState(true)
-  const [journeys, setJourneys] = useState<Journey[]>([])
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [employees, setEmployees] = useState<Employee[]>([])
   const [invite, setInvite] = useState<UserInviteApiItem>(makeInitialInvite)
 
-  // Effects
-  useEffect(() => {
-    void loadManagementData()
-  }, [])
+  const { mutate: mutateSWRCache } = useSWRConfig()
+  const { data: companyItems = [], isLoading: isLoadingCompanies } =
+    useCompaniesSWR()
+  const { data: employeeItems = [], isLoading: isLoadingEmployees } =
+    useUsersSWR()
+  const { data: journeyItems = [], isLoading: isLoadingJourneys } =
+    useJourneysSWR()
 
-  // Functions
-  async function loadManagementData() {
-    try {
-      setIsLoading(true)
+  const companies = useMemo(
+    () => companyItems.map(mapCompanyApiToCompany),
+    [companyItems]
+  )
+  const employees = useMemo(
+    () => employeeItems.map(mapUserApiToEmployee),
+    [employeeItems]
+  )
+  const journeys = useMemo(
+    () => journeyItems.map(mapJourneyApiToJourney),
+    [journeyItems]
+  )
+  const isLoading =
+    isLoadingCompanies || isLoadingEmployees || isLoadingJourneys
 
-      const companyItems = await getCompanies()
-
-      const [employeeItems, journeyItems] = await Promise.all([
-        getUsers(),
-        getJourneys(),
-      ])
-
-      setCompanies(companyItems.map(mapCompanyApiToCompany))
-      setEmployees(employeeItems.map(mapUserApiToEmployee))
-      setJourneys(journeyItems.map(mapJourneyApiToJourney))
-    } catch (error) {
-      console.log(error)
-    } finally {
-      setIsLoading(false)
-    }
+  async function revalidateManagementData() {
+    await Promise.all([
+      mutateSWRCache(swrKeyStartsWith(swrKeys.companies.list())),
+      mutateSWRCache(swrKeyStartsWith(swrKeys.users.list())),
+      mutateSWRCache(swrKeyStartsWith(swrKeys.journeys.list())),
+      mutateSWRCache(swrKeyStartsWith(swrKeys.analytics.dashboard())),
+    ])
   }
 
   async function removeEntity(view: ManagementTabId, id: number) {
     try {
       if (view === "companies") {
         await deleteCompany(id)
-        setCompanies((currentCompanies) =>
-          currentCompanies.filter((company) => company.id !== id)
-        )
+        await revalidateManagementData()
         return
       }
 
       if (view === "employees") {
         await deleteUser(id)
-        setEmployees((currentEmployees) =>
-          currentEmployees.filter((employee) => employee.id !== id)
-        )
+        await revalidateManagementData()
         return
       }
 
       await deleteJourney(id)
-      setJourneys((currentJourneys) =>
-        currentJourneys.filter((journey) => journey.id !== id)
-      )
+      await revalidateManagementData()
     } catch (error) {
       console.log(error)
       throw error
@@ -138,22 +138,13 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
       })
 
       if (entity) {
-        const updatedCompany = await updateCompany(entity.id, payload)
-        setCompanies((currentCompanies) =>
-          currentCompanies.map((company) =>
-            company.id === entity.id
-              ? mapCompanyApiToCompany(updatedCompany)
-              : company
-          )
-        )
+        await updateCompany(entity.id, payload)
+        await revalidateManagementData()
         return
       }
 
-      const createdCompany = await createCompany(payload)
-      setCompanies((currentCompanies) => [
-        ...currentCompanies,
-        mapCompanyApiToCompany(createdCompany),
-      ])
+      await createCompany(payload)
+      await revalidateManagementData()
     } catch (error) {
       console.log(error)
       throw error
@@ -165,25 +156,14 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
       const payload = buildEmployeePayload(form)
 
       if (entity) {
-        const updatedEmployee = await updateUser(entity.id, payload)
-        setEmployees((currentEmployees) =>
-          currentEmployees.map((employee) =>
-            employee.id === entity.id
-              ? mapUserApiToEmployee(updatedEmployee)
-              : employee
-          )
-        )
+        await updateUser(entity.id, payload)
+        await revalidateManagementData()
         return
       }
 
       const createdEmployeeResponse = await createUser(payload)
-      const createdEmployee = createdEmployeeResponse.item
-      setEmployees((currentEmployees) => [
-        ...currentEmployees,
-        mapUserApiToEmployee(createdEmployee),
-      ])
-
       setInvite(createdEmployeeResponse.invite)
+      await revalidateManagementData()
     } catch (error) {
       console.log(error)
       throw error
@@ -202,22 +182,13 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
       })
 
       if (entity) {
-        const updatedJourney = await updateJourney(entity.id, payload)
-        setJourneys((currentJourneys) =>
-          currentJourneys.map((journey) =>
-            journey.id === entity.id
-              ? mapJourneyApiToJourney(updatedJourney)
-              : journey
-          )
-        )
+        await updateJourney(entity.id, payload)
+        await revalidateManagementData()
         return
       }
 
-      const createdJourney = await createJourney(payload)
-      setJourneys((currentJourneys) => [
-        ...currentJourneys,
-        mapJourneyApiToJourney(createdJourney),
-      ])
+      await createJourney(payload)
+      await revalidateManagementData()
     } catch (error) {
       console.log(error)
       throw error

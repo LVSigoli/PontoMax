@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
+import { useTimeRecordsSummarySWR } from "@/hooks/swr"
 import { mapWorkdayToSummary } from "@/components/pages/PointRegister/utils"
 import type { WorkdaySummary } from "@/components/pages/PointRegister/types"
 import type { TableRowData } from "@/components/structure/Table/types"
 import { useToastContext } from "@/contexts/ToastContext"
 import {
   getTimeRecordsOverview,
-  getTimeRecordsSummary,
   type WorkdayApiItem,
 } from "@/services/domain"
 import { getErrorMessage } from "@/utils/getErrorMessage"
@@ -31,11 +31,20 @@ export function useHistoryTable() {
   const [errorMessage, setErrorMessage] = useState("")
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
-  const [analysisItems, setAnalysisItems] = useState<UserAnalysisItem[]>([])
   const [historyRecords, setHistoryRecords] = useState<WorkdayApiItem[]>([])
   const [pagination, setPagination] = useState(makeInitialPagination)
 
   const { showToast } = useToastContext()
+  const {
+    data: summary,
+    error: summaryError,
+    mutate: mutateSummary,
+  } = useTimeRecordsSummarySWR()
+
+  const analysisItems = useMemo<UserAnalysisItem[]>(
+    () => (summary ? buildAnalysisItems(summary) : []),
+    [summary]
+  )
 
   const mappedHistoryRecords = useMemo(
     () => historyRecords.map(mapWorkdayToSummary),
@@ -60,6 +69,18 @@ export function useHistoryTable() {
   useEffect(() => {
     void loadInitialHistory()
   }, [])
+
+  useEffect(() => {
+    if (!summaryError) return
+
+    const message = getErrorMessage(summaryError, LOAD_HISTORY_ERROR_MESSAGE)
+
+    setErrorMessage(message)
+    showToast({
+      variant: "error",
+      message,
+    })
+  }, [showToast, summaryError])
 
   useEffect(() => {
     const target = loadMoreRef.current
@@ -91,14 +112,13 @@ export function useHistoryTable() {
       setErrorMessage("")
       setIsInitialLoading(true)
 
-      const [overview, summary] = await Promise.all([
+      const [overview] = await Promise.all([
         getTimeRecordsOverview({ page: 1, pageSize: PAGE_SIZE }),
-        getTimeRecordsSummary(),
+        mutateSummary(),
       ])
 
       setHasMore(overview.meta.page < overview.meta.totalPages)
       setPagination(overview.meta)
-      setAnalysisItems(buildAnalysisItems(summary))
       setHistoryRecords(overview.items)
     } catch (error) {
       const message = getErrorMessage(error, LOAD_HISTORY_ERROR_MESSAGE)
@@ -161,9 +181,9 @@ export function useHistoryTable() {
           getTimeRecordsOverview({ page: index + 1, pageSize: PAGE_SIZE })
       )
 
-      const [pages, summary] = await Promise.all([
+      const [pages] = await Promise.all([
         Promise.all(overviewRequests),
-        getTimeRecordsSummary(),
+        mutateSummary(),
       ])
 
       const latestPage = pages.at(-1)
@@ -172,7 +192,6 @@ export function useHistoryTable() {
 
       setHasMore(latestPage.meta.page < latestPage.meta.totalPages)
       setPagination(latestPage.meta)
-      setAnalysisItems(buildAnalysisItems(summary))
       setHistoryRecords(pages.flatMap((page) => page.items))
     } catch (error) {
       const message = getErrorMessage(error, LOAD_HISTORY_ERROR_MESSAGE)

@@ -1,13 +1,14 @@
 // External Libraries
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useSWRConfig } from "swr"
 
 // Contexts
 import { useToastContext } from "@/contexts/ToastContext"
+import { swrKeys, useTodayTimeRecordsSWR } from "@/hooks/swr"
 
 // Services
 import {
   getTimeRecordsOverview,
-  getTodayTimeRecords,
   registerTimeRecord,
   type WorkdayApiItem,
 } from "@/services/domain"
@@ -44,9 +45,6 @@ export function usePointRegister() {
 
   // States
   const [now, setNow] = useState<Date | null>(null)
-  const [currentWorkday, setCurrentWorkday] = useState<WorkdayApiItem | null>(
-    null
-  )
   const [overviewWorkdays, setOverviewWorkdays] = useState<WorkdayApiItem[]>([])
   const [selectedHistoryRecord, setSelectedHistoryRecord] =
     useState<WorkdaySummary | null>(null)
@@ -58,6 +56,12 @@ export function usePointRegister() {
 
   // Contexts
   const { showToast } = useToastContext()
+  const { mutate: mutateSWRCache } = useSWRConfig()
+  const {
+    data: currentWorkday = null,
+    error: currentWorkdayError,
+    mutate: mutateCurrentWorkday,
+  } = useTodayTimeRecordsSWR()
 
   // Constants
   const currentDate = now ? formatPointDate(now) : "--"
@@ -115,27 +119,29 @@ export function usePointRegister() {
   }, [])
 
   useEffect(() => {
-    void loadPointRegisterData()
+    void syncOverviewWorkdays()
   }, [])
 
-  // Functions
-  async function syncCurrentWorkday() {
-    const nextCurrentWorkday = await getTodayTimeRecords()
-    setCurrentWorkday(nextCurrentWorkday)
-  }
+  useEffect(() => {
+    if (!currentWorkdayError) return
+
+    showToast({
+      variant: "error",
+      message: getErrorMessage(
+        currentWorkdayError,
+        "Nao foi possivel carregar os dados do registro de ponto."
+      ),
+    })
+  }, [currentWorkdayError, showToast])
 
   async function syncOverviewWorkdays() {
-    const overviewResponse = await getTimeRecordsOverview({
-      page: 1,
-      pageSize: POINT_REGISTER_HISTORY_PAGE_SIZE,
-    })
-
-    setOverviewWorkdays(overviewResponse.items)
-  }
-
-  async function loadPointRegisterData() {
     try {
-      await Promise.all([syncCurrentWorkday(), syncOverviewWorkdays()])
+      const overviewResponse = await getTimeRecordsOverview({
+        page: 1,
+        pageSize: POINT_REGISTER_HISTORY_PAGE_SIZE,
+      })
+
+      setOverviewWorkdays(overviewResponse.items)
     } catch (error) {
       showToast({
         variant: "error",
@@ -153,7 +159,11 @@ export function usePointRegister() {
         timezone: WORKDAY_TIMEZONE,
       })
 
-      await Promise.all([syncCurrentWorkday(), syncOverviewWorkdays()])
+      await Promise.all([
+        mutateCurrentWorkday(),
+        syncOverviewWorkdays(),
+        mutateSWRCache(swrKeys.timeRecords.teamToday()),
+      ])
 
       showToast({
         variant: "success",
