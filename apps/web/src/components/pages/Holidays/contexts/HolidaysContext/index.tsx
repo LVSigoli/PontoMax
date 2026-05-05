@@ -1,6 +1,9 @@
 // External Libraries
-import { createContext, useContext, useMemo } from "react"
+import { createContext, useContext, useEffect, useMemo } from "react"
 import { useSWRConfig } from "swr"
+
+// Contexts
+import { useToastContext } from "@/contexts/ToastContext"
 
 // Services
 import {
@@ -13,6 +16,7 @@ import {
   swrKeys,
   useHolidaysSWR,
 } from "@/hooks/swr"
+import { getErrorMessage } from "@/utils/getErrorMessage"
 
 // Types
 import type { Holiday, HolidayForm } from "../../types"
@@ -26,12 +30,26 @@ const HolidaysContext = createContext<HolidaysContextValue | null>(null)
 export const HolidaysProvider: React.FC<HolidaysProviderProps> = ({
   children,
 }) => {
+  const { showToast } = useToastContext()
   const { mutate: mutateSWRCache } = useSWRConfig()
-  const { data: holidayItems = [], isLoading } = useHolidaysSWR()
+  const {
+    data: holidayItems = [],
+    error,
+    isLoading,
+  } = useHolidaysSWR()
   const holidays = useMemo(
     () => holidayItems.map(mapHolidayApiToHoliday),
     [holidayItems]
   )
+
+  useEffect(() => {
+    if (!error) return
+
+    showToast({
+      variant: "error",
+      message: getErrorMessage(error, "Nao foi possivel carregar os feriados."),
+    })
+  }, [error, showToast])
 
   async function revalidateHolidayData() {
     await Promise.all([
@@ -46,8 +64,17 @@ export const HolidaysProvider: React.FC<HolidaysProviderProps> = ({
     try {
       await deleteHoliday(id)
       await revalidateHolidayData()
+      showToast({
+        variant: "success",
+        message: "Feriado removido com sucesso.",
+      })
     } catch (error) {
-      console.log(error)
+      showToast({
+        variant: "error",
+        message: getErrorMessage(error, "Nao foi possivel remover o feriado."),
+      })
+
+      throw error
     }
   }
 
@@ -57,18 +84,32 @@ export const HolidaysProvider: React.FC<HolidaysProviderProps> = ({
         name: form.name,
         date: form.date,
         type: mapHolidayTypeToApi(form.type),
+        companyIds: form.type === "Nacional" ? [] : form.companyIds,
       }
 
       if (holiday) {
         await updateHoliday(holiday.id, payload)
         await revalidateHolidayData()
+        showToast({
+          variant: "success",
+          message: "Feriado atualizado com sucesso.",
+        })
         return
       }
 
       await createHoliday(payload)
       await revalidateHolidayData()
+      showToast({
+        variant: "success",
+        message: "Feriado criado com sucesso.",
+      })
     } catch (error) {
-      console.log(error)
+      showToast({
+        variant: "error",
+        message: getErrorMessage(error, "Nao foi possivel salvar o feriado."),
+      })
+
+      throw error
     }
   }
 

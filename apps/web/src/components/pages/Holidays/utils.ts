@@ -21,13 +21,15 @@ export function makeHolidayForm(holiday?: Holiday | null): HolidayForm {
     name: holiday?.name ?? "",
     date: holiday?.date ?? "",
     type: holiday?.type ?? "Nacional",
+    companyIds: holiday?.companyIds ?? [],
   }
 }
 
 export function mapHolidayApiToHoliday(holiday: HolidayApiItem): Holiday {
   return {
     id: holiday.id,
-    companyId: holiday.companyId,
+    companyIds: holiday.companyIds,
+    companies: holiday.companies,
     name: holiday.name,
     date: holiday.date.slice(0, 10),
     type: mapHolidayTypeFromApi(holiday.type),
@@ -47,4 +49,11 @@ function mapHolidayTypeFromApi(type: HolidayApiItem["type"]) {
   if (type === "MUNICIPAL") return "Municipal"
 
   return "Estadual"
+}
+
+export function formatHolidayCompanies(holiday: Holiday) {
+  if (holiday.type === "Nacional") return "Todas as empresas"
+  if (!holiday.companies.length) return "-"
+
+  return holiday.companies.map((company) => company.name).join(", ")
 }

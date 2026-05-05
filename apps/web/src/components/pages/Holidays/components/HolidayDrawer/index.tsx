@@ -3,6 +3,7 @@ import {
   forwardRef,
   useCallback,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react"
@@ -19,7 +20,11 @@ import { Typography } from "@/components/structure/Typography"
 import { HOLIDAY_TYPE_OPTIONS } from "../../constants"
 
 // Contexts
+import { useAuth } from "@/contexts/AuthContext"
 import { useHolidaysContext } from "../../contexts/HolidaysContext"
+
+// Hooks
+import { useCompaniesSWR } from "@/hooks/swr"
 
 // Types
 import type { SelectionOption } from "@/components/structure/Select/types"
@@ -36,21 +41,46 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
     const sidePanelRef = useRef<SidePanelMethods>(null)
 
     // Contexts
+    const { user } = useAuth()
     const { saveHoliday } = useHolidaysContext()
+
+    // Hooks
+    const { data: companyItems = [] } = useCompaniesSWR()
 
     // States
     const [form, setForm] = useState<HolidayForm>(() =>
-      makeHolidayForm(element)
+      getDefaultForm(element, user?.role)
     )
 
     // Constants
     const mode = element ? "edit" : "create"
     const description =
       mode === "create" ? "Adicione um novo feriado" : "Edite o feriado"
+    const typeOptions = useMemo(
+      () =>
+        user?.role === "PLATFORM_ADMIN"
+          ? HOLIDAY_TYPE_OPTIONS
+          : HOLIDAY_TYPE_OPTIONS.filter((option) => option.value !== "Nacional"),
+      [user?.role]
+    )
+    const companyOptions = useMemo<SelectionOption[]>(
+      () =>
+        companyItems.map((company) => ({
+          value: String(company.id),
+          label: company.tradeName ?? company.name,
+        })),
+      [companyItems]
+    )
+    const selectedCompanyOptions = useMemo(
+      () =>
+        companyOptions.filter((option) => form.companyIds.includes(Number(option.value))),
+      [companyOptions, form.companyIds]
+    )
+    const shouldShowCompanySelect = form.type !== "Nacional"
 
     const getInitialForm = useCallback(() => {
-      return makeHolidayForm(element)
-    }, [element])
+      return getDefaultForm(element, user?.role)
+    }, [element, user?.role])
 
     const handleClose = useCallback(() => {
       sidePanelRef.current?.close()
@@ -76,19 +106,32 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
       [handleClose, handleOpen, handleToggle]
     )
 
-    function handleChange(field: keyof HolidayForm, value: string) {
+    function handleChange<Key extends keyof HolidayForm>(
+      field: Key,
+      value: HolidayForm[Key]
+    ) {
       setForm((currentForm) => ({
         ...currentForm,
         [field]: value,
       }))
     }
 
-    function handleSave() {
-      saveHoliday(element, form)
-      handleClose()
+    function handleTypeChange(value: HolidayType) {
+      setForm((currentForm) => ({
+        ...currentForm,
+        type: value,
+        companyIds: value === "Nacional" ? [] : currentForm.companyIds,
+      }))
     }
 
-    function renderSelect({
+    async function handleSave() {
+      try {
+        await saveHoliday(element, form)
+        handleClose()
+      } catch {}
+    }
+
+    function renderSingleSelect({
       label,
       options,
       value,
@@ -103,6 +146,7 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
         <div className="grid gap-1">
           <Typography variant="b2" value={label} />
           <Select
+            label={label}
             options={options}
             selectedItem={options.filter((option) => option.value === value)}
             buttonClassName="border-border-default"
@@ -143,12 +187,31 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
                 onChange={(value) => handleChange("date", value)}
               />
 
-              {renderSelect({
+              {renderSingleSelect({
                 label: "Selecione um tipo",
-                options: HOLIDAY_TYPE_OPTIONS,
+                options: typeOptions,
                 value: form.type,
-                onChange: (value) => handleChange("type", value as HolidayType),
+                onChange: (value) => handleTypeChange(value as HolidayType),
               })}
+
+              {shouldShowCompanySelect ? (
+                <div className="grid gap-1">
+                  <Typography variant="b2" value="Selecione as empresas" />
+                  <Select
+                    multi
+                    label="Selecione as empresas"
+                    options={companyOptions}
+                    selectedItem={selectedCompanyOptions}
+                    buttonClassName="border-border-default"
+                    onSelectionChange={(selection) => {
+                      handleChange(
+                        "companyIds",
+                        selection.map((option) => Number(option.value))
+                      )
+                    }}
+                  />
+                </div>
+              ) : null}
             </form>
           </div>
 
@@ -170,3 +233,19 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
 )
 
 HolidayDrawer.displayName = "HolidayDrawer"
+
+function getDefaultForm(
+  element: Props["element"],
+  role?: string
+) {
+  const form = makeHolidayForm(element)
+
+  if (role !== "PLATFORM_ADMIN" && form.type === "Nacional") {
+    return {
+      ...form,
+      type: "Municipal" as const,
+    }
+  }
+
+  return form
+}

@@ -87,11 +87,15 @@ export interface JourneyApiItem {
 
 export interface HolidayApiItem {
   id: number
-  companyId: number
   name: string
   date: string
   type: "NATIONAL" | "STATE" | "MUNICIPAL" | "COMPANY"
   isActive: boolean
+  companyIds: number[]
+  companies: Array<{
+    id: number
+    name: string
+  }>
 }
 
 export interface TimeEntryApiItem {

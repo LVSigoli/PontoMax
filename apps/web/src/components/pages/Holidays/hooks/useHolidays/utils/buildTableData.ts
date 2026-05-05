@@ -3,13 +3,18 @@ import type {
   TableRowData,
 } from "@/components/structure/Table/types"
 import { Holiday } from "../../../types"
-import { formatHolidayDate, getHolidayStatusClass } from "../../../utils"
+import {
+  formatHolidayCompanies,
+  formatHolidayDate,
+  getHolidayStatusClass,
+} from "../../../utils"
 
 export function buildTableData(holidays: Holiday[]) {
   return holidays.map<TableRowData>((holiday) => ({
     "Nome do feriado": { value: holiday.name },
     Data: { value: formatHolidayDate(holiday.date) },
     Tipo: { value: holiday.type },
+    Empresas: { value: formatHolidayCompanies(holiday) },
     Status: buildStatus(holiday),
   }))
 }

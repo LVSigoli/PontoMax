@@ -46,7 +46,7 @@ const HolidaysContent: React.FC = () => {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <Header
                 label="Gestao de feriados"
-                subtitle="Gerencie datas de feriados e relacione a jornadas"
+                subtitle="Gerencie datas de feriados e relacione as empresas impactadas"
               />
 
               <Button
@@ -60,7 +60,7 @@ const HolidaysContent: React.FC = () => {
 
             <Table
               allowActions
-              minWidth="760px"
+              minWidth="920px"
               data={tableData}
               actions={HOLIDAY_ACTIONS}
               onActionClick={handleActionClick}
