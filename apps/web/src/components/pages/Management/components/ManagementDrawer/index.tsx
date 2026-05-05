@@ -35,12 +35,14 @@ import type {
 // Utils
 import { useManagementContext } from "../../contexts/ManagementContext"
 import {
+  clockToMinutes,
   getEntityLabel,
   makeCompanyForm,
   makeCompanyOptions,
   makeEmployeeForm,
   makeJourneyForm,
   makeJourneyOptions,
+  minutesToClock,
 } from "../../utils"
 
 export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
@@ -203,6 +205,9 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
 
       const journeyForm = form as JourneyFormData
       const companyOptions = makeCompanyOptions(companies)
+      const dailyWorkloadValue = minutesToClock(
+        journeyForm.dailyWorkMinutes ?? 0
+      )
 
       return (
         <>
@@ -226,26 +231,39 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
             onChange: (value) => handleChange("companyId", Number(value)),
           })}
 
-          <Picker
-            type="time"
-            label="Informe a hora de entrada"
-            value={journeyForm.startTime}
-            onChange={(value) => handleChange("startTime", value)}
-          />
+          {journeyForm.flexible ? (
+            <Picker
+              type="time"
+              label="Informe a quantidade de horas a serem trabalhadas"
+              value={dailyWorkloadValue}
+              onChange={(value) =>
+                handleChange("dailyWorkMinutes", clockToMinutes(value))
+              }
+            />
+          ) : (
+            <>
+              <Picker
+                type="time"
+                label="Informe a hora de entrada"
+                value={journeyForm.startTime}
+                onChange={(value) => handleChange("startTime", value)}
+              />
 
-          <Picker
-            type="time"
-            label="Informe a hora de saida"
-            value={journeyForm.endTime}
-            onChange={(value) => handleChange("endTime", value)}
-          />
+              <Picker
+                type="time"
+                label="Informe a hora de saida"
+                value={journeyForm.endTime}
+                onChange={(value) => handleChange("endTime", value)}
+              />
 
-          <Picker
-            type="interval"
-            label="Informe o tempo de intervalo"
-            value={journeyForm.interval}
-            onChange={(value) => handleChange("interval", value)}
-          />
+              <Picker
+                type="interval"
+                label="Informe o tempo de intervalo"
+                value={journeyForm.interval}
+                onChange={(value) => handleChange("interval", value)}
+              />
+            </>
+          )}
 
           {renderSelect({
             label: "Selecione uma Escala",

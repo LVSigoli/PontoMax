@@ -8,9 +8,7 @@ import {
   normalizeDigitInput,
   parseTimeDraft,
 } from "@/components/structure/Picker/utils"
-
-// Types
-import { PickerPeriod, TimeDraft } from "@/components/structure/Picker/types"
+import { TimeDraft } from "@/components/structure/Picker/types"
 
 interface useTimePickerPanelParams {
   label?: string
@@ -26,62 +24,59 @@ export function useTimePickcerPanel({
 }: useTimePickerPanelParams) {
   const [draft, setDraft] = useState<TimeDraft>(() => parseTimeDraft(value))
 
-  function syncValue(nextDraft: TimeDraft) {
-    const nextValue = buildTimeValue(nextDraft)
-
-    if (nextValue) {
-      onChange(nextValue)
-      return
-    }
-
-    if (!nextDraft.hour && !nextDraft.minute) onChange("")
-  }
-
   function handleHourChange(value: string) {
-    const updated = { ...draft, hour: normalizeDigitInput(value) }
-
-    setDraft(updated)
-    syncValue(updated)
+    setDraft((currentValue) => ({
+      ...currentValue,
+      hour: normalizeDigitInput(value),
+    }))
   }
 
   function handleMinuteChange(value: string) {
-    const updated = { ...draft, minute: normalizeDigitInput(value) }
-
-    setDraft(updated)
-    syncValue(updated)
+    setDraft((currentValue) => ({
+      ...currentValue,
+      minute: normalizeDigitInput(value),
+    }))
   }
 
   function handleHourBlur() {
-    const updated = { ...draft, hour: clampInputValue(draft.hour, 1, 12) }
-
-    setDraft(updated)
-    syncValue(updated)
+    setDraft((currentValue) => ({
+      ...currentValue,
+      hour: clampInputValue(currentValue.hour, 0, 23),
+    }))
   }
 
   function handleMinuteBlur() {
-    const updated = { ...draft, minute: clampInputValue(draft.minute, 0, 59) }
-
-    setDraft(updated)
-    syncValue(updated)
-  }
-
-  function handlePeriodChange(period: PickerPeriod) {
-    const updated = { ...draft, period }
-
-    setDraft(updated)
-    syncValue(updated)
+    setDraft((currentValue) => ({
+      ...currentValue,
+      minute: clampInputValue(currentValue.minute, 0, 59),
+    }))
   }
 
   function handleClear() {
-    setDraft({ hour: "", minute: "", period: "AM" })
+    setDraft({ hour: "00", minute: "00" })
     onChange("")
+    onClose()
+  }
+
+  function handleConfirm() {
+    const sanitizedDraft = {
+      hour: clampInputValue(draft.hour, 0, 23),
+      minute: clampInputValue(draft.minute, 0, 59),
+    }
+
+    setDraft(sanitizedDraft)
+
+    const nextValue = buildTimeValue(sanitizedDraft)
+    if (!nextValue) return
+
+    onChange(nextValue)
     onClose()
   }
 
   return {
     draft,
     handleClear,
-    handlePeriodChange,
+    handleConfirm,
     handleHourBlur,
     handleMinuteBlur,
     handleMinuteChange,

@@ -6,8 +6,8 @@ export interface HttpRequest {
   flexibleSchedule?: boolean
   dailyWorkMinutes: number
   weeklyWorkMinutes?: number
-  expectedEntryTime?: string
-  expectedExitTime?: string
+  expectedEntryTime?: string | null
+  expectedExitTime?: string | null
   breakMinutes?: number
   toleranceMinutes?: number
   nightShift?: boolean

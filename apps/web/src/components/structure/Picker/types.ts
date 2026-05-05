@@ -4,7 +4,6 @@ import type { IconName } from "../Icon"
 
 export type PickerType = "date" | "time" | "interval" | "dateTime"
 export type PickerVariant = "default" | "table"
-export type PickerPeriod = "AM" | "PM"
 
 export interface Props {
   type: PickerType
@@ -34,7 +33,6 @@ export interface CalendarDay {
 export interface TimeDraft {
   hour: string
   minute: string
-  period: PickerPeriod
 }
 
 export interface DurationDraft {

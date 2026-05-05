@@ -16,7 +16,12 @@ export const MobileSidebarPanelHeader: React.FC<Props> = ({ onClose }) => {
         onClick={onClose}
         className="flex size-9 items-center justify-center rounded-md text-content-secondary transition hover:bg-surface-muted hover:text-content-primary"
       >
-        <Icon name="out" size="1rem" layout="inline" className="text-current" />
+        <Icon
+          name="close"
+          size="1rem"
+          layout="inline"
+          className="text-current"
+        />
       </button>
     </div>
   )

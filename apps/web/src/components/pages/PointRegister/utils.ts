@@ -115,19 +115,30 @@ export function mapTimeEntryKindToPointType(
 }
 
 export function mapWorkdayToPointRecords(workday: WorkdayApiItem) {
-  return workday.timeEntries.map((timeEntry) => ({
-    id: timeEntry.id,
-    workdayId: workday.id,
-    workdayDate: workday.date,
-    timeEntryId: timeEntry.id,
-    recordedAt: timeEntry.recordedAt,
-    time: formatTimeLabel(timeEntry.recordedAt),
-    workedHours: formatHoursWithMinutes(workday.workedMinutes),
-    extraHours: formatHoursWithMinutes(workday.overtimeMinutes),
-    missingHours: formatHoursWithMinutes(workday.missingMinutes),
-    type: mapTimeEntryKindToPointType(timeEntry.kind),
-    status: mapWorkdayStatusToPointStatus(workday.status),
-  }))
+  return [...workday.timeEntries]
+    .sort((left, right) => {
+      const leftTime = new Date(left.recordedAt).getTime()
+      const rightTime = new Date(right.recordedAt).getTime()
+
+      if (leftTime !== rightTime) {
+        return leftTime - rightTime
+      }
+
+      return left.sequence - right.sequence
+    })
+    .map((timeEntry) => ({
+      id: timeEntry.id,
+      workdayId: workday.id,
+      workdayDate: workday.date,
+      timeEntryId: timeEntry.id,
+      recordedAt: timeEntry.recordedAt,
+      time: formatTimeLabel(timeEntry.recordedAt),
+      workedHours: formatHoursWithMinutes(workday.workedMinutes),
+      extraHours: formatHoursWithMinutes(workday.overtimeMinutes),
+      missingHours: formatHoursWithMinutes(workday.missingMinutes),
+      type: mapTimeEntryKindToPointType(timeEntry.kind),
+      status: mapWorkdayStatusToPointStatus(workday.status),
+    }))
 }
 
 export function mapWorkdayToSummary(workday: WorkdayApiItem): WorkdaySummary {

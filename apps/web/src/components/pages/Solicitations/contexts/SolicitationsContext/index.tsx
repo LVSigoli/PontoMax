@@ -1,11 +1,17 @@
 // External Libraries
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useMemo } from "react"
+import { useSWRConfig } from "swr"
 
 // Contexts
 import { useToastContext } from "@/contexts/ToastContext"
 
 // Services
-import { getAdjustmentRequests, reviewAdjustmentRequest } from "@/services/domain"
+import { reviewAdjustmentRequest } from "@/services/domain"
+import {
+  swrKeyStartsWith,
+  swrKeys,
+  useAdjustmentRequestsSWR,
+} from "@/hooks/swr"
 
 // Types
 import type { Solicitation, SolicitationStatus } from "../../types"
@@ -17,10 +23,7 @@ import type {
 // Utils
 import { getErrorMessage } from "@/utils/getErrorMessage"
 import { mapAdjustmentApiToSolicitation } from "../../utils"
-import {
-  mapSolicitationStatusToRequestStatus,
-  updateSolicitationsStatus,
-} from "./utils"
+import { mapSolicitationStatusToRequestStatus } from "./utils"
 
 const SolicitationsContext = createContext<SolicitationsContextValue | null>(
   null
@@ -29,41 +32,42 @@ const SolicitationsContext = createContext<SolicitationsContextValue | null>(
 export const SolicitationsProvider: React.FC<SolicitationsProviderProps> = ({
   children,
 }) => {
-  const [solicitations, setSolicitations] = useState<Solicitation[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const { showToast } = useToastContext()
+  const { mutate: mutateSWRCache } = useSWRConfig()
+  const {
+    data: adjustmentRequests = [],
+    error,
+    isLoading,
+  } = useAdjustmentRequestsSWR()
+
+  const solicitations = useMemo<Solicitation[]>(
+    () => adjustmentRequests.map(mapAdjustmentApiToSolicitation),
+    [adjustmentRequests]
+  )
 
   useEffect(() => {
-    void loadSolicitations()
-  }, [])
+    if (!error) return
 
-  async function loadSolicitations() {
-    try {
-      setIsLoading(true)
-      const items = await getAdjustmentRequests()
-      setSolicitations(items.map(mapAdjustmentApiToSolicitation))
-    } catch (error) {
-      showToast({
-        variant: "error",
-        message: getErrorMessage(
-          error,
-          "Nao foi possivel carregar as solicitacoes de ajuste."
-        ),
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    showToast({
+      variant: "error",
+      message: getErrorMessage(
+        error,
+        "Nao foi possivel carregar as solicitacoes de ajuste."
+      ),
+    })
+  }, [error, showToast])
 
   async function updateSolicitationStatus(id: number, status: SolicitationStatus) {
     try {
       const requestStatus = mapSolicitationStatusToRequestStatus(status)
 
       await reviewAdjustmentRequest(id, { status: requestStatus })
-
-      setSolicitations((currentSolicitations) =>
-        updateSolicitationsStatus(currentSolicitations, id, status)
-      )
+      await Promise.all([
+        mutateSWRCache(
+          swrKeyStartsWith(swrKeys.adjustmentRequests.list())
+        ),
+        mutateSWRCache(swrKeyStartsWith(swrKeys.analytics.dashboard())),
+      ])
 
       showToast({
         variant: "success",
