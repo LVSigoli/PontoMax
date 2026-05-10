@@ -3,6 +3,7 @@ import useSWR, { type SWRConfiguration } from "swr"
 import { getCurrentUser } from "@/services/auth"
 import {
   getAdjustmentRequests,
+  getAuditLogs,
   getAnalyticsDashboard,
   getCompanies,
   getHolidays,
@@ -79,6 +80,17 @@ export function useAnalyticsDashboardSWR(
   return useCachedRequest(
     swrKeys.analytics.dashboard(params),
     () => getAnalyticsDashboard(params),
+    options
+  )
+}
+
+export function useAuditLogsSWR(
+  params?: Parameters<typeof getAuditLogs>[0],
+  options?: SWROptions<Awaited<ReturnType<typeof getAuditLogs>>>
+) {
+  return useCachedRequest(
+    swrKeys.auditLogs.list(params),
+    () => getAuditLogs(params),
     options
   )
 }

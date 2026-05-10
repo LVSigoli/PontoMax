@@ -18,7 +18,6 @@ O PontoMax é multiempresa. Um cliente contratante pode possuir uma ou mais empr
 ## Modulos
 
 - Autenticacao e recuperacao de senha.
-- Gestao de clientes.
 - Gestao de empresas.
 - Gestao de usuarios.
 - Configuracao de jornadas.
@@ -27,6 +26,35 @@ O PontoMax é multiempresa. Um cliente contratante pode possuir uma ou mais empr
 - Historico de jornada.
 - Solicitacao e analise de ajustes.
 - Dashboard com indicadores gerenciais.
+
+## To-dos
+
+Legenda de prioridade:
+
+- `P0`: prioridade mais alta. Bloqueia o fluxo principal ou a entrega do produto.
+- `P1`: prioridade alta. Importante para fechar o produto.
+- `P2`: prioridade media. Melhora importante, mas nao bloqueia o uso principal.
+
+### P0
+
+- Recuperacao de senha.
+- Exportacao de dados.
+
+### P1
+
+- Feriados company-specific.
+
+### P2
+
+- Qualidade tecnica do workspace, incluindo ajuste definitivo de lint.
+
+### Concluidos recentemente
+
+- Auditoria e rastreabilidade.
+
+### To-do despriorizado
+
+- Painel da equipe do dia.
 
 ## Entidades Principais
 

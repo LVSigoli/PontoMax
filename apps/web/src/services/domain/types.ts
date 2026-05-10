@@ -200,3 +200,40 @@ export interface AnalyticsDashboardResponse {
     hours: number
   }>
 }
+
+export interface AuditLogMetadataChange {
+  field: string
+  before: unknown
+  after: unknown
+}
+
+export interface AuditLogMetadata {
+  summary: string
+  actor?: {
+    id: number
+    name: string
+    email: string
+    role: string
+  }
+  company?: {
+    id: number
+    name: string
+  }
+  changes?: AuditLogMetadataChange[]
+  details?: Record<string, unknown>
+}
+
+export interface AuditLogApiItem {
+  id: number
+  companyId: number | null
+  companyName: string
+  actorUserId: number | null
+  actorUserName: string | null
+  actorUserEmail: string | null
+  entityType: string
+  entityId: string
+  action: string
+  summary: string
+  metadata: AuditLogMetadata | null
+  createdAt: string
+}
