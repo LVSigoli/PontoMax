@@ -1,7 +1,7 @@
 // External Libraries
 import React, {
-  useCallback,
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -10,6 +10,7 @@ import React, {
 import { useSWRConfig } from "swr"
 
 // Services
+import { swrKeys, useCurrentUserSWR } from "@/hooks/swr"
 import {
   clearAuthSession,
   getAuthSession,
@@ -18,7 +19,6 @@ import {
   postLogout,
   saveAuthSession,
 } from "@/services/auth"
-import { swrKeys, useCurrentUserSWR } from "@/hooks/swr"
 
 // Types
 import { AuthSession, LoginPayload } from "@/types"
@@ -66,7 +66,9 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
   const isSessionLoading =
     !hasHydratedSession || (shouldLoadCurrentUser && isLoading)
   const user = useMemo<AuthenticatedUser | null>(() => {
-    const currentUser = data?.user ?? session?.user
+    if (!session) return null
+
+    const currentUser = data?.user ?? session.user
 
     if (!currentUser) return null
 

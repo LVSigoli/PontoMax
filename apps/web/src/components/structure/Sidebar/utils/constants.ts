@@ -22,6 +22,7 @@ export const ADMIN_ITEMS: NavigationItem[] = [
     icon: "chart",
     href: "/analytics",
   },
+  // { id: "audit", label: "Auditoria", icon: "flag", href: "/audit" },
   {
     id: "management",
     label: "Gerenciamento",
