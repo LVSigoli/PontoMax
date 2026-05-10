@@ -54,20 +54,85 @@ const NIGHT_SHIFT_CARRYOVER_MINUTES = 12 * 60
 
 function mapWorkedStatus(params: {
   totalEntries: number
-  workedMinutes: number
-  scheduledMinutes: number
+  isLate: boolean
 }) {
-  const { totalEntries, workedMinutes, scheduledMinutes } = params
+  const { totalEntries, isLate } = params
+
+  if (isLate) {
+    return "LATE" as const
+  }
 
   if (totalEntries === 0 || totalEntries % 2 !== 0) {
     return "INCONSISTENT" as const
   }
 
-  if (workedMinutes > scheduledMinutes) {
-    return "CLOSED" as const
+  return "CLOSED" as const
+}
+
+function getStoredTimeMinutes(value?: Date | null) {
+  if (!value) return null
+
+  return value.getUTCHours() * 60 + value.getUTCMinutes()
+}
+
+function getWorkdayEntryBoundaries(
+  entries: Array<Pick<TimeEntry, "kind" | "recordedAt" | "sequence">>
+) {
+  const sortedEntries = [...entries].sort(
+    (left, right) =>
+      left.recordedAt.getTime() - right.recordedAt.getTime() ||
+      left.sequence - right.sequence
+  )
+
+  return {
+    firstEntry: sortedEntries.find(
+      (entry) => toTimeEntryKind(entry.kind) === "ENTRY"
+    ),
+    lastExit: [...sortedEntries]
+      .reverse()
+      .find((entry) => toTimeEntryKind(entry.kind) === "EXIT"),
+  }
+}
+
+function isLateWorkday(params: {
+  assignment: JourneyAssignmentWithJourney | null
+  entries: Array<Pick<TimeEntry, "kind" | "recordedAt" | "sequence">>
+  scheduledMinutes: number
+  timeZone?: string
+}) {
+  if (!params.assignment || params.scheduledMinutes <= 0) {
+    return false
   }
 
-  return "CLOSED" as const
+  const journey = params.assignment.journey
+
+  if (journey.flexibleSchedule) {
+    return false
+  }
+
+  const expectedEntryMinutes = getStoredTimeMinutes(journey.expectedEntryTime)
+  const expectedExitMinutes = getStoredTimeMinutes(journey.expectedExitTime)
+
+  if (expectedEntryMinutes === null && expectedExitMinutes === null) {
+    return false
+  }
+
+  const { firstEntry, lastExit } = getWorkdayEntryBoundaries(params.entries)
+  const toleranceMinutes = journey.toleranceMinutes
+
+  const entryIsLate =
+    expectedEntryMinutes !== null && firstEntry
+      ? getLocalMinutes(firstEntry.recordedAt, params.timeZone) >
+        expectedEntryMinutes + toleranceMinutes
+      : false
+
+  const exitIsLate =
+    expectedExitMinutes !== null && lastExit
+      ? getLocalMinutes(lastExit.recordedAt, params.timeZone) <
+        expectedExitMinutes - toleranceMinutes
+      : false
+
+  return entryIsLate || exitIsLate
 }
 
 function getScheduledMinutesForDate(
@@ -465,6 +530,7 @@ export async function recalculateWorkday(workdayId: number) {
       },
     },
   })
+  const timeZone = workday.timeEntries[0]?.timezone ?? "America/Sao_Paulo"
 
   const workedMinutes = calculateWorkedMinutes(
     workday.timeEntries.map((entry) => ({
@@ -495,12 +561,17 @@ export async function recalculateWorkday(workdayId: number) {
     getStoredDateOnly(workday.date),
     isHoliday
   )
+  const isLate = isLateWorkday({
+    assignment,
+    entries: workday.timeEntries,
+    scheduledMinutes,
+    timeZone,
+  })
   const overtimeMinutes = Math.max(0, workedMinutes - scheduledMinutes)
   const missingMinutes = Math.max(0, scheduledMinutes - workedMinutes)
   const status = mapWorkedStatus({
     totalEntries: workday.timeEntries.length,
-    workedMinutes,
-    scheduledMinutes,
+    isLate,
   })
 
   return prisma.workday.update({
@@ -756,8 +827,12 @@ function normalizeWorkdayForTimezone<T extends WorkdayLike>(
       ? workday.status
       : mapWorkedStatus({
           totalEntries: timeEntries.length,
-          workedMinutes,
-          scheduledMinutes,
+          isLate: isLateWorkday({
+            assignment: workdayAssignment,
+            entries: timeEntries,
+            scheduledMinutes,
+            timeZone,
+          }),
         })
 
   return {

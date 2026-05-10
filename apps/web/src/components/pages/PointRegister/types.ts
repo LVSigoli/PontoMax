@@ -1,4 +1,8 @@
-export type PointRecordStatus = "Registrado" | "Pendente" | "Aprovado"
+export type PointRecordStatus =
+  | "Registrado"
+  | "Pendente"
+  | "Atrasado"
+  | "Aprovado"
 
 export type PointRecordType = "Entrada" | "Saida"
 

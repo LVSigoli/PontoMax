@@ -22,6 +22,7 @@ export const WORKDAY_STATUSES = [
   "OPEN",
   "CLOSED",
   "INCONSISTENT",
+  "LATE",
   "PENDING_ADJUSTMENT",
   "ADJUSTED",
 ] as const

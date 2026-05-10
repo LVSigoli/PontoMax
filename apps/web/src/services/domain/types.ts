@@ -111,7 +111,13 @@ export interface TimeEntryApiItem {
 export interface WorkdayApiItem {
   id: number
   date: string
-  status: "OPEN" | "CLOSED" | "INCONSISTENT" | "PENDING_ADJUSTMENT" | "ADJUSTED"
+  status:
+    | "OPEN"
+    | "CLOSED"
+    | "INCONSISTENT"
+    | "LATE"
+    | "PENDING_ADJUSTMENT"
+    | "ADJUSTED"
   scheduledMinutes: number
   workedMinutes: number
   overtimeMinutes: number
@@ -139,7 +145,13 @@ export interface RegisterTimeRecordResponse {
 export interface TeamTodayApiItem {
   userId: number
   userName: string
-  status: "OPEN" | "CLOSED" | "INCONSISTENT" | "PENDING_ADJUSTMENT" | "ADJUSTED"
+  status:
+    | "OPEN"
+    | "CLOSED"
+    | "INCONSISTENT"
+    | "LATE"
+    | "PENDING_ADJUSTMENT"
+    | "ADJUSTED"
   workedMinutes: number
   lastEntryAt: string | null
 }
