@@ -16,7 +16,96 @@ import type { TableRowData } from "@/components/structure/Table/types"
 import type { Props, SolicitationDrawerMethods } from "./types"
 
 // Utils
-import { formatSolicitationDate, getPointTypeClass } from "../../utils"
+import {
+  formatSolicitationDate,
+  formatSolicitationTime,
+  getPointTypeClass,
+} from "../../utils"
+
+type ReviewTimeCellTone = "warning" | "success" | "danger" | "muted"
+
+const REVIEW_TIME_CELL_STYLES: Record<
+  ReviewTimeCellTone,
+  {
+    container: string
+    badge: string
+    value: string
+  }
+> = {
+  warning: {
+    container: "border-warning-200 bg-warning-50",
+    badge: "bg-warning-100 text-warning-700",
+    value: "text-warning-900",
+  },
+  success: {
+    container: "border-success-200 bg-success-50",
+    badge: "bg-success-100 text-success-700",
+    value: "text-success-900",
+  },
+  danger: {
+    container: "border-danger-200 bg-danger-50",
+    badge: "bg-danger-100 text-danger-700",
+    value: "text-danger-900",
+  },
+  muted: {
+    container: "border-border-subtle bg-surface-page",
+    badge: "bg-surface-muted text-content-muted",
+    value: "text-content-muted",
+  },
+}
+
+function renderReviewTimeCell(params: {
+  heading: string
+  value: string
+  tone: ReviewTimeCellTone
+  emphasized?: boolean
+  strikethrough?: boolean
+}) {
+  const styles = REVIEW_TIME_CELL_STYLES[params.tone]
+  const strikeClass = params.strikethrough
+    ? params.tone === "danger"
+      ? "line-through decoration-2 decoration-danger-400"
+      : "line-through decoration-2 decoration-warning-400"
+    : ""
+
+  return (
+    <span
+      className={`inline-flex min-w-28 flex-col gap-0.5 rounded-xl border px-3 py-1 ${styles.container}`}
+    >
+      <span
+        className={`w-fit rounded-full text-[10px] font-semibold uppercase tracking-[0.12em] ${styles.badge}`}
+      >
+        {params.heading}
+      </span>
+      <span
+        className={`text-sm font-semibold ${params.emphasized ? "tracking-wide" : ""} ${strikeClass} ${styles.value}`}
+      >
+        {params.value}
+      </span>
+    </span>
+  )
+}
+
+function getReviewTimeTone(
+  point: {
+    actionType?: "CREATE" | "UPDATE" | "DELETE"
+    originalRecordedAt?: string
+    newRecordedAt?: string
+  },
+  side: "before" | "after"
+): ReviewTimeCellTone {
+  if (side === "before") {
+    if (point.actionType === "CREATE") return "muted"
+    if (point.actionType === "DELETE") return "danger"
+
+    return point.originalRecordedAt ? "warning" : "muted"
+  }
+
+  if (point.actionType === "DELETE") return "danger"
+  if (point.actionType === "CREATE") return "success"
+
+  return point.newRecordedAt ? "success" : "muted"
+}
 
 export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
   ({ element }, ref) => {
@@ -28,14 +117,39 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
 
     const isPending = element?.status === "Pendente"
     const subtitle = element
-      ? `${element.userName} • ${formatSolicitationDate(element.requestDate)}`
+      ? `${element.userName} - ${formatSolicitationDate(element.requestDate)}`
       : "Revise os registros e a justificativa da solicitacao"
 
     const tableData =
       element?.points.map<TableRowData>((point) => ({
-        Horario: { value: point.time },
+        Antes: {
+          value: renderReviewTimeCell({
+            heading: "Original",
+            value:
+              point.originalRecordedAt && point.actionType !== "CREATE"
+                ? formatSolicitationTime(point.originalRecordedAt)
+                : "Sem registro",
+            tone: getReviewTimeTone(point, "before"),
+            emphasized: Boolean(point.originalRecordedAt),
+            strikethrough:
+              point.actionType === "UPDATE" || point.actionType === "DELETE",
+          }),
+        },
+        Depois: {
+          value: renderReviewTimeCell({
+            heading: point.actionType === "DELETE" ? "Removido" : "Solicitado",
+            value:
+              point.actionType === "DELETE"
+                ? "Registro excluido"
+                : point.newRecordedAt
+                  ? formatSolicitationTime(point.newRecordedAt)
+                  : "Sem registro",
+            tone: getReviewTimeTone(point, "after"),
+            emphasized: Boolean(point.newRecordedAt),
+          }),
+        },
         Tipo: {
-          value: `• ${point.type}`,
+          value: point.type,
           color: getPointTypeClass(point.type),
         },
       })) ?? []
@@ -123,7 +237,7 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
               data={tableData}
               minWidth="100%"
               sideScroll={false}
-              className="mt-5 overflow-hidden rounded-xl bg-surface-card"
+              className="mt-5 max-h-[320px] overflow-y-auto rounded-xl bg-surface-card"
               emptyMessage="Nenhum horario informado"
               getRowKey={(_, index) => element?.points[index]?.id ?? index}
             />

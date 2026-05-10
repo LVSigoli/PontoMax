@@ -27,6 +27,10 @@ export function getPointTypeClass(type: SolicitationPointType) {
   return type === "Entrada" ? "text-success-700" : "text-danger-700"
 }
 
+export function formatSolicitationTime(value?: string | null) {
+  return value ? formatTimeLabel(value) : "-"
+}
+
 export function mapSolicitationStatus(status: AdjustmentRequestApiItem["status"]): SolicitationStatus {
   if (status === "APPROVED") return "Aprovado"
   if (status === "REJECTED") return "Recusado"
@@ -47,7 +51,9 @@ export function mapAdjustmentApiToSolicitation(item: AdjustmentRequestApiItem) {
     points: item.pointAdjustments.map((point) => ({
       id: point.id,
       timeEntryId: point.timeEntryId ?? undefined,
-      time: formatTimeLabel(point.newRecordedAt ?? point.originalRecordedAt ?? item.requestedAt),
+      time: formatTimeLabel(
+        point.newRecordedAt ?? point.originalRecordedAt ?? item.requestedAt
+      ),
       type: (point.targetKind === "ENTRY"
         ? "Entrada"
         : "Saida") as SolicitationPointType,
