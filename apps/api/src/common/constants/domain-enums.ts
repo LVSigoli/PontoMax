@@ -61,6 +61,31 @@ export type AdjustmentActionType = (typeof ADJUSTMENT_ACTION_TYPES)[number]
 export const SESSION_STATUSES = ["ACTIVE", "REVOKED", "EXPIRED"] as const
 export type SessionStatus = (typeof SESSION_STATUSES)[number]
 
+export const AUDIT_LOG_ENTITY_TYPES = [
+  "AUTH",
+  "USER",
+  "COMPANY",
+  "JOURNEY",
+  "HOLIDAY",
+  "TIME_RECORD",
+  "ADJUSTMENT_REQUEST",
+] as const
+export type AuditLogEntityType =
+  (typeof AUDIT_LOG_ENTITY_TYPES)[number]
+
+export const AUDIT_LOG_ACTIONS = [
+  "CREATE",
+  "UPDATE",
+  "DELETE",
+  "LOGIN",
+  "LOGOUT",
+  "RESET_PASSWORD",
+  "REGISTER",
+  "APPROVE",
+  "REJECT",
+] as const
+export type AuditLogAction = (typeof AUDIT_LOG_ACTIONS)[number]
+
 function isEnumValue<T extends readonly string[]>(
   values: T,
   value: string

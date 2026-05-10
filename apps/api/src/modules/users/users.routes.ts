@@ -2,6 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../common/auth/auth.middleware.js';
+import {
+  buildAuditCompany,
+  buildChangeSet,
+  recordAuditLog,
+} from '../../common/audit/index.js';
 import { requireRole } from '../../common/auth/require-role.middleware.js';
 import { hashPassword } from '../../common/auth/password.service.js';
 import { USER_ROLES } from '../../common/constants/domain-enums.js';
@@ -197,6 +202,26 @@ usersRouter.post(
       'No primeiro acesso, a troca de senha sera obrigatoria.',
     ].join('\n');
 
+    await recordAuditLog(prisma, {
+      companyId: createdUser.companyId,
+      actorUserId: request.authUser!.id,
+      entityType: 'USER',
+      entityId: createdUser.id,
+      action: 'CREATE',
+      metadata: {
+        summary: 'Usuário criado',
+        company: buildAuditCompany(createdUser.company),
+        details: {
+          after: buildUserAuditSnapshot(createdUser),
+          invite: {
+            requiresPasswordChange: true,
+            temporaryPasswordProvided: Boolean(request.body.password),
+            invitationUrlGenerated: true,
+          },
+        },
+      },
+    });
+
     response.status(201).json({
       item: {
         id: createdUser.id,
@@ -231,6 +256,18 @@ usersRouter.patch(
     const userId = Number(request.params.userId);
     const currentUser = await prisma.user.findUniqueOrThrow({
       where: { id: userId },
+      include: {
+        company: true,
+        journeyAssignments: {
+          include: {
+            journey: true,
+          },
+          orderBy: {
+            validFrom: 'desc',
+          },
+          take: 1,
+        },
+      },
     });
 
     if (request.authUser!.role !== 'PLATFORM_ADMIN' && currentUser.companyId !== request.authUser!.companyId) {
@@ -333,6 +370,36 @@ usersRouter.patch(
       },
     });
 
+    await recordAuditLog(prisma, {
+      companyId: updatedUser.companyId,
+      actorUserId: request.authUser!.id,
+      entityType: 'USER',
+      entityId: updatedUser.id,
+      action: 'UPDATE',
+      metadata: {
+        summary: 'Usuário atualizado',
+        company: buildAuditCompany(updatedUser.company),
+        changes: buildChangeSet(
+          buildUserAuditSnapshot(currentUser),
+          buildUserAuditSnapshot(updatedUser),
+          [
+            'companyId',
+            'employeeCode',
+            'fullName',
+            'email',
+            'cpf',
+            'role',
+            'position',
+            'isActive',
+            'journeyId',
+          ],
+        ),
+        details: {
+          passwordChanged: Boolean(request.body.password),
+        },
+      },
+    });
+
     response.json({
       item: {
         id: updatedUser.id,
@@ -355,6 +422,32 @@ usersRouter.patch(
 function generateTemporaryPassword(length = 12) {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({ length }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+}
+
+function buildUserAuditSnapshot(user: {
+  companyId: number;
+  employeeCode: string | null;
+  fullName: string;
+  email: string;
+  cpf: string;
+  role: string;
+  position: string | null;
+  isActive: boolean;
+  journeyAssignments: Array<{
+    journeyId: number;
+  }>;
+}) {
+  return {
+    companyId: user.companyId,
+    employeeCode: user.employeeCode,
+    fullName: user.fullName,
+    email: user.email,
+    cpf: user.cpf,
+    role: user.role,
+    position: user.position,
+    isActive: user.isActive,
+    journeyId: user.journeyAssignments[0]?.journeyId ?? null,
+  }
 }
 
 usersRouter.get(
@@ -397,6 +490,18 @@ usersRouter.delete(
     const userId = Number(request.params.userId);
     const currentUser = await prisma.user.findUniqueOrThrow({
       where: { id: userId },
+      include: {
+        company: true,
+        journeyAssignments: {
+          include: {
+            journey: true,
+          },
+          orderBy: {
+            validFrom: 'desc',
+          },
+          take: 1,
+        },
+      },
     });
 
     if (request.authUser!.role !== 'PLATFORM_ADMIN' && currentUser.companyId !== request.authUser!.companyId) {
@@ -406,6 +511,21 @@ usersRouter.delete(
     await prisma.user.delete({
       where: {
         id: userId,
+      },
+    });
+
+    await recordAuditLog(prisma, {
+      companyId: currentUser.companyId,
+      actorUserId: request.authUser!.id,
+      entityType: 'USER',
+      entityId: currentUser.id,
+      action: 'DELETE',
+      metadata: {
+        summary: 'Usuário removido',
+        company: buildAuditCompany(currentUser.company),
+        details: {
+          before: buildUserAuditSnapshot(currentUser),
+        },
       },
     });
 

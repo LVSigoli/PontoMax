@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../common/auth/auth.middleware.js';
+import { recordAuditLog } from '../../common/audit/index.js';
 import { requireRole } from '../../common/auth/require-role.middleware.js';
 import {
   ADJUSTMENT_ACTION_TYPES,
@@ -150,6 +151,23 @@ adjustmentRequestsRouter.post(
       },
     });
 
+    await recordAuditLog(prisma, {
+      companyId: request.authUser!.companyId,
+      actorUserId: request.authUser!.id,
+      entityType: 'ADJUSTMENT_REQUEST',
+      entityId: createdRequest.id,
+      action: 'CREATE',
+      metadata: {
+        summary: 'Solicitação de ajuste criada',
+        details: {
+          workdayId: workday.id,
+          workdayDate: workday.date,
+          justification: request.body.justification,
+          records: request.body.records,
+        },
+      },
+    });
+
     response.status(201).json({ item: createdRequest });
   }),
 );
@@ -283,6 +301,27 @@ adjustmentRequestsRouter.patch(
           orderBy: {
             recordedAt: 'asc',
           },
+        },
+      },
+    });
+
+    await recordAuditLog(prisma, {
+      companyId: adjustmentRequest.companyId,
+      actorUserId: request.authUser!.id,
+      entityType: 'ADJUSTMENT_REQUEST',
+      entityId: adjustmentRequest.id,
+      action: nextStatus === 'APPROVED' ? 'APPROVE' : 'REJECT',
+      metadata: {
+        summary:
+          nextStatus === 'APPROVED'
+            ? 'Solicitação de ajuste aprovada'
+            : 'Solicitação de ajuste recusada',
+        details: {
+          status: nextStatus,
+          reviewNotes: request.body.reviewNotes ?? null,
+          workdayId: adjustmentRequest.workdayId,
+          workdayDate: workday.date,
+          pointAdjustments: adjustmentRequest.pointAdjustments.length,
         },
       },
     });

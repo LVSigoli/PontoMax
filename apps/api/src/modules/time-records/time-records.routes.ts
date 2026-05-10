@@ -3,6 +3,7 @@ import { Router } from "express"
 import { z } from "zod"
 
 import { authenticate } from "../../common/auth/auth.middleware.js"
+import { recordAuditLog } from "../../common/audit/index.js"
 import { requireRole } from "../../common/auth/require-role.middleware.js"
 import { TIME_ENTRY_KINDS } from "../../common/constants/domain-enums.js"
 import { AppError } from "../../common/errors/app-error.js"
@@ -154,6 +155,24 @@ timeRecordsRouter.post(
       source: "WEB",
       kind: request.body.kind,
       timezone: request.body.timezone ?? "America/Sao_Paulo",
+    })
+
+    await recordAuditLog(prisma, {
+      companyId: request.authUser!.companyId,
+      actorUserId: request.authUser!.id,
+      entityType: "TIME_RECORD",
+      entityId: result.entry.id,
+      action: "REGISTER",
+      metadata: {
+        summary: "Ponto registrado",
+        details: {
+          workdayId: result.workday.id,
+          kind: result.entry.kind,
+          source: result.entry.source,
+          recordedAt: result.entry.recordedAt,
+          workdayStatus: result.workday.status,
+        },
+      },
     })
 
     response.status(201).json({

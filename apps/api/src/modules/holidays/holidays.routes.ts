@@ -3,6 +3,10 @@ import { Router } from "express"
 import { z } from "zod"
 
 import { authenticate } from "../../common/auth/auth.middleware.js"
+import {
+  buildChangeSet,
+  recordAuditLog,
+} from "../../common/audit/index.js"
 import { requireRole } from "../../common/auth/require-role.middleware.js"
 import { HOLIDAY_TYPES } from "../../common/constants/domain-enums.js"
 import { AppError } from "../../common/errors/app-error.js"
@@ -154,6 +158,20 @@ holidaysRouter.post(
       },
     ])
 
+    await recordAuditLog(prisma, {
+      companyId: companyIds[0] ?? null,
+      actorUserId: request.authUser!.id,
+      entityType: "HOLIDAY",
+      entityId: holiday.id,
+      action: "CREATE",
+      metadata: {
+        summary: "Feriado criado",
+        details: {
+          after: serializeHoliday(holiday),
+        },
+      },
+    })
+
     response.status(201).json({ item: serializeHoliday(holiday) })
   })
 )
@@ -218,6 +236,42 @@ holidaysRouter.patch(
 
     await refreshHolidayWorkdays([currentScope, toHolidayScope(holiday)])
 
+    await recordAuditLog(prisma, {
+      companyId: resolvedCompanyIds[0] ?? currentHoliday.companyAssignments[0]?.companyId ?? null,
+      actorUserId: request.authUser!.id,
+      entityType: "HOLIDAY",
+      entityId: holiday.id,
+      action: "UPDATE",
+      metadata: {
+        summary: "Feriado atualizado",
+        changes: buildChangeSet(
+          {
+            name: currentHoliday.name,
+            date: currentHoliday.date,
+            type: currentHoliday.type,
+            isActive: currentHoliday.isActive,
+            companyIds: currentHoliday.companyAssignments
+              .map((assignment) => assignment.companyId)
+              .sort((left, right) => left - right),
+          },
+          {
+            name: holiday.name,
+            date: holiday.date,
+            type: holiday.type,
+            isActive: holiday.isActive,
+            companyIds: holiday.companyAssignments
+              .map((assignment) => assignment.companyId)
+              .sort((left, right) => left - right),
+          },
+          ["name", "date", "type", "isActive", "companyIds"],
+        ),
+        details: {
+          before: serializeHoliday(currentHoliday),
+          after: serializeHoliday(holiday),
+        },
+      },
+    })
+
     response.json({ item: serializeHoliday(holiday) })
   })
 )
@@ -246,6 +300,20 @@ holidaysRouter.delete(
     })
 
     await refreshHolidayWorkdays([toHolidayScope(currentHoliday)])
+
+    await recordAuditLog(prisma, {
+      companyId: currentHoliday.companyAssignments[0]?.companyId ?? null,
+      actorUserId: request.authUser!.id,
+      entityType: "HOLIDAY",
+      entityId: currentHoliday.id,
+      action: "DELETE",
+      metadata: {
+        summary: "Feriado removido",
+        details: {
+          before: serializeHoliday(currentHoliday),
+        },
+      },
+    })
 
     response.status(204).send()
   })

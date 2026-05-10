@@ -2,6 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../common/auth/auth.middleware.js';
+import {
+  buildAuditCompany,
+  buildChangeSet,
+  recordAuditLog,
+} from '../../common/audit/index.js';
 import { requireRole } from '../../common/auth/require-role.middleware.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
@@ -123,6 +128,29 @@ companiesRouter.post(
       data: request.body,
     });
 
+    await recordAuditLog(prisma, {
+      companyId: company.id,
+      actorUserId: request.authUser!.id,
+      entityType: 'COMPANY',
+      entityId: company.id,
+      action: 'CREATE',
+      metadata: {
+        summary: 'Empresa criada',
+        company: buildAuditCompany(company),
+        details: {
+          after: {
+            clientId: company.clientId,
+            name: company.name,
+            legalName: company.legalName,
+            tradeName: company.tradeName,
+            cnpj: company.cnpj,
+            timezone: company.timezone,
+            isActive: company.isActive,
+          },
+        },
+      },
+    });
+
     response.status(201).json({ item: company });
   }),
 );
@@ -171,6 +199,47 @@ companiesRouter.patch(
       },
     });
 
+    await recordAuditLog(prisma, {
+      companyId: company.id,
+      actorUserId: request.authUser!.id,
+      entityType: 'COMPANY',
+      entityId: company.id,
+      action: 'UPDATE',
+      metadata: {
+        summary: 'Empresa atualizada',
+        company: buildAuditCompany(company),
+        changes: buildChangeSet(
+          {
+            clientId: currentCompany.clientId,
+            name: currentCompany.name,
+            legalName: currentCompany.legalName,
+            tradeName: currentCompany.tradeName,
+            cnpj: currentCompany.cnpj,
+            timezone: currentCompany.timezone,
+            isActive: currentCompany.isActive,
+          },
+          {
+            clientId: company.clientId,
+            name: company.name,
+            legalName: company.legalName,
+            tradeName: company.tradeName,
+            cnpj: company.cnpj,
+            timezone: company.timezone,
+            isActive: company.isActive,
+          },
+          [
+            'clientId',
+            'name',
+            'legalName',
+            'tradeName',
+            'cnpj',
+            'timezone',
+            'isActive',
+          ],
+        ),
+      },
+    });
+
     response.json({
       item: {
         id: company.id,
@@ -193,10 +262,39 @@ companiesRouter.delete(
   requireRole('PLATFORM_ADMIN'),
   validateRequest(companyIdSchema),
   asyncHandler(async (request, response) => {
-    await prisma.company.delete({
-      where: {
-        id: Number(request.params.companyId),
-      },
+    const currentCompany = await prisma.company.findUniqueOrThrow({
+      where: { id: Number(request.params.companyId) },
+    });
+
+    await prisma.$transaction(async (transaction) => {
+      await recordAuditLog(transaction, {
+        companyId: currentCompany.id,
+        actorUserId: request.authUser!.id,
+        entityType: 'COMPANY',
+        entityId: currentCompany.id,
+        action: 'DELETE',
+        metadata: {
+          summary: 'Empresa removida',
+          company: buildAuditCompany(currentCompany),
+          details: {
+            before: {
+              clientId: currentCompany.clientId,
+              name: currentCompany.name,
+              legalName: currentCompany.legalName,
+              tradeName: currentCompany.tradeName,
+              cnpj: currentCompany.cnpj,
+              timezone: currentCompany.timezone,
+              isActive: currentCompany.isActive,
+            },
+          },
+        },
+      });
+
+      await transaction.company.delete({
+        where: {
+          id: Number(request.params.companyId),
+        },
+      });
     });
 
     response.status(204).send();
