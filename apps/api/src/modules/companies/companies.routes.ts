@@ -42,6 +42,7 @@ companiesRouter.use(authenticate);
 
 companiesRouter.get(
   '/',
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(listCompaniesSchema),
   asyncHandler(async (request, response) => {
     if (request.authUser!.role === 'PLATFORM_ADMIN') {
@@ -128,17 +129,38 @@ companiesRouter.post(
 
 companiesRouter.patch(
   '/:companyId',
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(companyIdSchema.merge(updateCompanySchema)),
   asyncHandler(async (request, response) => {
     const companyId = Number(request.params.companyId);
+    const currentCompany = await prisma.company.findUniqueOrThrow({
+      where: { id: companyId },
+    });
 
     if (request.authUser!.role !== 'PLATFORM_ADMIN' && request.authUser!.companyId !== companyId) {
       throw new AppError('You do not have permission to update this company.', 403);
     }
 
+    if (
+      request.authUser!.role !== 'PLATFORM_ADMIN' &&
+      request.body.clientId !== undefined &&
+      request.body.clientId !== currentCompany.clientId
+    ) {
+      throw new AppError(
+        'You do not have permission to change the client of this company.',
+        403,
+      );
+    }
+
     const company = await prisma.company.update({
       where: { id: companyId },
-      data: request.body,
+      data: {
+        ...request.body,
+        clientId:
+          request.authUser!.role === 'PLATFORM_ADMIN'
+            ? request.body.clientId
+            : undefined,
+      },
       include: {
         client: true,
         _count: {

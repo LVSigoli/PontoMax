@@ -45,7 +45,5 @@ export const ADMIN_ITEMS: NavigationItem[] = [
 // Constants
 export const ADMIN_ROLES = [
   "PLATFORM_ADMIN",
-  "CLIENT_ADMIN",
   "COMPANY_ADMIN",
-  "MANAGER",
 ]

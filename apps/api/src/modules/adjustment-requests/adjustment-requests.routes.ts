@@ -156,7 +156,7 @@ adjustmentRequestsRouter.post(
 
 adjustmentRequestsRouter.patch(
   '/:requestId/review',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(reviewSchema),
   asyncHandler(async (request, response) => {
     const requestId = Number(request.params.requestId);

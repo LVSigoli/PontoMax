@@ -1,12 +1,14 @@
 export const USER_ROLES = [
   "PLATFORM_ADMIN",
-  "CLIENT_ADMIN",
   "COMPANY_ADMIN",
-  "MANAGER",
   "EMPLOYEE",
 ] as const
 
 export type UserRole = (typeof USER_ROLES)[number]
+
+export const ADMIN_ROLES = ["PLATFORM_ADMIN", "COMPANY_ADMIN"] as const
+
+const LEGACY_COMPANY_ADMIN_ROLES = ["CLIENT_ADMIN", "MANAGER"] as const
 
 export const HOLIDAY_TYPES = [
   "NATIONAL",
@@ -68,6 +70,10 @@ function isEnumValue<T extends readonly string[]>(
 
 export function toUserRole(value: string): UserRole {
   if (!isEnumValue(USER_ROLES, value)) {
+    if (LEGACY_COMPANY_ADMIN_ROLES.includes(value as (typeof LEGACY_COMPANY_ADMIN_ROLES)[number])) {
+      return "COMPANY_ADMIN"
+    }
+
     throw new Error(`Invalid user role: ${value}`)
   }
 

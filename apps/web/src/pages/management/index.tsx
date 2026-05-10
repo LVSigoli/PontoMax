@@ -5,5 +5,8 @@ import { Management } from "@/components/pages/Management"
 import { withAuthentication } from "@/hooks/withAuthentication"
 
 export default function ManagementPage() {
-  return withAuthentication(<Management />)
+  return withAuthentication(<Management />, [
+    "PLATFORM_ADMIN",
+    "COMPANY_ADMIN",
+  ])
 }

@@ -96,11 +96,12 @@ export function useTeamTodaySWR(
 }
 
 export function useTimeRecordsSummarySWR(
+  params?: Parameters<typeof getTimeRecordsSummary>[0],
   options?: SWROptions<Awaited<ReturnType<typeof getTimeRecordsSummary>>>
 ) {
   return useCachedRequest(
-    swrKeys.timeRecords.summary(),
-    getTimeRecordsSummary,
+    swrKeys.timeRecords.summary(params),
+    () => getTimeRecordsSummary(params),
     options
   )
 }

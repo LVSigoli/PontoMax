@@ -18,7 +18,7 @@ export const HistoryAnalysisSection: React.FC<Props> = ({
     <section className="grid gap-4">
       <Typography
         variant="h4"
-        value="Analise de solicitacoes"
+        value="Resumo do historico"
         className="text-xl"
       />
 

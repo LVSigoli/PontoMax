@@ -2,6 +2,7 @@
 import type { JSX } from "react"
 
 import { Login } from "@/components/pages/Login"
+import { NoAccess } from "@/components/pages/NoAccess"
 import { Head } from "@/components/structure/Head"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -16,7 +17,7 @@ export function withAuthentication(
   if (!user) return <Login />
 
   if (!canAccessPage(user.role, allowedGroups))
-    return <Head title="Sem acesso" />
+    return <NoAccess />
 
   return Component
 }

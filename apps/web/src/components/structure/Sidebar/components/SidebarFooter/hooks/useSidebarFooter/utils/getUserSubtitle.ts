@@ -8,13 +8,9 @@ export function getUserSubtitle(params: GetSubtitleParams) {
 
   if (position?.trim()) return position.trim()
 
-  if (role === "PLATFORM_ADMIN") return "Proprietário"
-
-  if (role === "CLIENT_ADMIN") return "Moderador"
+  if (role === "PLATFORM_ADMIN") return "Contratante"
 
   if (role === "COMPANY_ADMIN") return "Administrador"
-
-  if (role === "MANAGER") return "Gestor"
 
   return "Colaborador"
 }

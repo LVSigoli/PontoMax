@@ -39,7 +39,7 @@ export function makeEmployeeForm(
     role: employee?.role ?? "",
     companyId: employee?.companyId ?? companies[0]?.id ?? 0,
     journeyId: employee?.journeyId ?? journeys[0]?.id ?? 0,
-    managerAccess: employee?.managerAccess ?? false,
+    managerAccess: employee?.userRole === "COMPANY_ADMIN",
   }
 }
 
@@ -122,8 +122,6 @@ export function mapUserApiToEmployee(user: UserApiItem): Employee {
     companyId: user.companyId,
     journeyId: user.journeyId ?? 0,
     managerAccess:
-      user.role === "MANAGER" ||
-      user.role === "CLIENT_ADMIN" ||
       user.role === "COMPANY_ADMIN",
   }
 }

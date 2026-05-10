@@ -50,6 +50,7 @@ workSchedulesRouter.use(authenticate);
 
 workSchedulesRouter.get(
   '/',
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(listSchema),
   asyncHandler(async (request, response) => {
     const companyId = getOptionalRequestCompanyId(
@@ -82,7 +83,7 @@ workSchedulesRouter.get(
 
 workSchedulesRouter.post(
   '/',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(journeySchema),
   asyncHandler(async (request, response) => {
     const companyId = getRequestCompanyId(request, request.body.companyId);
@@ -111,7 +112,7 @@ workSchedulesRouter.post(
 
 workSchedulesRouter.patch(
   '/:journeyId',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(journeyIdSchema.merge(updateJourneySchema)),
   asyncHandler(async (request, response) => {
     const journeyId = Number(request.params.journeyId);
@@ -147,7 +148,7 @@ workSchedulesRouter.patch(
 
 workSchedulesRouter.delete(
   '/:journeyId',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(journeyIdSchema),
   asyncHandler(async (request, response) => {
     const journeyId = Number(request.params.journeyId);

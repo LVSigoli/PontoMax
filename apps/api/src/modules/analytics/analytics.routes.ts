@@ -18,7 +18,7 @@ const analyticsQuerySchema = z.object({
   }),
 });
 
-analyticsRouter.use(authenticate, requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'));
+analyticsRouter.use(authenticate, requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'));
 
 analyticsRouter.get(
   '/overview',

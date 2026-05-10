@@ -83,7 +83,7 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
     function renderFooter() {
       if (!isPending) {
         return (
-          <footer className="border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
+          <footer className="border-t border-border-subtle bg-surface-page">
             <Button
               fitWidth
               value="Fechar"
@@ -96,7 +96,7 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
       }
 
       return (
-        <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
+        <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page">
           <Button
             fitWidth
             value="Recusar"
@@ -117,8 +117,8 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
         className="bg-surface-page"
         widthClassName="max-w-[504px]"
       >
-        <div className="flex min-h-full flex-col">
-          <div className="flex-1 overflow-y-auto px-4 py-7 sm:px-5">
+        <div className="flex w-full h-full flex-col justify-evenly py-5">
+          <div className=" flex flex-col overflow-y-auto gap-4">
             <Table
               data={tableData}
               minWidth="100%"
@@ -128,14 +128,12 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
               getRowKey={(_, index) => element?.points[index]?.id ?? index}
             />
 
-            <div className="mt-7">
-              <TextArea
-                disabled
-                label="Justificativa"
-                value={element?.justification ?? ""}
-                onChange={() => undefined}
-              />
-            </div>
+            <TextArea
+              disabled
+              label="Justificativa"
+              value={element?.justification ?? ""}
+              onChange={() => undefined}
+            />
           </div>
 
           {renderFooter()}

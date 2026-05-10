@@ -62,6 +62,7 @@ export const swrKeys = {
   timeRecords: {
     today: () => "time-records/today",
     teamToday: () => "time-records/team/today",
-    summary: () => "time-records/summary",
+    summary: (params?: { userId?: number }) =>
+      buildSWRKey("time-records/summary", params),
   },
 }

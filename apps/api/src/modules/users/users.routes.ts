@@ -51,7 +51,7 @@ usersRouter.use(authenticate);
 
 usersRouter.get(
   '/',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(listUsersSchema),
   asyncHandler(async (request, response) => {
     const companyId = getOptionalRequestCompanyId(
@@ -101,10 +101,35 @@ usersRouter.get(
 
 usersRouter.post(
   '/',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(userSchema),
   asyncHandler(async (request, response) => {
     const companyId = getRequestCompanyId(request, request.body.companyId);
+    const requestedRole = request.body.role;
+
+    if (
+      request.authUser!.role !== 'PLATFORM_ADMIN' &&
+      requestedRole === 'PLATFORM_ADMIN'
+    ) {
+      throw new AppError(
+        'You do not have permission to assign this role.',
+        403,
+      );
+    }
+
+    const journey = request.body.journeyId
+      ? await prisma.journey.findUniqueOrThrow({
+          where: { id: request.body.journeyId },
+        })
+      : null;
+
+    if (journey && journey.companyId !== companyId) {
+      throw new AppError(
+        'You do not have permission to assign this journey.',
+        403,
+      );
+    }
+
     const temporaryPassword = request.body.password ?? generateTemporaryPassword();
 
     const user = await prisma.user.create({
@@ -200,7 +225,7 @@ usersRouter.post(
 
 usersRouter.patch(
   '/:userId',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(userIdSchema.merge(updateUserSchema)),
   asyncHandler(async (request, response) => {
     const userId = Number(request.params.userId);
@@ -212,10 +237,51 @@ usersRouter.patch(
       throw new AppError('You do not have permission to update this user.', 403);
     }
 
+    if (
+      request.authUser!.role !== 'PLATFORM_ADMIN' &&
+      request.body.role === 'PLATFORM_ADMIN'
+    ) {
+      throw new AppError(
+        'You do not have permission to assign this role.',
+        403,
+      );
+    }
+
+    if (
+      request.authUser!.role !== 'PLATFORM_ADMIN' &&
+      request.body.companyId !== undefined &&
+      request.body.companyId !== currentUser.companyId
+    ) {
+      throw new AppError(
+        'You do not have permission to move this user to another company.',
+        403,
+      );
+    }
+
+    const resolvedCompanyId =
+      request.authUser!.role === 'PLATFORM_ADMIN'
+        ? request.body.companyId ?? currentUser.companyId
+        : currentUser.companyId;
+    const journey = request.body.journeyId
+      ? await prisma.journey.findUniqueOrThrow({
+          where: { id: request.body.journeyId },
+        })
+      : null;
+
+    if (journey && journey.companyId !== resolvedCompanyId) {
+      throw new AppError(
+        'You do not have permission to assign this journey.',
+        403,
+      );
+    }
+
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
-        companyId: request.body.companyId,
+        companyId:
+          request.authUser!.role === 'PLATFORM_ADMIN'
+            ? request.body.companyId
+            : undefined,
         employeeCode: request.body.employeeCode,
         fullName: request.body.fullName,
         email: request.body.email?.trim().toLowerCase(),
@@ -293,6 +359,7 @@ function generateTemporaryPassword(length = 12) {
 
 usersRouter.get(
   '/:userId',
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(userIdSchema),
   asyncHandler(async (request, response) => {
     const userId = Number(request.params.userId);
@@ -311,7 +378,10 @@ usersRouter.get(
       },
     });
 
-    if (request.authUser!.role !== 'PLATFORM_ADMIN' && user.companyId !== request.authUser!.companyId) {
+    if (
+      request.authUser!.role !== 'PLATFORM_ADMIN' &&
+      user.companyId !== request.authUser!.companyId
+    ) {
       throw new AppError('You do not have permission to access this user.', 403);
     }
 
@@ -321,7 +391,7 @@ usersRouter.get(
 
 usersRouter.delete(
   '/:userId',
-  requireRole('PLATFORM_ADMIN', 'CLIENT_ADMIN', 'COMPANY_ADMIN', 'MANAGER'),
+  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
   validateRequest(userIdSchema),
   asyncHandler(async (request, response) => {
     const userId = Number(request.params.userId);

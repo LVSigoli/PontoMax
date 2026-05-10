@@ -165,7 +165,7 @@ timeRecordsRouter.post(
 
 timeRecordsRouter.get(
   "/team/today",
-  requireRole("PLATFORM_ADMIN", "CLIENT_ADMIN", "COMPANY_ADMIN", "MANAGER"),
+  requireRole("PLATFORM_ADMIN", "COMPANY_ADMIN"),
   asyncHandler(async (request, response) => {
     const today = startOfDay(new Date())
     const tomorrow = endOfDay(new Date())
@@ -216,9 +216,7 @@ async function resolveTimeRecordAccess(request: Request) {
   if (
     requestedUserId &&
     requestedUserId !== request.authUser!.id &&
-    !["PLATFORM_ADMIN", "CLIENT_ADMIN", "COMPANY_ADMIN", "MANAGER"].includes(
-      request.authUser!.role
-    )
+    !["PLATFORM_ADMIN", "COMPANY_ADMIN"].includes(request.authUser!.role)
   ) {
     throw new AppError(
       "You do not have permission to access records from another user.",

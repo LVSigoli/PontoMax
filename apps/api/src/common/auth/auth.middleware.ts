@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 
 import { AppError } from '../errors/app-error.js';
+import { toUserRole } from '../constants/domain-enums.js';
 import { verifyAccessToken } from './token.service.js';
 
 export function authenticate(request: Request, _response: Response, next: NextFunction) {
@@ -18,7 +19,7 @@ export function authenticate(request: Request, _response: Response, next: NextFu
     request.authUser = {
       id: payload.id,
       companyId: payload.companyId,
-      role: payload.role,
+      role: toUserRole(payload.role),
       email: payload.email,
     };
 

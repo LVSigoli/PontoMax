@@ -5,12 +5,7 @@ import { toUserRole } from '../constants/domain-enums.js';
 export function mapRoleToGroups(role: string) {
   const safeRole = toUserRole(role);
 
-  if (safeRole === 'PLATFORM_ADMIN') return ['PLATFORM_ADMIN', 'PONTOMAX_ADMIN'];
-  if (safeRole === 'CLIENT_ADMIN' || safeRole === 'COMPANY_ADMIN') {
-    return ['CLIENT_ADMIN', 'COMPANY_ADMIN'];
-  }
-  if (safeRole === 'MANAGER') return ['MANAGER'];
-  return ['EMPLOYEE'];
+  return [safeRole];
 }
 
 export function makeSessionResponse(params: {
@@ -19,6 +14,7 @@ export function makeSessionResponse(params: {
   user: User & { company?: Company | null };
 }) {
   const { accessToken, refreshToken, user } = params;
+  const safeRole = toUserRole(user.role);
 
   return {
     requiresPasswordChange: false,
@@ -29,8 +25,8 @@ export function makeSessionResponse(params: {
       name: user.fullName,
       email: user.email,
       position: user.position ?? null,
-      role: user.role,
-      groups: mapRoleToGroups(user.role),
+      role: safeRole,
+      groups: mapRoleToGroups(safeRole),
       companyId: user.companyId,
       companyName: user.company?.name ?? null,
       mustChangePassword: user.mustChangePassword,
