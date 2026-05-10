@@ -19,5 +19,5 @@ export interface AuthContextValues {
   session: AuthSession | null
   user: AuthenticatedUser | null
   login: (payload: LoginPayload) => Promise<LoginResponse | undefined>
-  logout: () => void
+  logout: () => Promise<void>
 }

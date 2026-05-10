@@ -44,9 +44,9 @@ export function useSidebarFooter() {
   async function handleLogoutClick() {
     setIsMenuOpen(false)
 
-    logout()
+    await logout()
 
-    await router.push("/login")
+    await router.replace("/login")
   }
 
   function toggleMenu() {

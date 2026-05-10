@@ -5,5 +5,8 @@ import { Solicitations } from "@/components/pages/Solicitations"
 import { withAuthentication } from "@/hooks/withAuthentication"
 
 export default function SolicitationsPage() {
-  return withAuthentication(<Solicitations />)
+  return withAuthentication(<Solicitations />, [
+    "PLATFORM_ADMIN",
+    "COMPANY_ADMIN",
+  ])
 }

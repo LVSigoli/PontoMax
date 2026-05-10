@@ -111,7 +111,13 @@ export interface TimeEntryApiItem {
 export interface WorkdayApiItem {
   id: number
   date: string
-  status: "OPEN" | "CLOSED" | "INCONSISTENT" | "PENDING_ADJUSTMENT" | "ADJUSTED"
+  status:
+    | "OPEN"
+    | "CLOSED"
+    | "INCONSISTENT"
+    | "LATE"
+    | "PENDING_ADJUSTMENT"
+    | "ADJUSTED"
   scheduledMinutes: number
   workedMinutes: number
   overtimeMinutes: number
@@ -139,7 +145,13 @@ export interface RegisterTimeRecordResponse {
 export interface TeamTodayApiItem {
   userId: number
   userName: string
-  status: "OPEN" | "CLOSED" | "INCONSISTENT" | "PENDING_ADJUSTMENT" | "ADJUSTED"
+  status:
+    | "OPEN"
+    | "CLOSED"
+    | "INCONSISTENT"
+    | "LATE"
+    | "PENDING_ADJUSTMENT"
+    | "ADJUSTED"
   workedMinutes: number
   lastEntryAt: string | null
 }
@@ -180,6 +192,7 @@ export interface AnalyticsDashboardResponse {
   metrics: {
     presentEmployees: number
     companyEmployees: number
+    lateWorkdays: number
     overtimeMinutes: number
     pendingAdjustments: number
     inconsistentWorkdays: number
@@ -199,4 +212,41 @@ export interface AnalyticsDashboardResponse {
     label: string
     hours: number
   }>
+}
+
+export interface AuditLogMetadataChange {
+  field: string
+  before: unknown
+  after: unknown
+}
+
+export interface AuditLogMetadata {
+  summary: string
+  actor?: {
+    id: number
+    name: string
+    email: string
+    role: string
+  }
+  company?: {
+    id: number
+    name: string
+  }
+  changes?: AuditLogMetadataChange[]
+  details?: Record<string, unknown>
+}
+
+export interface AuditLogApiItem {
+  id: number
+  companyId: number | null
+  companyName: string
+  actorUserId: number | null
+  actorUserName: string | null
+  actorUserEmail: string | null
+  entityType: string
+  entityId: string
+  action: string
+  summary: string
+  metadata: AuditLogMetadata | null
+  createdAt: string
 }

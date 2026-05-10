@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 import { AppError } from '../errors/app-error.js';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
@@ -16,6 +18,14 @@ export function asyncHandler(
 function normalizeRouteError(error: unknown) {
   if (error instanceof AppError) {
     return error;
+  }
+
+  if (error instanceof Prisma.PrismaClientInitializationError) {
+    return new AppError(
+      'Database connection is unavailable.',
+      503,
+      error.message,
+    );
   }
 
   if (error instanceof Error) {

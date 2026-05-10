@@ -13,7 +13,9 @@ export const getPointTypeClass = (type: PointRecordType) => {
 }
 
 export const getPointStatusClass = (status: PointRecordStatus) => {
-  if (status === "Pendente") return "bg-warning-50 text-warning-700"
+  if (status === "Pendente" || status === "Atrasado") {
+    return "bg-warning-50 text-warning-700"
+  }
 
   return "bg-success-50 text-success-700"
 }
@@ -104,6 +106,8 @@ export function mapWorkdayStatusToPointStatus(
   }
 
   if (status === "ADJUSTED") return "Aprovado"
+
+  if (status === "LATE") return "Atrasado"
 
   return "Registrado"
 }

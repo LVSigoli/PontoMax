@@ -3,6 +3,7 @@ import { Router } from "express"
 import { z } from "zod"
 
 import { authenticate } from "../../common/auth/auth.middleware.js"
+import { recordAuditLog } from "../../common/audit/index.js"
 import { requireRole } from "../../common/auth/require-role.middleware.js"
 import { TIME_ENTRY_KINDS } from "../../common/constants/domain-enums.js"
 import { AppError } from "../../common/errors/app-error.js"
@@ -156,6 +157,24 @@ timeRecordsRouter.post(
       timezone: request.body.timezone ?? "America/Sao_Paulo",
     })
 
+    await recordAuditLog(prisma, {
+      companyId: request.authUser!.companyId,
+      actorUserId: request.authUser!.id,
+      entityType: "TIME_RECORD",
+      entityId: result.entry.id,
+      action: "REGISTER",
+      metadata: {
+        summary: "Ponto registrado",
+        details: {
+          workdayId: result.workday.id,
+          kind: result.entry.kind,
+          source: result.entry.source,
+          recordedAt: result.entry.recordedAt,
+          workdayStatus: result.workday.status,
+        },
+      },
+    })
+
     response.status(201).json({
       entry: serializeTimeEntry(result.entry),
       workday: serializeWorkday(result.workday),
@@ -165,7 +184,7 @@ timeRecordsRouter.post(
 
 timeRecordsRouter.get(
   "/team/today",
-  requireRole("PLATFORM_ADMIN", "CLIENT_ADMIN", "COMPANY_ADMIN", "MANAGER"),
+  requireRole("PLATFORM_ADMIN", "COMPANY_ADMIN"),
   asyncHandler(async (request, response) => {
     const today = startOfDay(new Date())
     const tomorrow = endOfDay(new Date())
@@ -216,9 +235,7 @@ async function resolveTimeRecordAccess(request: Request) {
   if (
     requestedUserId &&
     requestedUserId !== request.authUser!.id &&
-    !["PLATFORM_ADMIN", "CLIENT_ADMIN", "COMPANY_ADMIN", "MANAGER"].includes(
-      request.authUser!.role
-    )
+    !["PLATFORM_ADMIN", "COMPANY_ADMIN"].includes(request.authUser!.role)
   ) {
     throw new AppError(
       "You do not have permission to access records from another user.",

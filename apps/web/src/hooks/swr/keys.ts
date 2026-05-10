@@ -55,6 +55,19 @@ export const swrKeys = {
     list: (params?: { status?: string; from?: string; to?: string }) =>
       buildSWRKey("adjustment-requests", params),
   },
+  auditLogs: {
+    list: (params?: {
+      companyId?: number
+      actorUserId?: number
+      entityType?: string
+      action?: string
+      entityId?: string
+      from?: string
+      to?: string
+      page?: number
+      pageSize?: number
+    }) => buildSWRKey("audit-logs", params),
+  },
   analytics: {
     dashboard: (params?: { companyId?: number }) =>
       buildSWRKey("analytics/dashboard", params),
@@ -62,6 +75,7 @@ export const swrKeys = {
   timeRecords: {
     today: () => "time-records/today",
     teamToday: () => "time-records/team/today",
-    summary: () => "time-records/summary",
+    summary: (params?: { userId?: number }) =>
+      buildSWRKey("time-records/summary", params),
   },
 }

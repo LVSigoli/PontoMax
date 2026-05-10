@@ -1,4 +1,9 @@
-export type AnalyticsMetricType = "present" | "extra-hours" | "pending" | "issues"
+export type AnalyticsMetricType =
+  | "present"
+  | "late"
+  | "extra-hours"
+  | "pending"
+  | "issues"
 
 export interface AnalyticsMetric {
   label: string

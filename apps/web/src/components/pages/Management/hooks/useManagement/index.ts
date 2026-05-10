@@ -1,6 +1,8 @@
 // External Libraries
 import { useEffect, useMemo, useRef, useState } from "react"
 
+import { useAuth } from "@/contexts/AuthContext"
+
 // Constants
 import { MANAGEMENT_TABS } from "../../constants"
 
@@ -19,9 +21,20 @@ export function useManagement() {
   const inviteModalRef = useRef<InviteModalMethods>(null)
   const drawerRef = useRef<ManagementDrawerMethods>(null)
 
+  const { user } = useAuth()
+
   // States
   const [drawerRequestKey, setDrawerRequestKey] = useState(0)
-  const [activeTab, setActiveTab] = useState(MANAGEMENT_TABS[0])
+  const availableTabs = useMemo(
+    () =>
+      user?.role === "PLATFORM_ADMIN"
+        ? MANAGEMENT_TABS
+        : MANAGEMENT_TABS.filter((tab) => tab.id !== "companies"),
+    [user?.role]
+  )
+  const [activeTab, setActiveTab] = useState<ManagementTabOption>(
+    availableTabs[0] ?? MANAGEMENT_TABS[0]
+  )
   const [selectedElement, setSelectedElement] =
     useState<ManagementEntity | null>(null)
   const [shouldOpenInviteModal, setShouldOpenInviteModal] = useState(false)
@@ -109,6 +122,7 @@ export function useManagement() {
 
   return {
     invite,
+    availableTabs,
     activeTab,
     tableData,
     drawerRef,

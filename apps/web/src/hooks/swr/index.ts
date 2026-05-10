@@ -3,6 +3,7 @@ import useSWR, { type SWRConfiguration } from "swr"
 import { getCurrentUser } from "@/services/auth"
 import {
   getAdjustmentRequests,
+  getAuditLogs,
   getAnalyticsDashboard,
   getCompanies,
   getHolidays,
@@ -83,6 +84,17 @@ export function useAnalyticsDashboardSWR(
   )
 }
 
+export function useAuditLogsSWR(
+  params?: Parameters<typeof getAuditLogs>[0],
+  options?: SWROptions<Awaited<ReturnType<typeof getAuditLogs>>>
+) {
+  return useCachedRequest(
+    swrKeys.auditLogs.list(params),
+    () => getAuditLogs(params),
+    options
+  )
+}
+
 export function useTodayTimeRecordsSWR(
   options?: SWROptions<Awaited<ReturnType<typeof getTodayTimeRecords>>>
 ) {
@@ -96,11 +108,12 @@ export function useTeamTodaySWR(
 }
 
 export function useTimeRecordsSummarySWR(
+  params?: Parameters<typeof getTimeRecordsSummary>[0],
   options?: SWROptions<Awaited<ReturnType<typeof getTimeRecordsSummary>>>
 ) {
   return useCachedRequest(
-    swrKeys.timeRecords.summary(),
-    getTimeRecordsSummary,
+    swrKeys.timeRecords.summary(params),
+    () => getTimeRecordsSummary(params),
     options
   )
 }

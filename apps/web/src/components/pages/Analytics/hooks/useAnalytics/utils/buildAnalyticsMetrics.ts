@@ -13,6 +13,12 @@ export function buildAnalyticsMetrics(
       subtitle: "Quantidade de funcionarios que ja registraram entrada hoje",
     },
     {
+      label: "Atrasos hoje",
+      data: `${dashboard.metrics.lateWorkdays} registros`,
+      type: "late",
+      subtitle: "Funcionarios com entrada ou saida fora da tolerancia",
+    },
+    {
       label: "Horas extras da semana",
       data: formatHoursWithMinutes(dashboard.metrics.overtimeMinutes),
       type: "extra-hours",

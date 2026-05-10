@@ -21,7 +21,12 @@ export function validateRequest(schema: ValidSchema): RequestHandler {
       }
 
       if (parsed.query && typeof parsed.query === 'object') {
-        Object.assign(request.query as Record<string, unknown>, parsed.query);
+        Object.defineProperty(request, 'query', {
+          configurable: true,
+          enumerable: true,
+          value: parsed.query,
+          writable: true,
+        });
       }
 
       if (parsed.params && typeof parsed.params === 'object') {

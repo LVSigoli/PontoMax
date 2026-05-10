@@ -10,7 +10,7 @@ import { TextSwitch } from "@/components/structure/TextSwitch"
 import { ManagementDrawer } from "./components/ManagementDrawer"
 
 // Constants
-import { MANAGEMENT_ACTIONS, MANAGEMENT_TABS } from "./constants"
+import { MANAGEMENT_ACTIONS } from "./constants"
 
 // Contexts
 import { ManagementProvider } from "./contexts/ManagementContext"
@@ -33,6 +33,7 @@ const ManagementContent: React.FC = () => {
   // Hooks
   const {
     invite,
+    availableTabs,
     activeTab,
     tableData,
     drawerRef,
@@ -60,7 +61,7 @@ const ManagementContent: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-between gap-4">
               <TextSwitch
-                options={MANAGEMENT_TABS}
+                options={availableTabs}
                 value={activeTab}
                 onChange={handleTabChange}
               />

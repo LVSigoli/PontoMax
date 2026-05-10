@@ -13,6 +13,10 @@ export function getMetricTypeStyle(type: AnalyticsMetricType) {
       icon: "clock",
       iconClassName: "bg-success-600 text-content-inverse",
     },
+    late: {
+      icon: "timer",
+      iconClassName: "bg-warning-600 text-content-inverse",
+    },
     issues: {
       icon: "danger",
       iconClassName: "bg-danger-600 text-content-inverse",

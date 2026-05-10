@@ -48,12 +48,14 @@ export const TableBody = <T extends TableRowData>({
   }
 
   return (
-    <tbody>
+    <tbody className="overflow-y-scroll">
       {data.map((row, rowIndex) => (
         <tr
           key={getRowKey?.(row, rowIndex) ?? rowIndex}
           className={`border-b border-border-subtle last:border-b-0 ${
-            onRowSelect ? "cursor-pointer transition hover:bg-surface-muted" : ""
+            onRowSelect
+              ? "cursor-pointer transition hover:bg-surface-muted"
+              : ""
           }`}
           onClick={() => onRowSelect?.(row)}
         >

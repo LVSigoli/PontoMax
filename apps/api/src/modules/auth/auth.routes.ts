@@ -2,6 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { AppError } from '../../common/errors/app-error.js';
+import {
+  buildAuditActor,
+  buildAuditCompany,
+  recordAuditLog,
+} from '../../common/audit/index.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
 import { validateRequest } from '../../common/validation/validate-request.js';
 import { prisma } from '../../lib/prisma.js';
@@ -79,6 +84,23 @@ authRouter.post(
     if (user.mustChangePassword) {
       const resetToken = await issuePasswordResetToken(user.id);
 
+      await recordAuditLog(prisma, {
+        companyId: user.companyId,
+        actorUserId: user.id,
+        entityType: 'AUTH',
+        entityId: user.id,
+        action: 'LOGIN',
+        metadata: {
+          summary: 'Login autenticado com troca de senha obrigatória',
+          actor: buildAuditActor(user),
+          company: buildAuditCompany(user.company),
+          details: {
+            requiresPasswordChange: true,
+            resetTokenIssued: true,
+          },
+        },
+      });
+
       response.json({
         requiresPasswordChange: true,
         message: 'Password change is required before accessing the platform.',
@@ -123,6 +145,23 @@ authRouter.post(
       where: { id: user.id },
       data: {
         lastLoginAt: new Date(),
+      },
+    });
+
+    await recordAuditLog(prisma, {
+      companyId: user.companyId,
+      actorUserId: user.id,
+      entityType: 'AUTH',
+      entityId: session.id,
+      action: 'LOGIN',
+      metadata: {
+        summary: 'Login realizado com sucesso',
+        actor: buildAuditActor(user),
+        company: buildAuditCompany(user.company),
+        details: {
+          sessionId: session.id,
+          requiresPasswordChange: false,
+        },
       },
     });
 
@@ -194,6 +233,14 @@ authRouter.post(
   validateRequest(logoutSchema),
   asyncHandler(async (request, response) => {
     const payload = verifyRefreshToken(request.body.refreshToken);
+    const user = await prisma.user.findUniqueOrThrow({
+      where: {
+        id: payload.id,
+      },
+      include: {
+        company: true,
+      },
+    });
 
     await prisma.authSession.updateMany({
       where: {
@@ -204,6 +251,22 @@ authRouter.post(
       data: {
         status: 'REVOKED',
         revokedAt: new Date(),
+      },
+    });
+
+    await recordAuditLog(prisma, {
+      companyId: user.companyId,
+      actorUserId: user.id,
+      entityType: 'AUTH',
+      entityId: payload.sessionId,
+      action: 'LOGOUT',
+      metadata: {
+        summary: 'Sessão encerrada',
+        actor: buildAuditActor(user),
+        company: buildAuditCompany(user.company),
+        details: {
+          sessionId: payload.sessionId,
+        },
       },
     });
 
@@ -290,6 +353,32 @@ authRouter.post(
         },
       }),
     ]);
+
+    const user = await prisma.user.findUniqueOrThrow({
+      where: {
+        id: resetToken.userId,
+      },
+      include: {
+        company: true,
+      },
+    });
+
+    await recordAuditLog(prisma, {
+      companyId: user.companyId,
+      actorUserId: user.id,
+      entityType: 'AUTH',
+      entityId: user.id,
+      action: 'RESET_PASSWORD',
+      metadata: {
+        summary: 'Senha redefinida com sucesso',
+        actor: buildAuditActor(user),
+        company: buildAuditCompany(user.company),
+        details: {
+          resetTokenId: resetToken.id,
+          revokedSessions: true,
+        },
+      },
+    });
 
     response.status(204).send();
   }),

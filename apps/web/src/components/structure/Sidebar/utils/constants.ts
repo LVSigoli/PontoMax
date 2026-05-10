@@ -22,6 +22,7 @@ export const ADMIN_ITEMS: NavigationItem[] = [
     icon: "chart",
     href: "/analytics",
   },
+  // { id: "audit", label: "Auditoria", icon: "flag", href: "/audit" },
   {
     id: "management",
     label: "Gerenciamento",
@@ -43,9 +44,4 @@ export const ADMIN_ITEMS: NavigationItem[] = [
 ]
 
 // Constants
-export const ADMIN_ROLES = [
-  "PLATFORM_ADMIN",
-  "CLIENT_ADMIN",
-  "COMPANY_ADMIN",
-  "MANAGER",
-]
+export const ADMIN_ROLES = ["PLATFORM_ADMIN", "COMPANY_ADMIN"]

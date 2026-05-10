@@ -5,5 +5,8 @@ import { Analytics } from "@/components/pages/Analytics"
 import { withAuthentication } from "@/hooks/withAuthentication"
 
 export default function AnalyticsPage() {
-  return withAuthentication(<Analytics />)
+  return withAuthentication(<Analytics />, [
+    "PLATFORM_ADMIN",
+    "COMPANY_ADMIN",
+  ])
 }
