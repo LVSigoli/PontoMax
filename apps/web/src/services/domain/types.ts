@@ -192,6 +192,7 @@ export interface AnalyticsDashboardResponse {
   metrics: {
     presentEmployees: number
     companyEmployees: number
+    lateWorkdays: number
     overtimeMinutes: number
     pendingAdjustments: number
     inconsistentWorkdays: number

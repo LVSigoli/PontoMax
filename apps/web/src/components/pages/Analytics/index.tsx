@@ -92,7 +92,7 @@ export const Analytics: React.FC = () => {
                 />
               ) : null}
 
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                 {metrics.map((metric) => (
                   <MetricCard key={metric.type} metric={metric} />
                 ))}

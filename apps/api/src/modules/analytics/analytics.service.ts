@@ -215,6 +215,9 @@ export async function getAnalyticsDashboard(companyId?: number) {
   const inconsistentWorkdays = monthlyWorkdays.filter(
     (workday) => workday.status === 'INCONSISTENT' || workday.status === 'PENDING_ADJUSTMENT',
   ).length;
+  const lateWorkdays = todayWorkdays.filter(
+    (workday) => workday.status === 'LATE',
+  ).length;
   const pendingAdjustments = monthlyAdjustments.filter(
     (adjustment) => adjustment.status === 'PENDING',
   ).length;
@@ -316,6 +319,7 @@ export async function getAnalyticsDashboard(companyId?: number) {
     metrics: {
       presentEmployees,
       companyEmployees,
+      lateWorkdays,
       overtimeMinutes,
       pendingAdjustments,
       inconsistentWorkdays,

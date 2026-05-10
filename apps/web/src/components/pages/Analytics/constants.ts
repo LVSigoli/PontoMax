@@ -14,6 +14,12 @@ export const ANALYTICS_METRICS: AnalyticsMetric[] = [
     subtitle: "Quantidade de funcionarios que ja registraram entrada hoje",
   },
   {
+    label: "Atrasos hoje",
+    data: "2 registros",
+    type: "late",
+    subtitle: "Funcionarios com entrada ou saida fora da tolerancia",
+  },
+  {
     label: "Horas extras da semana",
     data: "+18h 30 min",
     type: "extra-hours",
