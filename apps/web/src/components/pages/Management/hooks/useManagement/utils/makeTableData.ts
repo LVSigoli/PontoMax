@@ -3,8 +3,8 @@ import { getCompanyName, getJourneyName } from "../../../utils"
 
 // Type
 import { TableRowData } from "@/components/structure/Table/types"
-import { formatTimeLabel } from "@/services/utils"
 import { Company, Employee, Journey, ManagementTabId } from "../../../types"
+import { formatTimeLabel } from "../../../utils"
 
 interface MakeTableDataParams {
   tab: ManagementTabId
