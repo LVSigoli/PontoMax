@@ -1,0 +1,11 @@
+process.env.NODE_ENV = "test"
+process.env.TZ = "UTC"
+process.env.API_PREFIX = process.env.API_PREFIX || "api"
+process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://test:test@localhost:5432/test"
+process.env.DIRECT_URL = process.env.DIRECT_URL || process.env.DATABASE_URL
+process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "test-access-secret"
+process.env.JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN || "15m"
+process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "test-refresh-secret"
+process.env.JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || "7d"
+process.env.APP_URL = process.env.APP_URL || "http://localhost:3000"
+process.env.MAIL_FROM = process.env.MAIL_FROM || "PontoMax <no-reply@pontomax.local>"

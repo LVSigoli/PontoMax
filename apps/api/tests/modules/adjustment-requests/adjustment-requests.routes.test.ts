@@ -1,0 +1,254 @@
+import request from "supertest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+import { createRouterApp } from "../../helpers/create-router-app"
+
+const mocked = vi.hoisted(() => {
+  return {
+    authenticateMock: vi.fn(),
+    requireRoleMock: vi.fn(() => (_request, _response, next) => {
+      next()
+    }),
+    ensureWorkdayMock: vi.fn(),
+    recalculateWorkdayMock: vi.fn(),
+    prisma: {
+      adjustmentRequest: {
+        findMany: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
+        create: vi.fn(),
+      },
+      workday: {
+        update: vi.fn(),
+      },
+      timeEntry: {
+        update: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
+        aggregate: vi.fn(),
+        create: vi.fn(),
+      },
+      $transaction: vi.fn(),
+      auditLog: {
+        create: vi.fn(),
+      },
+    },
+  }
+})
+
+vi.mock("../../../src/common/auth/auth.middleware.js", () => ({
+  authenticate: mocked.authenticateMock,
+}))
+
+vi.mock("../../../src/common/auth/require-role.middleware.js", () => ({
+  requireRole: mocked.requireRoleMock,
+}))
+
+vi.mock("../../../src/modules/time-records/time-records.service.js", () => ({
+  ensureWorkday: mocked.ensureWorkdayMock,
+  recalculateWorkday: mocked.recalculateWorkdayMock,
+}))
+
+vi.mock("../../../src/lib/prisma.js", () => ({
+  prisma: mocked.prisma,
+}))
+
+const { adjustmentRequestsRouter } = await import(
+  "../../../src/modules/adjustment-requests/adjustment-requests.routes.js"
+)
+
+const app = createRouterApp(adjustmentRequestsRouter, "/adjustment-requests")
+
+let authUser = {
+  id: 1,
+  companyId: 10,
+  role: "COMPANY_ADMIN",
+  email: "manager@example.com",
+}
+
+beforeEach(() => {
+  authUser = {
+    id: 1,
+    companyId: 10,
+    role: "COMPANY_ADMIN",
+    email: "manager@example.com",
+  }
+
+  mocked.authenticateMock.mockImplementation((request, _response, next) => {
+    request.authUser = authUser
+    next()
+  })
+  mocked.ensureWorkdayMock.mockReset()
+  mocked.recalculateWorkdayMock.mockReset()
+  mocked.prisma.adjustmentRequest.findMany.mockReset()
+  mocked.prisma.adjustmentRequest.findUniqueOrThrow.mockReset()
+  mocked.prisma.adjustmentRequest.create.mockReset()
+  mocked.prisma.workday.update.mockReset()
+  mocked.prisma.timeEntry.update.mockReset()
+  mocked.prisma.timeEntry.findUniqueOrThrow.mockReset()
+  mocked.prisma.timeEntry.aggregate.mockReset()
+  mocked.prisma.timeEntry.create.mockReset()
+  mocked.prisma.$transaction.mockReset()
+  mocked.prisma.auditLog.create.mockReset()
+})
+
+describe("adjustment requests routes", () => {
+  it("creates a new adjustment request", async () => {
+    mocked.ensureWorkdayMock.mockResolvedValue({
+      id: 501,
+      date: new Date("2026-05-11T00:00:00.000Z"),
+    })
+    mocked.prisma.adjustmentRequest.create.mockResolvedValue({
+      id: 601,
+      companyId: 10,
+      userId: 1,
+      workdayId: 501,
+      justification: "Precisei corrigir um registro",
+      status: "PENDING",
+      pointAdjustments: [
+        {
+          id: 701,
+          actionType: "UPDATE",
+          targetKind: "ENTRY",
+          timeEntryId: 900,
+          originalRecordedAt: "2026-05-11T11:00:00.000Z",
+          newRecordedAt: "2026-05-11T11:15:00.000Z",
+          reason: "Entrada atrasada",
+        },
+      ],
+    })
+    mocked.prisma.workday.update.mockResolvedValue({ id: 501 })
+    mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
+
+    const response = await request(app).post("/adjustment-requests").send({
+      workdayDate: "2026-05-11",
+      justification: "Precisei corrigir um registro",
+      records: [
+        {
+          timeEntryId: 900,
+          actionType: "UPDATE",
+          targetKind: "ENTRY",
+          originalRecordedAt: "2026-05-11T11:00:00.000Z",
+          newRecordedAt: "2026-05-11T11:15:00.000Z",
+          reason: "Entrada atrasada",
+        },
+      ],
+    })
+
+    expect(response.status).toBe(201)
+    expect(response.body).toEqual({
+      item: {
+        id: 601,
+        companyId: 10,
+        userId: 1,
+        workdayId: 501,
+        justification: "Precisei corrigir um registro",
+        status: "PENDING",
+        pointAdjustments: [
+          {
+            id: 701,
+            actionType: "UPDATE",
+            targetKind: "ENTRY",
+            timeEntryId: 900,
+            originalRecordedAt: "2026-05-11T11:00:00.000Z",
+            newRecordedAt: "2026-05-11T11:15:00.000Z",
+            reason: "Entrada atrasada",
+          },
+        ],
+      },
+    })
+    expect(mocked.ensureWorkdayMock).toHaveBeenCalledWith({
+      companyId: 10,
+      userId: 1,
+      date: "2026-05-11",
+    })
+    expect(mocked.prisma.workday.update).toHaveBeenCalledWith({
+      where: { id: 501 },
+      data: {
+        status: "PENDING_ADJUSTMENT",
+      },
+    })
+  })
+
+  it("rejects an adjustment request and updates the workday status", async () => {
+    authUser = {
+      id: 7,
+      companyId: 10,
+      role: "COMPANY_ADMIN",
+      email: "manager@example.com",
+    }
+
+    mocked.prisma.adjustmentRequest.findUniqueOrThrow.mockResolvedValue({
+      id: 601,
+      companyId: 10,
+      userId: 1,
+      workdayId: 501,
+      pointAdjustments: [],
+      workday: {
+        id: 501,
+      },
+    })
+
+    const transaction = {
+      adjustmentRequest: {
+        update: vi.fn().mockResolvedValue({ id: 601 }),
+      },
+      workday: {
+        update: vi.fn().mockResolvedValue({ id: 501 }),
+      },
+      timeEntry: {
+        update: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
+        aggregate: vi.fn(),
+        create: vi.fn(),
+      },
+    }
+
+    mocked.prisma.$transaction.mockImplementation(async (callback) =>
+      callback(transaction as never)
+    )
+    mocked.recalculateWorkdayMock.mockResolvedValue(undefined)
+    mocked.prisma.workday.update.mockResolvedValue({
+      id: 501,
+      date: new Date("2026-05-11T00:00:00.000Z"),
+      status: "ADJUSTED",
+      timeEntries: [],
+    })
+    mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
+
+    const response = await request(app)
+      .patch("/adjustment-requests/601/review")
+      .send({
+        status: "REJECTED",
+        reviewNotes: "Inconsistencia encontrada",
+      })
+
+    expect(response.status).toBe(200)
+    expect(response.body).toEqual({
+      item: {
+        id: 601,
+        status: "REJECTED",
+        workday: {
+          id: 501,
+          date: "2026-05-11",
+          status: "ADJUSTED",
+          timeEntries: [],
+        },
+      },
+    })
+    expect(transaction.adjustmentRequest.update).toHaveBeenCalledWith({
+      where: { id: 601 },
+      data: {
+        status: "REJECTED",
+        reviewNotes: "Inconsistencia encontrada",
+        reviewedById: 7,
+        reviewedAt: expect.any(Date),
+      },
+    })
+    expect(transaction.workday.update).toHaveBeenCalledWith({
+      where: { id: 501 },
+      data: {
+        status: "INCONSISTENT",
+      },
+    })
+    expect(mocked.recalculateWorkdayMock).toHaveBeenCalledWith(501)
+  })
+})

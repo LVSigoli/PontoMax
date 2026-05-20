@@ -8,6 +8,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage",
     "db:prepare": "pnpm prisma:generate && pnpm prisma:deploy && pnpm seed:build",
     "prisma:generate": "prisma generate --schema ../../prisma/schema.prisma",
     "prisma:push": "prisma db push --schema ../../prisma/schema.prisma",
@@ -34,8 +37,12 @@
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.7.2",
+    "@types/supertest": "^7.2.0",
+    "@vitest/coverage-v8": "^4.1.6",
     "prisma": "^6.16.2",
+    "supertest": "^7.2.2",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.6"
   }
 }

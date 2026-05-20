@@ -237,7 +237,7 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
               data={tableData}
               minWidth="100%"
               sideScroll={false}
-              className="mt-5 max-h-[320px] overflow-y-auto rounded-xl bg-surface-card"
+              className="mt-5 max-h-80 overflow-y-auto rounded-xl bg-surface-card"
               emptyMessage="Nenhum horario informado"
               getRowKey={(_, index) => element?.points[index]?.id ?? index}
             />
