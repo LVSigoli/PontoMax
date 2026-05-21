@@ -1,6 +1,6 @@
 // External Libraries
 import { useRouter } from "next/router"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 // Services
 import { postResetPassword } from "@/services/auth"
@@ -12,8 +12,13 @@ import type { ReplacePasswordCredential } from "./types"
 // Utils
 import { makeInitialReplacePasswordCredential } from "./utils"
 
+const LOGIN_REDIRECT_DELAY_MS = 2500
+const RESET_PASSWORD_SUCCESS_MESSAGE =
+  "Senha atualizada com sucesso. Voce sera redirecionado para o login em instantes."
+
 export function useReplacePassword() {
   const router = useRouter()
+  const redirectTimeoutRef = useRef<number | null>(null)
 
   const [credential, setCredential] = useState(
     makeInitialReplacePasswordCredential
@@ -24,13 +29,23 @@ export function useReplacePassword() {
   const [isPasswordHidden, setIsPasswordHidden] = useState(true)
   const [isConfirmPasswordHidden, setIsConfirmPasswordHidden] = useState(true)
 
+  useEffect(() => {
+    return () => {
+      clearRedirectTimeout()
+    }
+  }, [])
+
   function handleCredentialChange(
     key: keyof ReplacePasswordCredential,
     value: string
   ) {
+    clearRedirectTimeout()
     setErrorMessage("")
     setSuccessMessage("")
-    setCredential({ ...credential, [key]: value })
+    setCredential((currentCredential) => ({
+      ...currentCredential,
+      [key]: value,
+    }))
   }
 
   function handlePasswordIconClick() {
@@ -39,6 +54,22 @@ export function useReplacePassword() {
 
   function handleConfirmPasswordIconClick() {
     setIsConfirmPasswordHidden((currentValue) => !currentValue)
+  }
+
+  function clearRedirectTimeout() {
+    if (redirectTimeoutRef.current === null) return
+
+    window.clearTimeout(redirectTimeoutRef.current)
+    redirectTimeoutRef.current = null
+  }
+
+  function scheduleLoginRedirect() {
+    clearRedirectTimeout()
+
+    redirectTimeoutRef.current = window.setTimeout(() => {
+      redirectTimeoutRef.current = null
+      void router.replace("/login")
+    }, LOGIN_REDIRECT_DELAY_MS)
   }
 
   async function handleSubmit() {
@@ -73,10 +104,10 @@ export function useReplacePassword() {
       })
 
       setCredential(makeInitialReplacePasswordCredential())
-      setSuccessMessage(
-        "Senha atualizada com sucesso. Voce ja pode fazer login."
-      )
+      setSuccessMessage(RESET_PASSWORD_SUCCESS_MESSAGE)
+      scheduleLoginRedirect()
     } catch (error) {
+      clearRedirectTimeout()
       setSuccessMessage("")
       setErrorMessage(
         getErrorMessage(
