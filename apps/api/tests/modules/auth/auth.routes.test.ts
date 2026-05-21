@@ -35,6 +35,8 @@ const mocked = vi.hoisted(() => {
     verifyRefreshTokenMock: vi.fn(),
     issuePasswordResetTokenMock: vi.fn(),
     createTokenHashMock: vi.fn(),
+    makePasswordSetupUrlMock: vi.fn(),
+    sendPasswordResetEmailMock: vi.fn(),
     authenticateMock: vi.fn(),
   }
 })
@@ -72,6 +74,11 @@ vi.mock("../../../src/common/auth/token.service.js", () => ({
 vi.mock("../../../src/modules/auth/password-reset.service.js", () => ({
   issuePasswordResetToken: mocked.issuePasswordResetTokenMock,
   createTokenHash: mocked.createTokenHashMock,
+  makePasswordSetupUrl: mocked.makePasswordSetupUrlMock,
+}))
+
+vi.mock("../../../src/modules/auth/auth-email.service.js", () => ({
+  sendPasswordResetEmail: mocked.sendPasswordResetEmailMock,
 }))
 
 vi.mock("../../../src/common/auth/auth.middleware.js", () => ({
@@ -135,6 +142,8 @@ function resetAllMocks() {
   mocked.verifyRefreshTokenMock.mockReset()
   mocked.issuePasswordResetTokenMock.mockReset()
   mocked.createTokenHashMock.mockReset()
+  mocked.makePasswordSetupUrlMock.mockReset()
+  mocked.sendPasswordResetEmailMock.mockReset()
   mocked.authenticateMock.mockReset()
 }
 
@@ -159,6 +168,14 @@ describe("auth routes", () => {
     })
     mocked.issuePasswordResetTokenMock.mockResolvedValue("reset-token")
     mocked.createTokenHashMock.mockImplementation((token: string) => `hash:${token}`)
+    mocked.makePasswordSetupUrlMock.mockImplementation(
+      (token: string) =>
+        `http://localhost:3000/login?view=replace-password&token=${token}`
+    )
+    mocked.sendPasswordResetEmailMock.mockResolvedValue({
+      channel: "file",
+      previewPath: ".tmp/mail-outbox/reset-preview.txt",
+    })
     mocked.authenticateMock.mockImplementation((request, _response, next) => {
       request.authUser = {
         id: 1,
@@ -350,13 +367,51 @@ describe("auth routes", () => {
     expect(mocked.authenticateMock).toHaveBeenCalledOnce()
   })
 
-  it("returns the forgot-password guidance message", async () => {
+  it("sends a password reset e-mail for active users", async () => {
+    mocked.prisma.user.findUnique.mockResolvedValue(baseUser)
+
     const response = await request(app).post("/auth/forgot-password").send({
-      email: "ana@example.com",
+      email: "Ana@Example.com",
     })
 
     expect(response.status).toBe(200)
-    expect(response.body.message).toContain("entre em contato com um administrador")
+    expect(response.body).toEqual({
+      message:
+        "Se o e-mail informado estiver cadastrado, voce recebera um link para redefinir sua senha.",
+    })
+    expect(mocked.prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { email: "ana@example.com" },
+      include: {
+        company: true,
+      },
+    })
+    expect(mocked.issuePasswordResetTokenMock).toHaveBeenCalledWith(1)
+    expect(mocked.makePasswordSetupUrlMock).toHaveBeenCalledWith("reset-token")
+    expect(mocked.sendPasswordResetEmailMock).toHaveBeenCalledWith({
+      to: "ana@example.com",
+      fullName: "Ana Demo",
+      passwordSetupUrl:
+        "http://localhost:3000/login?view=replace-password&token=reset-token",
+    })
+    expect(mocked.recordAuditLogMock).toHaveBeenCalledOnce()
+  })
+
+  it("returns a generic forgot-password message for unknown users", async () => {
+    mocked.prisma.user.findUnique.mockResolvedValue(null)
+
+    const response = await request(app).post("/auth/forgot-password").send({
+      email: "missing@example.com",
+    })
+
+    expect(response.status).toBe(200)
+    expect(response.body).toEqual({
+      message:
+        "Se o e-mail informado estiver cadastrado, voce recebera um link para redefinir sua senha.",
+    })
+    expect(mocked.issuePasswordResetTokenMock).not.toHaveBeenCalled()
+    expect(mocked.makePasswordSetupUrlMock).not.toHaveBeenCalled()
+    expect(mocked.sendPasswordResetEmailMock).not.toHaveBeenCalled()
+    expect(mocked.recordAuditLogMock).not.toHaveBeenCalled()
   })
 
   it("rejects reset-password requests with invalid tokens", async () => {

@@ -21,9 +21,17 @@ import {
 import { authenticate } from '../../common/auth/auth.middleware.js';
 import { toUserRole } from '../../common/constants/domain-enums.js';
 import { durationToMilliseconds } from '../../common/utils/duration.js';
-import { createTokenHash, issuePasswordResetToken } from './password-reset.service.js';
+import { sendPasswordResetEmail } from './auth-email.service.js';
+import {
+  createTokenHash,
+  issuePasswordResetToken,
+  makePasswordSetupUrl,
+} from './password-reset.service.js';
 
 export const authRouter = Router();
+
+const forgotPasswordResponseMessage =
+  'Se o e-mail informado estiver cadastrado, voce recebera um link para redefinir sua senha.';
 
 const loginSchema = z.object({
   body: z.object({
@@ -301,9 +309,43 @@ authRouter.post(
   '/forgot-password',
   validateRequest(forgotPasswordSchema),
   asyncHandler(async (request, response) => {
+    const email = request.body.email.trim().toLowerCase();
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        company: true,
+      },
+    });
+
+    if (user?.isActive) {
+      const resetToken = await issuePasswordResetToken(user.id);
+      const passwordSetupUrl = makePasswordSetupUrl(resetToken);
+      const mailDelivery = await sendPasswordResetEmail({
+        to: user.email,
+        fullName: user.fullName,
+        passwordSetupUrl,
+      });
+
+      await recordAuditLog(prisma, {
+        companyId: user.companyId,
+        actorUserId: null,
+        entityType: 'AUTH',
+        entityId: user.id,
+        action: 'RESET_PASSWORD',
+        metadata: {
+          summary: 'Solicitacao de redefinicao de senha enviada',
+          company: buildAuditCompany(user.company),
+          details: {
+            requestedFor: buildAuditActor(user),
+            deliveryChannel: mailDelivery.channel,
+            previewPath: mailDelivery.previewPath ?? null,
+          },
+        },
+      });
+    }
+
     response.json({
-      message:
-        'Para recuperar sua senha, entre em contato com um administrador da sua empresa e solicite um novo link de acesso.',
+      message: forgotPasswordResponseMessage,
     });
   }),
 );

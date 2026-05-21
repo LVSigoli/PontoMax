@@ -1,3 +1,4 @@
+export * from "./auth.forgot-password.post"
 export * from "./auth.login.post"
 export * from "./auth.logout.post"
 export * from "./auth.me.get"

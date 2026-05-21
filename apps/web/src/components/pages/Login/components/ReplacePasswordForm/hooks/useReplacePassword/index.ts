@@ -6,6 +6,7 @@ import { useState } from "react"
 import { postResetPassword } from "@/services/auth"
 
 // Types
+import { getErrorMessage } from "@/utils/getErrorMessage"
 import type { ReplacePasswordCredential } from "./types"
 
 // Utils
@@ -64,17 +65,25 @@ export function useReplacePassword() {
     try {
       setIsSubmitting(true)
       setErrorMessage("")
+      setSuccessMessage("")
 
       await postResetPassword({
         token,
         password: credential.password,
       })
 
+      setCredential(makeInitialReplacePasswordCredential())
       setSuccessMessage(
         "Senha atualizada com sucesso. Voce ja pode fazer login."
       )
     } catch (error) {
-      console.log(error)
+      setSuccessMessage("")
+      setErrorMessage(
+        getErrorMessage(
+          error,
+          "Nao foi possivel atualizar sua senha. Verifique se o link ainda esta valido."
+        )
+      )
     } finally {
       setIsSubmitting(false)
     }

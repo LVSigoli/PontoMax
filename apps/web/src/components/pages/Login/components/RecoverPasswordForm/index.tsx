@@ -4,7 +4,11 @@ import React from "react"
 // Components
 import { Button } from "@/components/structure/Button"
 import { Icon } from "@/components/structure/Icon"
+import { Input } from "@/components/structure/Input"
 import { Typography } from "@/components/structure/Typography"
+
+// Hooks
+import { useRecoverPassword } from "./hooks/useRecoverPassword"
 
 interface Props {
   onBackToLoginClick?: () => void
@@ -13,8 +17,26 @@ interface Props {
 export const RecoverPasswordForm: React.FC<Props> = ({
   onBackToLoginClick,
 }) => {
+  const {
+    email,
+    errorMessage,
+    successMessage,
+    isSubmitting,
+    handleEmailChange,
+    handleSubmit,
+  } = useRecoverPassword()
+
+  async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    await handleSubmit()
+  }
+
   return (
-    <div className="w-full max-w-100" aria-labelledby="recover-password-title">
+    <form
+      className="w-full max-w-100"
+      aria-labelledby="recover-password-title"
+      onSubmit={handleFormSubmit}
+    >
       <div className="flex flex-col items-center text-center">
         <div className="relative mb-3 flex size-11 items-center justify-center rounded-xl bg-brand-600 text-content-inverse">
           <Icon name="clock" size="1.25rem" />
@@ -24,14 +46,43 @@ export const RecoverPasswordForm: React.FC<Props> = ({
 
         <Typography
           variant="b2"
-          value="Entre em contato com um administrador da sua empresa."
-        />
-
-        <Typography
-          variant="b2"
-          value="O administrador poderá gerar um novo link de redefinição"
+          value="Informe o e-mail da sua conta para receber um link de redefinicao."
         />
       </div>
+
+      <Input
+        title="email"
+        icon="mail"
+        type="email"
+        value={email}
+        placeholder="seu@email.com.br"
+        className="mt-6"
+        onChange={handleEmailChange}
+      />
+
+      {errorMessage ? (
+        <Typography
+          variant="legal"
+          value={errorMessage}
+          className="mt-3 text-danger-700"
+        />
+      ) : null}
+
+      {successMessage ? (
+        <Typography
+          variant="legal"
+          value={successMessage}
+          className="mt-3 text-success-700"
+        />
+      ) : null}
+
+      <Button
+        fitWidth
+        type="submit"
+        value="Enviar link de redefinicao"
+        className="mt-7"
+        loading={isSubmitting}
+      />
 
       <Button
         fitWidth
@@ -39,6 +90,6 @@ export const RecoverPasswordForm: React.FC<Props> = ({
         value="Voltar para login"
         onClick={onBackToLoginClick}
       />
-    </div>
+    </form>
   )
 }
