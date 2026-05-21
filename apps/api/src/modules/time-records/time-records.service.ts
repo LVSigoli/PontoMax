@@ -343,66 +343,21 @@ export async function getTodayWorkdaySnapshot(params: {
 }
 
 export async function getWorkdayOverview(params: {
+  companyId: number
   userId: number
   page: number
   pageSize: number
   timezone?: string
 }): Promise<WorkdayOverviewResponse> {
-  const today = getDateOnly(new Date(), params.timezone)
-
-  const [totalItems, workdays] = await Promise.all([
-    prisma.workday.count({
-      where: {
-        userId: params.userId,
-        date: {
-          lt: today,
-        },
-      },
-    }),
-    prisma.workday.findMany({
-      where: {
-        userId: params.userId,
-        date: {
-          lt: today,
-        },
-      },
-      include: {
-        timeEntries: {
-          where: {
-            status: "ACTIVE",
-          },
-          orderBy: {
-            recordedAt: "asc",
-          },
-        },
-      },
-      orderBy: {
-        date: "desc",
-      },
-      skip: Math.max(0, (params.page - 1) * params.pageSize),
-      take: params.pageSize,
-    }),
-  ])
-  const earliestWorkdayDate = workdays.reduce<Date | null>(
-    (current, workday) =>
-      !current || workday.date.getTime() < current.getTime()
-        ? workday.date
-        : current,
-    null
-  )
-  const assignments = await getJourneyAssignmentsForRange({
-    userId: params.userId,
-    from: earliestWorkdayDate
-      ? addUtcDays(getStoredDateOnly(earliestWorkdayDate), -1)
-      : today,
-    to: today,
-  })
-
+  const { assignments, workdays } = await getHistoricalWorkdays(params)
+  const totalItems = workdays.length
   const totalPages =
     totalItems === 0 ? 0 : Math.ceil(totalItems / params.pageSize)
+  const startIndex = Math.max(0, (params.page - 1) * params.pageSize)
+  const pageItems = workdays.slice(startIndex, startIndex + params.pageSize)
 
   return {
-    items: workdays.map((workday) =>
+    items: pageItems.map((workday) =>
       serializeWorkday(
         normalizeWorkdayForTimezone(workday, params.timezone, assignments)
       )
@@ -421,25 +376,7 @@ export async function getUserWorkdaySummary(params: {
   userId: number
   timezone?: string
 }): Promise<WorkdayOverviewSummary> {
-  const today = getDateOnly(new Date(), params.timezone)
-  const workdays = await prisma.workday.findMany({
-    where: {
-      userId: params.userId,
-      date: {
-        lt: today,
-      },
-    },
-    include: {
-      timeEntries: {
-        where: {
-          status: "ACTIVE",
-        },
-        orderBy: {
-          recordedAt: "asc",
-        },
-      },
-    },
-  })
+  const { assignments, workdays } = await getHistoricalWorkdays(params)
 
   const [pendingAdjustments] = await Promise.all([
     prisma.adjustmentRequest.count({
@@ -450,21 +387,6 @@ export async function getUserWorkdaySummary(params: {
       },
     }),
   ])
-  const assignments = await getJourneyAssignmentsForRange({
-    userId: params.userId,
-    from:
-      workdays.length > 0
-        ? addUtcDays(
-            getStoredDateOnly(
-              [...workdays].sort(
-                (left, right) => left.date.getTime() - right.date.getTime()
-              )[0]!.date
-            ),
-            -1
-          )
-        : today,
-    to: today,
-  })
 
   if (assignments.length === 0 && workdays.length === 0) {
     return {
@@ -853,6 +775,158 @@ function shouldIgnoreWorkdayInSummary(workday: WorkdayLike) {
   )
 }
 
+async function getHistoricalWorkdays(params: {
+  companyId: number
+  userId: number
+  timezone?: string
+}) {
+  const today = getDateOnly(new Date(), params.timezone)
+  const historyEndDate = addUtcDays(today, -1)
+
+  const [persistedWorkdays, assignments] = await Promise.all([
+    prisma.workday.findMany({
+      where: {
+        userId: params.userId,
+        date: {
+          lt: today,
+        },
+      },
+      include: {
+        timeEntries: {
+          where: {
+            status: "ACTIVE",
+          },
+          orderBy: {
+            recordedAt: "asc",
+          },
+        },
+      },
+      orderBy: {
+        date: "desc",
+      },
+    }),
+    getJourneyAssignmentsForRange({
+      userId: params.userId,
+      from: new Date(Date.UTC(1970, 0, 1)),
+      to: historyEndDate,
+    }),
+  ])
+
+  const earliestPersistedDate = persistedWorkdays.reduce<Date | null>(
+    (current, workday) =>
+      !current || workday.date.getTime() < current.getTime()
+        ? workday.date
+        : current,
+    null
+  )
+  const earliestAssignmentDate = assignments[0]
+    ? getStoredDateOnly(assignments[0].validFrom)
+    : null
+  const historyStartDate = minDate(earliestPersistedDate, earliestAssignmentDate)
+
+  if (
+    !historyStartDate ||
+    historyStartDate.getTime() > historyEndDate.getTime()
+  ) {
+    return {
+      assignments,
+      workdays: persistedWorkdays,
+    }
+  }
+
+  const holidayDateKeys = await getHolidayDateKeysForRange({
+    companyId: params.companyId,
+    from: historyStartDate,
+    to: historyEndDate,
+  })
+  const persistedWorkdaysByDate = new Map(
+    persistedWorkdays.map((workday) => [
+      getDateKey(getStoredDateOnly(workday.date)),
+      workday,
+    ])
+  )
+  const workdays: WorkdayLike[] = []
+
+  for (
+    let cursor = historyEndDate;
+    cursor.getTime() >= historyStartDate.getTime();
+    cursor = addUtcDays(cursor, -1)
+  ) {
+    const dateKey = getDateKey(cursor)
+    const persistedWorkday = persistedWorkdaysByDate.get(dateKey)
+
+    if (persistedWorkday) {
+      workdays.push(persistedWorkday)
+      continue
+    }
+
+    const assignment = findJourneyAssignmentForDate(assignments, cursor)
+    const isHoliday = holidayDateKeys.has(dateKey)
+    const scheduledMinutes = getScheduledMinutesForDate(
+      assignment,
+      cursor,
+      isHoliday
+    )
+
+    if (scheduledMinutes <= 0) {
+      continue
+    }
+
+    workdays.push({
+      id: makeSyntheticWorkdayId(cursor),
+      date: cursor,
+      status: "INCONSISTENT",
+      scheduledMinutes,
+      workedMinutes: 0,
+      overtimeMinutes: 0,
+      missingMinutes: scheduledMinutes,
+      nightMinutes: 0,
+      isHoliday,
+      timeEntries: [],
+    })
+  }
+
+  return {
+    assignments,
+    workdays,
+  }
+}
+
+async function getHolidayDateKeysForRange(params: {
+  companyId: number
+  from: Date
+  to: Date
+}) {
+  const holidays = await prisma.holiday.findMany({
+    where: {
+      date: {
+        gte: params.from,
+        lte: params.to,
+      },
+      isActive: true,
+      OR: [
+        {
+          type: "NATIONAL",
+        },
+        {
+          companyAssignments: {
+            some: {
+              companyId: params.companyId,
+            },
+          },
+        },
+      ],
+    },
+    select: {
+      date: true,
+    },
+  })
+
+  return new Set(
+    holidays.map((holiday) => getDateKey(getStoredDateOnly(holiday.date)))
+  )
+}
+
 async function getEffectiveWorkdayDateForUser(params: {
   userId: number
   recordedAt: Date
@@ -1024,6 +1098,13 @@ function addUtcDays(value: Date, amount: number) {
       value.getUTCDate() + amount
     )
   )
+}
+
+function minDate(left: Date | null, right: Date | null) {
+  if (!left) return right
+  if (!right) return left
+
+  return left.getTime() <= right.getTime() ? left : right
 }
 
 function normalizeWorkdayDateInput(value: Date | string, timeZone?: string) {

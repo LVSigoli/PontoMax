@@ -13,6 +13,10 @@ export const getPointTypeClass = (type: PointRecordType) => {
 }
 
 export const getPointStatusClass = (status: PointRecordStatus) => {
+  if (status === "Falta") {
+    return "bg-danger-50 text-danger-700"
+  }
+
   if (status === "Pendente" || status === "Atrasado") {
     return "bg-warning-50 text-warning-700"
   }
@@ -98,16 +102,32 @@ export function isBusinessDay(value: string) {
   return weekday !== 0 && weekday !== 6
 }
 
+function isAbsentWorkday(workday: WorkdayApiItem) {
+  return (
+    workday.status === "INCONSISTENT" &&
+    workday.timeEntries.length === 0 &&
+    workday.scheduledMinutes > 0 &&
+    workday.missingMinutes >= workday.scheduledMinutes
+  )
+}
+
 export function mapWorkdayStatusToPointStatus(
-  status: WorkdayApiItem["status"]
+  workday: WorkdayApiItem
 ): PointRecordStatus {
-  if (status === "PENDING_ADJUSTMENT" || status === "INCONSISTENT") {
+  if (isAbsentWorkday(workday)) {
+    return "Falta"
+  }
+
+  if (
+    workday.status === "PENDING_ADJUSTMENT" ||
+    workday.status === "INCONSISTENT"
+  ) {
     return "Pendente"
   }
 
-  if (status === "ADJUSTED") return "Aprovado"
+  if (workday.status === "ADJUSTED") return "Aprovado"
 
-  if (status === "LATE") return "Atrasado"
+  if (workday.status === "LATE") return "Atrasado"
 
   return "Registrado"
 }
@@ -141,7 +161,7 @@ export function mapWorkdayToPointRecords(workday: WorkdayApiItem) {
       extraHours: formatHoursWithMinutes(workday.overtimeMinutes),
       missingHours: formatHoursWithMinutes(workday.missingMinutes),
       type: mapTimeEntryKindToPointType(timeEntry.kind),
-      status: mapWorkdayStatusToPointStatus(workday.status),
+      status: mapWorkdayStatusToPointStatus(workday),
     }))
 }
 
@@ -153,7 +173,7 @@ export function mapWorkdayToSummary(workday: WorkdayApiItem): WorkdaySummary {
     extraHours: formatHoursWithMinutes(workday.overtimeMinutes),
     missingHours: formatHoursWithMinutes(workday.missingMinutes),
     recordsCount: workday.timeEntries.length,
-    status: mapWorkdayStatusToPointStatus(workday.status),
+    status: mapWorkdayStatusToPointStatus(workday),
     records: mapWorkdayToPointRecords(workday),
   }
 }

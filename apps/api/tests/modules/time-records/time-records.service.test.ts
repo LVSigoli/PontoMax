@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocked = vi.hoisted(() => {
   return {
@@ -15,6 +15,7 @@ const mocked = vi.hoisted(() => {
       },
       holiday: {
         findFirst: vi.fn(),
+        findMany: vi.fn(),
       },
       adjustmentRequest: {
         count: vi.fn(),
@@ -32,8 +33,13 @@ vi.mock("../../../src/lib/prisma.js", () => ({
   prisma: mocked.prisma,
 }))
 
-const { recalculateWorkday, serializeTimeEntry, serializeWorkday } =
-  await import("../../../src/modules/time-records/time-records.service.js")
+const {
+  getUserWorkdaySummary,
+  getWorkdayOverview,
+  recalculateWorkday,
+  serializeTimeEntry,
+  serializeWorkday,
+} = await import("../../../src/modules/time-records/time-records.service.js")
 
 beforeEach(() => {
   mocked.prisma.workday.findUniqueOrThrow.mockReset()
@@ -43,10 +49,15 @@ beforeEach(() => {
   mocked.prisma.userJourneyAssignment.findFirst.mockReset()
   mocked.prisma.userJourneyAssignment.findMany.mockReset()
   mocked.prisma.holiday.findFirst.mockReset()
+  mocked.prisma.holiday.findMany.mockReset()
   mocked.prisma.adjustmentRequest.count.mockReset()
   mocked.prisma.timeEntry.findMany.mockReset()
   mocked.prisma.timeEntry.aggregate.mockReset()
   mocked.prisma.timeEntry.create.mockReset()
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe("time records service", () => {
@@ -213,6 +224,125 @@ describe("time records service", () => {
       nightMinutes: 0,
       isHoliday: false,
       timeEntries: [serializedEntry],
+    })
+  })
+
+  it("includes scheduled days without records in the overview", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-05-15T12:00:00.000Z"))
+
+    mocked.prisma.workday.findMany.mockResolvedValue([])
+    mocked.prisma.userJourneyAssignment.findMany.mockResolvedValue([
+      {
+        id: 100,
+        userId: 7,
+        validFrom: new Date("2026-05-12T00:00:00.000Z"),
+        validTo: null,
+        journey: {
+          scaleCode: "5X2",
+          dailyWorkMinutes: 480,
+          expectedEntryTime: new Date("1970-01-01T08:00:00.000Z"),
+          expectedExitTime: new Date("1970-01-01T17:00:00.000Z"),
+          flexibleSchedule: false,
+          toleranceMinutes: 10,
+          nightShift: false,
+        },
+      },
+    ])
+    mocked.prisma.holiday.findMany.mockResolvedValue([])
+
+    const overview = await getWorkdayOverview({
+      companyId: 10,
+      userId: 7,
+      page: 1,
+      pageSize: 20,
+      timezone: "America/Sao_Paulo",
+    })
+
+    expect(overview).toEqual({
+      items: [
+        {
+          id: -new Date("2026-05-14T00:00:00.000Z").getTime(),
+          date: "2026-05-14",
+          status: "INCONSISTENT",
+          scheduledMinutes: 480,
+          workedMinutes: 0,
+          overtimeMinutes: 0,
+          missingMinutes: 480,
+          nightMinutes: 0,
+          isHoliday: false,
+          timeEntries: [],
+        },
+        {
+          id: -new Date("2026-05-13T00:00:00.000Z").getTime(),
+          date: "2026-05-13",
+          status: "INCONSISTENT",
+          scheduledMinutes: 480,
+          workedMinutes: 0,
+          overtimeMinutes: 0,
+          missingMinutes: 480,
+          nightMinutes: 0,
+          isHoliday: false,
+          timeEntries: [],
+        },
+        {
+          id: -new Date("2026-05-12T00:00:00.000Z").getTime(),
+          date: "2026-05-12",
+          status: "INCONSISTENT",
+          scheduledMinutes: 480,
+          workedMinutes: 0,
+          overtimeMinutes: 0,
+          missingMinutes: 480,
+          nightMinutes: 0,
+          isHoliday: false,
+          timeEntries: [],
+        },
+      ],
+      meta: {
+        page: 1,
+        pageSize: 20,
+        totalItems: 3,
+        totalPages: 1,
+      },
+    })
+  })
+
+  it("counts missing scheduled days in the summary", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-05-15T12:00:00.000Z"))
+
+    mocked.prisma.workday.findMany.mockResolvedValue([])
+    mocked.prisma.userJourneyAssignment.findMany.mockResolvedValue([
+      {
+        id: 100,
+        userId: 7,
+        validFrom: new Date("2026-05-12T00:00:00.000Z"),
+        validTo: null,
+        journey: {
+          scaleCode: "5X2",
+          dailyWorkMinutes: 480,
+          expectedEntryTime: new Date("1970-01-01T08:00:00.000Z"),
+          expectedExitTime: new Date("1970-01-01T17:00:00.000Z"),
+          flexibleSchedule: false,
+          toleranceMinutes: 10,
+          nightShift: false,
+        },
+      },
+    ])
+    mocked.prisma.holiday.findMany.mockResolvedValue([])
+    mocked.prisma.adjustmentRequest.count.mockResolvedValue(0)
+
+    const summary = await getUserWorkdaySummary({
+      companyId: 10,
+      userId: 7,
+      timezone: "America/Sao_Paulo",
+    })
+
+    expect(summary).toEqual({
+      workedDays: 0,
+      balanceMinutes: -1440,
+      inconsistentCount: 3,
+      pendingAdjustments: 0,
     })
   })
 })

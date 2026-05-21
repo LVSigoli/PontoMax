@@ -185,4 +185,36 @@ describe("time records routes", () => {
       ],
     })
   })
+
+  it("passes the company scope when loading the overview", async () => {
+    mocked.prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: 1,
+      companyId: 10,
+      company: {
+        timezone: "America/Sao_Paulo",
+      },
+    })
+    mocked.getWorkdayOverviewMock.mockResolvedValue({
+      items: [],
+      meta: {
+        page: 1,
+        pageSize: 20,
+        totalItems: 0,
+        totalPages: 0,
+      },
+    })
+
+    const response = await request(app).get(
+      "/time-records/overview?page=1&pageSize=20"
+    )
+
+    expect(response.status).toBe(200)
+    expect(mocked.getWorkdayOverviewMock).toHaveBeenCalledWith({
+      companyId: 10,
+      userId: 1,
+      page: 1,
+      pageSize: 20,
+      timezone: "America/Sao_Paulo",
+    })
+  })
 })

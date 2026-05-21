@@ -66,6 +66,7 @@ timeRecordsRouter.get(
     const { user, userId } = await resolveTimeRecordAccess(request)
 
     const overview = await getWorkdayOverview({
+      companyId: user.companyId,
       userId,
       page: Number(request.query.page ?? 1),
       pageSize: Number(request.query.pageSize ?? 20),
