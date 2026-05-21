@@ -4,6 +4,7 @@ import React from "react"
 // Components
 import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
+import { SkeletonTable } from "@/components/structure/Skeleton"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Table } from "@/components/structure/Table"
 import { TextSwitch } from "@/components/structure/TextSwitch"
@@ -35,6 +36,7 @@ const ManagementContent: React.FC = () => {
     invite,
     availableTabs,
     activeTab,
+    isLoading,
     tableData,
     drawerRef,
     inviteModalRef,
@@ -76,18 +78,27 @@ const ManagementContent: React.FC = () => {
               />
             </div>
 
-            <Table
-              allowActions
-              minWidth="860px"
-              data={tableData}
-              actions={MANAGEMENT_ACTIONS}
-              onActionClick={handleActionClick}
-              getActionState={getActionState}
-              emptyMessage="Nenhum registro encontrado"
-              className="overflow-hidden rounded-xl bg-surface-card shadow-[0_18px_45px_rgba(15,23,42,0.04)]"
-              getRowKey={getRowKey}
-              onRowSelect={handleRowSelect}
-            />
+            {isLoading ? (
+              <SkeletonTable
+                columns={activeTab.id === "companies" ? 4 : 6}
+                rows={6}
+                hasActions
+                className="shadow-[0_18px_45px_rgba(15,23,42,0.04)]"
+              />
+            ) : (
+              <Table
+                allowActions
+                minWidth="860px"
+                data={tableData}
+                actions={MANAGEMENT_ACTIONS}
+                onActionClick={handleActionClick}
+                getActionState={getActionState}
+                emptyMessage="Nenhum registro encontrado"
+                className="overflow-hidden rounded-xl bg-surface-card shadow-[0_18px_45px_rgba(15,23,42,0.04)]"
+                getRowKey={getRowKey}
+                onRowSelect={handleRowSelect}
+              />
+            )}
           </div>
         </section>
       </div>

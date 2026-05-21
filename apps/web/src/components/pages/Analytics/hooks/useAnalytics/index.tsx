@@ -38,8 +38,15 @@ export function useAnalytics() {
       : undefined
 
   // Hooks
-  const { data: companies = [] } = useCompaniesSWR({ enabled: isPlatformAdmin })
-  const { data: dashboard, error } = useAnalyticsDashboardSWR(
+  const {
+    data: companies = [],
+    isLoading: isCompaniesLoading,
+  } = useCompaniesSWR({ enabled: isPlatformAdmin })
+  const {
+    data: dashboard,
+    error,
+    isLoading: isDashboardLoading,
+  } = useAnalyticsDashboardSWR(
     selectedCompanyParams,
     { enabled: Boolean(user) }
   )
@@ -93,6 +100,8 @@ export function useAnalytics() {
     balances,
     workedHours,
     errorMessage,
+    isLoading: isDashboardLoading,
+    isCompaniesLoading,
     companyOptions,
     isPlatformAdmin,
     solicitationChart,

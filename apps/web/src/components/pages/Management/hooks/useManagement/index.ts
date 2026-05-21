@@ -41,7 +41,7 @@ export function useManagement() {
   const [pendingRemovalKey, setPendingRemovalKey] = useState<string | null>(null)
 
   // Hooks
-  const { companies, employees, journeys, invite, removeEntity } =
+  const { companies, employees, journeys, invite, isLoading, removeEntity } =
     useManagementContext()
 
   // Constants
@@ -155,6 +155,7 @@ export function useManagement() {
     invite,
     availableTabs,
     activeTab,
+    isLoading,
     tableData,
     drawerRef,
     inviteModalRef,

@@ -67,12 +67,18 @@ export function useAudit() {
     selectedActionValue === ALL_OPTION_VALUE ? undefined : selectedActionValue
   const selectedPageSizeNumber = Number(selectedPageSize)
 
-  const { data: companies = [] } = useCompaniesSWR({
+  const {
+    data: companies = [],
+    isLoading: isCompaniesLoading,
+  } = useCompaniesSWR({
     enabled: Boolean(isPlatformAdmin),
   })
 
   const shouldLoadUsers = Boolean(selectedCompanyId) || isCompanyAdmin
-  const { data: companyUsers = [] } = useUsersSWR(
+  const {
+    data: companyUsers = [],
+    isLoading: isUsersLoading,
+  } = useUsersSWR(
     { companyId: selectedCompanyId },
     {
       enabled: shouldLoadUsers,
@@ -170,6 +176,7 @@ export function useAudit() {
   const auditSubtitle = isPlatformAdmin
     ? "Consulte eventos criticos, acessos e mudancas por empresa."
     : "Acompanhe a trilha de eventos da sua empresa."
+  const isInitialLoading = isLoading && auditLogs.length === 0
 
   useEffect(() => {
     if (!canShowActorFilter) {
@@ -333,8 +340,11 @@ export function useAudit() {
     handlePreviousPage,
     handleRefreshAuditLogs,
     handleToDateChange,
+    isCompaniesLoading,
+    isInitialLoading,
     isLoading,
     isRefreshing,
+    isUsersLoading,
     meta,
     pageSizeOptions,
     selectedActionOption,

@@ -10,6 +10,11 @@ import { ConfirmationModal } from "./components/modals/ConfirmationModal"
 import { DayHistorySidePanel } from "./components/modals/DayHistorySidePanel"
 import { PointCard } from "./components/PointCard"
 import { PointHistory } from "./components/PointHistory"
+import {
+  CurrentRegistersSkeleton,
+  PointCardSkeleton,
+  PointHistorySkeleton,
+} from "./components/PointRegisterLoading"
 
 // Hooks
 import { usePointRegister } from "./hooks"
@@ -20,6 +25,8 @@ export const PointRegister: React.FC = () => {
     currentTime,
     workedHours,
     balanceLabel,
+    isCurrentWorkdayLoading,
+    isHistoryLoading,
     remainingTime,
     currentRecords,
     historyRecords,
@@ -49,22 +56,34 @@ export const PointRegister: React.FC = () => {
             />
 
             <div className="grid w-full grid-cols-1 gap-4 xl:grid-cols-2">
-              <PointCard
-                currentDate={currentDate}
-                remainingTime={remainingTime}
-                workedHours={workedHours}
-                balanceLabel={balanceLabel}
-                onRegisterPoint={handleConfirmationModalOpen}
-              />
+              {isCurrentWorkdayLoading ? (
+                <PointCardSkeleton />
+              ) : (
+                <PointCard
+                  currentDate={currentDate}
+                  remainingTime={remainingTime}
+                  workedHours={workedHours}
+                  balanceLabel={balanceLabel}
+                  onRegisterPoint={handleConfirmationModalOpen}
+                />
+              )}
 
-              <CurrentRegisters records={currentRecords} />
+              {isCurrentWorkdayLoading ? (
+                <CurrentRegistersSkeleton />
+              ) : (
+                <CurrentRegisters records={currentRecords} />
+              )}
             </div>
 
-            <PointHistory
-              records={historyRecords}
-              onAdjustmentRequest={handleAdjustmentRequestOpen}
-              onRecordSelect={handleHistoryRecordSelect}
-            />
+            {isHistoryLoading && historyRecords.length === 0 ? (
+              <PointHistorySkeleton />
+            ) : (
+              <PointHistory
+                records={historyRecords}
+                onAdjustmentRequest={handleAdjustmentRequestOpen}
+                onRecordSelect={handleHistoryRecordSelect}
+              />
+            )}
           </div>
         </section>
       </div>

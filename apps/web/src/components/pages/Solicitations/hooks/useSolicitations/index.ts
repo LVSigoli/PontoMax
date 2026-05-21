@@ -27,7 +27,7 @@ export function useSolicitations() {
   const [drawerRequestKey, setDrawerRequestKey] = useState(0)
 
   // Constants
-  const { solicitations } = useSolicitationsContext()
+  const { isLoading, solicitations } = useSolicitationsContext()
   const filteredSolicitations = useMemo(
     () => filterSolicitations({ search, solicitations, statusFilter }),
     [search, solicitations, statusFilter]
@@ -60,6 +60,7 @@ export function useSolicitations() {
   return {
     drawerRef,
     filteredSolicitations,
+    isLoading,
     search,
     selectedElement,
     statusFilter,

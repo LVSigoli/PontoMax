@@ -69,35 +69,10 @@ export const InviteModal = forwardRef<InviteModalMethods, InviteModalProps>(
           </div>
 
           <div className="rounded-2xl border border-border-subtle bg-surface-page p-4">
-            <Typography
-              variant="b2"
-              color="secondary"
-              value="Use qualquer um destes dados para encaminhar o convite ao funcionario."
-              className="mb-3"
-            />
-
-            <div className="grid gap-3">
-              <InviteField label="E-mail" value={invite.email} />
-
-              <InviteField
-                label="Senha temporaria"
-                value={invite.temporaryPassword}
-              />
-              <InviteField
-                label="URL de convite"
-                value={invite.invitationUrl}
-              />
-            </div>
+            <InviteField label="URL de convite" value={invite.invitationUrl} />
           </div>
 
           <div className="rounded-2xl border border-border-subtle bg-surface-page p-4">
-            <Typography
-              variant="b2"
-              color="secondary"
-              value="Primeiro acesso"
-              className="mb-2"
-            />
-
             <Typography
               variant="b1"
               value="A troca de senha sera obrigatoria assim que o funcionario entrar na aplicacao."
@@ -112,7 +87,7 @@ export const InviteModal = forwardRef<InviteModalMethods, InviteModalProps>(
             />
           ) : null}
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="flex flex-row justify-between gap-4">
             <Button
               fitWidth
               value="Fechar"

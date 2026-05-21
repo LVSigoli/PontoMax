@@ -4,6 +4,7 @@ import React from "react"
 // Components
 import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
+import { SkeletonTable } from "@/components/structure/Skeleton"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Table } from "@/components/structure/Table"
 import { HolidayDrawer } from "./components/HolidayDrawer"
@@ -28,6 +29,7 @@ export const Holidays: React.FC = () => {
 const HolidaysContent: React.FC = () => {
   const {
     drawerRef,
+    isLoading,
     selectedElement,
     tableData,
     getRowKey,
@@ -59,18 +61,27 @@ const HolidaysContent: React.FC = () => {
               />
             </div>
 
-            <Table
-              allowActions
-              minWidth="920px"
-              data={tableData}
-              actions={HOLIDAY_ACTIONS}
-              onActionClick={handleActionClick}
-              getActionState={getActionState}
-              emptyMessage="Nenhum feriado encontrado"
-              className="overflow-hidden rounded-xl bg-surface-card shadow-[0_18px_45px_rgba(15,23,42,0.04)]"
-              getRowKey={getRowKey}
-              onRowSelect={handleRowSelect}
-            />
+            {isLoading ? (
+              <SkeletonTable
+                columns={5}
+                rows={6}
+                hasActions
+                className="shadow-[0_18px_45px_rgba(15,23,42,0.04)]"
+              />
+            ) : (
+              <Table
+                allowActions
+                minWidth="920px"
+                data={tableData}
+                actions={HOLIDAY_ACTIONS}
+                onActionClick={handleActionClick}
+                getActionState={getActionState}
+                emptyMessage="Nenhum feriado encontrado"
+                className="overflow-hidden rounded-xl bg-surface-card shadow-[0_18px_45px_rgba(15,23,42,0.04)]"
+                getRowKey={getRowKey}
+                onRowSelect={handleRowSelect}
+              />
+            )}
           </div>
         </section>
       </div>

@@ -7,6 +7,7 @@ import { SearchInput } from "@/components/structure/SearchInput"
 import { Select } from "@/components/structure/Select"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { SolicitationCard } from "./components/SolicitationCard"
+import { SolicitationsGridSkeleton } from "./components/SolicitationsLoading"
 import { SolicitationDrawer } from "./components/SolicitationDrawer"
 
 // Utils
@@ -28,6 +29,7 @@ const SolicitationsContent: React.FC = () => {
   const {
     drawerRef,
     filteredSolicitations,
+    isLoading,
     search,
     selectedElement,
     statusFilter,
@@ -70,15 +72,19 @@ const SolicitationsContent: React.FC = () => {
               </div>
             </div>
 
-            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {filteredSolicitations.map((solicitation) => (
-                <SolicitationCard
-                  key={solicitation.id}
-                  solicitation={solicitation}
-                  onClick={handleSolicitationSelect}
-                />
-              ))}
-            </section>
+            {isLoading && filteredSolicitations.length === 0 ? (
+              <SolicitationsGridSkeleton />
+            ) : (
+              <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {filteredSolicitations.map((solicitation) => (
+                  <SolicitationCard
+                    key={solicitation.id}
+                    solicitation={solicitation}
+                    onClick={handleSolicitationSelect}
+                  />
+                ))}
+              </section>
+            )}
           </div>
         </section>
       </div>

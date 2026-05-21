@@ -12,6 +12,7 @@ import { Button } from "@/components/structure/Button"
 import { Input } from "@/components/structure/Input"
 import { Picker } from "@/components/structure/Picker"
 import { Select } from "@/components/structure/Select"
+import { Skeleton } from "@/components/structure/Skeleton"
 import { SidePanel } from "@/components/structure/SidePanel"
 import { Toggle } from "@/components/structure/Toggle"
 import { Typography } from "@/components/structure/Typography"
@@ -51,7 +52,7 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
     const sidePanelRef = useRef<SidePanelMethods>(null)
 
     // Contexts
-    const { companies, journeys, saveEntity } = useManagementContext()
+    const { companies, journeys, isLoading, saveEntity } = useManagementContext()
 
     // States
     const [form, setForm] = useState<FormData>(() =>
@@ -124,6 +125,19 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
     }
 
     function renderForm() {
+      if (isLoading) {
+        return (
+          <div className="grid gap-3">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div key={`management-form-skeleton-${index}`} className="grid gap-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-11 w-full rounded-xl" />
+              </div>
+            ))}
+          </div>
+        )
+      }
+
       if (view.id === "companies") {
         const companyForm = form as CompanyFormData
 

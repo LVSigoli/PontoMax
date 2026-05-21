@@ -37,7 +37,10 @@ export function useHistory() {
     Number(user?.id ?? 0)
   )
 
-  const { data: companyUsers = [] } = useUsersSWR(
+  const {
+    data: companyUsers = [],
+    isLoading: isUsersLoading,
+  } = useUsersSWR(
     { companyId: user?.companyId },
     {
       enabled: canFilterHistory && Boolean(user?.companyId),
@@ -180,6 +183,7 @@ export function useHistory() {
     historyRecords,
     isInitialLoading,
     isLoadingMore,
+    isUsersLoading,
     loadMoreLabel,
     loadMoreRef,
     selectedHistoryRecord,

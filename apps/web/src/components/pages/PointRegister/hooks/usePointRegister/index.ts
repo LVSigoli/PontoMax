@@ -53,6 +53,7 @@ export function usePointRegister() {
   const [adjustmentRequestRecords, setAdjustmentRequestRecords] = useState<
     PointRecord[]
   >([])
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true)
 
   // Contexts
   const { showToast } = useToastContext()
@@ -60,6 +61,7 @@ export function usePointRegister() {
   const {
     data: currentWorkday = null,
     error: currentWorkdayError,
+    isLoading: isCurrentWorkdayLoading,
     mutate: mutateCurrentWorkday,
   } = useTodayTimeRecordsSWR()
 
@@ -136,6 +138,8 @@ export function usePointRegister() {
 
   async function syncOverviewWorkdays() {
     try {
+      setIsHistoryLoading(true)
+
       const overviewResponse = await getTimeRecordsOverview({
         page: 1,
         pageSize: POINT_REGISTER_HISTORY_PAGE_SIZE,
@@ -150,6 +154,8 @@ export function usePointRegister() {
           "Nao foi possivel carregar os dados do registro de ponto."
         ),
       })
+    } finally {
+      setIsHistoryLoading(false)
     }
   }
 
@@ -216,6 +222,8 @@ export function usePointRegister() {
     historyRecords,
     currentDate,
     currentTime,
+    isCurrentWorkdayLoading,
+    isHistoryLoading,
     remainingTime,
     workedHours,
     balanceLabel,

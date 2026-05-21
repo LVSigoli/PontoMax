@@ -3,12 +3,17 @@ import React from "react"
 
 // Components
 import { Header } from "@/components/structure/Header"
+import { Skeleton } from "@/components/structure/Skeleton"
 import { Select } from "@/components/structure/Select"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Typography } from "@/components/structure/Typography"
 import { AdjustmentRequestSidePanel } from "../PointRegister/components/modals/AdjustmentRequestSidePanel"
 import { DayHistorySidePanel } from "../PointRegister/components/modals/DayHistorySidePanel"
 import { HistoryAnalysisSection } from "./components/HistoryAnalysisSection"
+import {
+  HistoryAnalysisSkeleton,
+  HistoryTableSkeleton,
+} from "./components/HistoryLoading"
 import { HistoryTableSection } from "./components/HistoryTableSection"
 
 // Hooks
@@ -30,6 +35,8 @@ export const History: React.FC = () => {
     historyRecords,
     historySubtitle,
     historyUserOptions,
+    isInitialLoading,
+    isUsersLoading,
     loadMoreLabel,
     loadMoreRef,
     selectedHistoryRecord,
@@ -38,6 +45,7 @@ export const History: React.FC = () => {
     tableData,
     getRowKey,
   } = useHistory()
+  const showHistorySkeleton = isInitialLoading && !errorMessage
 
   return (
     <main className="h-screen overflow-hidden bg-surface-page text-content-primary">
@@ -66,32 +74,44 @@ export const History: React.FC = () => {
                       />
                     </div>
 
-                    <Select
-                      options={historyUserOptions}
-                      selectedItem={selectedHistoryUserOption}
-                      buttonClassName="h-11"
-                      onSelectionChange={handleHistoryUserChange}
-                    />
+                    {isUsersLoading ? (
+                      <Skeleton className="h-11 w-full rounded-xl" />
+                    ) : (
+                      <Select
+                        options={historyUserOptions}
+                        selectedItem={selectedHistoryUserOption}
+                        buttonClassName="h-11"
+                        onSelectionChange={handleHistoryUserChange}
+                      />
+                    )}
                   </div>
                 </section>
               ) : null}
             </div>
 
-            <HistoryAnalysisSection
-              items={analysisItems}
-              errorMessage={errorMessage}
-            />
+            {showHistorySkeleton ? (
+              <HistoryAnalysisSkeleton />
+            ) : (
+              <HistoryAnalysisSection
+                items={analysisItems}
+                errorMessage={errorMessage}
+              />
+            )}
 
-            <HistoryTableSection
-              data={tableData}
-              actions={tableActions}
-              historyRecordsCount={historyRecords.length}
-              loadMoreLabel={loadMoreLabel}
-              loadMoreRef={loadMoreRef}
-              getRowKey={getRowKey}
-              onActionClick={handleHistoryActionClick}
-              onRowSelect={handleHistoryRecordSelect}
-            />
+            {showHistorySkeleton ? (
+              <HistoryTableSkeleton />
+            ) : (
+              <HistoryTableSection
+                data={tableData}
+                actions={tableActions}
+                historyRecordsCount={historyRecords.length}
+                loadMoreLabel={loadMoreLabel}
+                loadMoreRef={loadMoreRef}
+                getRowKey={getRowKey}
+                onActionClick={handleHistoryActionClick}
+                onRowSelect={handleHistoryRecordSelect}
+              />
+            )}
           </div>
         </section>
       </div>

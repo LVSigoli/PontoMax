@@ -26,7 +26,7 @@ export function useHolidays() {
   // Constants
   const { user } = useAuth()
   const { showToast } = useToastContext()
-  const { holidays, removeHoliday } = useHolidaysContext()
+  const { holidays, isLoading, removeHoliday } = useHolidaysContext()
   const tableData = useMemo(() => buildTableData(holidays), [holidays])
 
   // Effects
@@ -114,6 +114,7 @@ export function useHolidays() {
 
   return {
     drawerRef,
+    isLoading,
     selectedElement,
     tableData,
     getRowKey,

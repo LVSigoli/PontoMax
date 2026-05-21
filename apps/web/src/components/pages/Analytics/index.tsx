@@ -4,9 +4,14 @@ import React from "react"
 // Components
 import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
+import { Skeleton } from "@/components/structure/Skeleton"
 import { Select } from "@/components/structure/Select"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Typography } from "@/components/structure/Typography"
+import {
+  AnalyticsContentSkeleton,
+  AnalyticsMetricsSkeleton,
+} from "./components/AnalyticsLoading"
 import { HourBalanceList } from "./components/HourBalanceList"
 import { MetricCard } from "./components/MetricCard"
 import { SolicitationBarChart } from "./components/SolicitationBarChart"
@@ -19,12 +24,15 @@ export const Analytics: React.FC = () => {
     companyOptions,
     errorMessage,
     handleCompanyFilterChange,
+    isCompaniesLoading,
+    isLoading,
     isPlatformAdmin,
     metrics,
     selectedCompanyOption,
     solicitationChart,
     workedHours,
   } = useAnalytics()
+  const showAnalyticsSkeleton = isLoading && !errorMessage
 
   function handleExportReport() {
     console.log("export report")
@@ -50,12 +58,16 @@ export const Analytics: React.FC = () => {
               <div className="w-full flex flex-wrap items-center gap-2">
                 {isPlatformAdmin ? (
                   <div className="w-full min-w-64 sm:w-72">
-                    <Select
-                      options={companyOptions}
-                      selectedItem={selectedCompanyOption}
-                      buttonClassName="h-11 bg-surface-card"
-                      onSelectionChange={handleCompanyFilterChange}
-                    />
+                    {isCompaniesLoading && companyOptions.length <= 1 ? (
+                      <Skeleton className="h-11 w-full rounded-xl" />
+                    ) : (
+                      <Select
+                        options={companyOptions}
+                        selectedItem={selectedCompanyOption}
+                        buttonClassName="h-11 bg-surface-card"
+                        onSelectionChange={handleCompanyFilterChange}
+                      />
+                    )}
                   </div>
                 ) : null}
 
@@ -92,21 +104,29 @@ export const Analytics: React.FC = () => {
                 />
               ) : null}
 
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                {metrics.map((metric) => (
-                  <MetricCard key={metric.type} metric={metric} />
-                ))}
-              </div>
+              {showAnalyticsSkeleton ? (
+                <AnalyticsMetricsSkeleton />
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                  {metrics.map((metric) => (
+                    <MetricCard key={metric.type} metric={metric} />
+                  ))}
+                </div>
+              )}
             </section>
 
-            <section className="grid gap-4 xl:grid-cols-[0.9fr_1.7fr]">
-              <HourBalanceList items={balances} />
+            {showAnalyticsSkeleton ? (
+              <AnalyticsContentSkeleton />
+            ) : (
+              <section className="grid gap-4 xl:grid-cols-[0.9fr_1.7fr]">
+                <HourBalanceList items={balances} />
 
-              <div className="grid gap-4">
-                <SolicitationBarChart items={solicitationChart} />
-                <WorkedHoursLineChart items={workedHours} />
-              </div>
-            </section>
+                <div className="grid gap-4">
+                  <SolicitationBarChart items={solicitationChart} />
+                  <WorkedHoursLineChart items={workedHours} />
+                </div>
+              </section>
+            )}
           </div>
         </section>
       </div>

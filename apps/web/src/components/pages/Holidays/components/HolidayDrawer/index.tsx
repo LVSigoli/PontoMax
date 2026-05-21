@@ -13,6 +13,7 @@ import { Button } from "@/components/structure/Button"
 import { Input } from "@/components/structure/Input"
 import { Picker } from "@/components/structure/Picker"
 import { Select } from "@/components/structure/Select"
+import { Skeleton } from "@/components/structure/Skeleton"
 import { SidePanel } from "@/components/structure/SidePanel"
 import { Typography } from "@/components/structure/Typography"
 
@@ -45,7 +46,10 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
     const { saveHoliday } = useHolidaysContext()
 
     // Hooks
-    const { data: companyItems = [] } = useCompaniesSWR()
+    const {
+      data: companyItems = [],
+      isLoading: isCompaniesLoading,
+    } = useCompaniesSWR()
 
     // States
     const [form, setForm] = useState<HolidayForm>(() =>
@@ -203,19 +207,23 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
               {shouldShowCompanySelect ? (
                 <div className="grid gap-1">
                   <Typography variant="b2" value="Selecione as empresas" />
-                  <Select
-                    multi
-                    label="Selecione as empresas"
-                    options={companyOptions}
-                    selectedItem={selectedCompanyOptions}
-                    buttonClassName="border-border-default"
-                    onSelectionChange={(selection) => {
-                      handleChange(
-                        "companyIds",
-                        selection.map((option) => Number(option.value))
-                      )
-                    }}
-                  />
+                  {isCompaniesLoading && companyOptions.length === 0 ? (
+                    <Skeleton className="h-11 w-full rounded-xl" />
+                  ) : (
+                    <Select
+                      multi
+                      label="Selecione as empresas"
+                      options={companyOptions}
+                      selectedItem={selectedCompanyOptions}
+                      buttonClassName="border-border-default"
+                      onSelectionChange={(selection) => {
+                        handleChange(
+                          "companyIds",
+                          selection.map((option) => Number(option.value))
+                        )
+                      }}
+                    />
+                  )}
                 </div>
               ) : null}
             </form>
