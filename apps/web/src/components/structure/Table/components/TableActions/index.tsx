@@ -9,6 +9,7 @@ export const TableActions = <T extends TableRowData>({
   actions,
   row,
   handleActionClick,
+  getActionState,
 }: TableActionsProps<T>) => {
   // Refs
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -16,9 +17,16 @@ export const TableActions = <T extends TableRowData>({
   // States
   const [isOpen, setIsOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState({ left: 0, top: 0 })
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null)
+
+  const hasLoadingAction =
+    pendingActionId !== null ||
+    actions.some((action) => getActionState?.(action.id, row)?.loading)
 
   // Functions
   function handleMenuToggle() {
+    if (hasLoadingAction) return
+
     setIsOpen((currentValue) => {
       if (!currentValue) setMenuPosition(getMenuPosition())
 
@@ -30,9 +38,28 @@ export const TableActions = <T extends TableRowData>({
     setIsOpen(false)
   }
 
-  function handleActionSelect(actionId: string) {
-    handleActionClick?.(actionId, row)
-    handleMenuClose()
+  async function handleActionSelect(actionId: string) {
+    const actionState = getActionState?.(actionId, row)
+
+    if (actionState?.disabled || actionState?.loading) {
+      return
+    }
+
+    const result = handleActionClick?.(actionId, row)
+
+    if (!isPromiseLike(result)) {
+      handleMenuClose()
+      return
+    }
+
+    setPendingActionId(actionId)
+
+    try {
+      await result
+    } finally {
+      setPendingActionId(null)
+      handleMenuClose()
+    }
   }
 
   function getMenuPosition() {
@@ -71,24 +98,54 @@ export const TableActions = <T extends TableRowData>({
         type="button"
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        aria-label="Abrir ações"
-        className="inline-flex cursor-pointer size-8 items-center justify-center rounded-md text-content-muted transition hover:bg-surface-muted hover:text-content-primary"
+        aria-label="Abrir acoes"
+        disabled={hasLoadingAction}
+        className={`inline-flex size-8 items-center justify-center rounded-md text-content-muted transition ${
+          hasLoadingAction
+            ? "cursor-not-allowed opacity-60"
+            : "cursor-pointer hover:bg-surface-muted hover:text-content-primary"
+        }`}
         onClick={handleMenuToggle}
       >
-        <span className="flex flex-col items-center gap-0.5" aria-hidden="true">
-          <span className="size-1 rounded-full bg-current" />
-          <span className="size-1 rounded-full bg-current" />
-          <span className="size-1 rounded-full bg-current" />
-        </span>
+        {hasLoadingAction ? (
+          <span
+            aria-hidden="true"
+            className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+          />
+        ) : (
+          <span className="flex flex-col items-center gap-0.5" aria-hidden="true">
+            <span className="size-1 rounded-full bg-current" />
+            <span className="size-1 rounded-full bg-current" />
+            <span className="size-1 rounded-full bg-current" />
+          </span>
+        )}
       </button>
 
       {isOpen ? (
         <ActionList
           actions={actions}
           position={menuPosition}
+          getActionState={(actionId) => {
+            const actionState = getActionState?.(actionId, row)
+
+            return {
+              ...actionState,
+              loading:
+                pendingActionId === actionId || Boolean(actionState?.loading),
+            }
+          }}
           onActionClick={handleActionSelect}
         />
       ) : null}
     </div>
+  )
+}
+
+function isPromiseLike(value: unknown): value is Promise<unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "then" in value &&
+    typeof value.then === "function"
   )
 }

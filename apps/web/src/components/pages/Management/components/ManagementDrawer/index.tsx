@@ -57,6 +57,7 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
     const [form, setForm] = useState<FormData>(() =>
       makeDrawerForm(view, element, companies, journeys)
     )
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Constants
     const drawerTitle = `Cadastro de ${getEntityLabel(view.id)}`
@@ -106,7 +107,10 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
     }
 
     async function handleSave() {
+      if (isSubmitting) return
+
       try {
+        setIsSubmitting(true)
         await saveEntity(view.id, element, form)
 
         handleClose()
@@ -114,6 +118,8 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
         if (view.id === "employees" && !element) onSuccess()
       } catch (error) {
         console.log(error)
+      } finally {
+        setIsSubmitting(false)
       }
     }
 
@@ -310,8 +316,8 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
         widthClassName="max-w-[504px]"
         className="bg-surface-page"
       >
-        <div className="flex min-h-full flex-col">
-          <div className="flex-1 overflow-y-auto px-4 py-7 sm:px-5">
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">
             <form
               className="grid gap-3"
               onSubmit={(event) => event.preventDefault()}
@@ -326,10 +332,16 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
               value="Cancelar"
               color="primary"
               variant="outlined"
+              disabled={isSubmitting}
               onClick={handleCancel}
             />
 
-            <Button fitWidth value="Salvar" onClick={() => void handleSave()} />
+            <Button
+              fitWidth
+              value="Salvar"
+              loading={isSubmitting}
+              onClick={() => void handleSave()}
+            />
           </footer>
         </div>
       </SidePanel>

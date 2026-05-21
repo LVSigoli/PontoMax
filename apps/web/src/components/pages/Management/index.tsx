@@ -40,6 +40,7 @@ const ManagementContent: React.FC = () => {
     inviteModalRef,
     selectedElement,
     getRowKey,
+    getActionState,
     handleActionClick,
     handleAddClick,
     handleRowSelect,
@@ -81,6 +82,7 @@ const ManagementContent: React.FC = () => {
               data={tableData}
               actions={MANAGEMENT_ACTIONS}
               onActionClick={handleActionClick}
+              getActionState={getActionState}
               emptyMessage="Nenhum registro encontrado"
               className="overflow-hidden rounded-xl bg-surface-card shadow-[0_18px_45px_rgba(15,23,42,0.04)]"
               getRowKey={getRowKey}

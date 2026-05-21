@@ -31,6 +31,7 @@ const HolidaysContent: React.FC = () => {
     selectedElement,
     tableData,
     getRowKey,
+    getActionState,
     handleActionClick,
     handleAddClick,
     handleRowSelect,
@@ -64,6 +65,7 @@ const HolidaysContent: React.FC = () => {
               data={tableData}
               actions={HOLIDAY_ACTIONS}
               onActionClick={handleActionClick}
+              getActionState={getActionState}
               emptyMessage="Nenhum feriado encontrado"
               className="overflow-hidden rounded-xl bg-surface-card shadow-[0_18px_45px_rgba(15,23,42,0.04)]"
               getRowKey={getRowKey}

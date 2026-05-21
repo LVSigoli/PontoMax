@@ -57,62 +57,68 @@ export const AdjustmentRequestSidePanel = forwardRef<
       ref={sidePanelRef}
       className="bg-surface-page "
       widthClassName="max-w-[456px]"
-      title="Solicitação de ajuste"
-      subtitle="Solicite o ajuste dos horários necessários"
+      title="Solicitacao de ajuste"
+      subtitle="Solicite o ajuste dos horarios necessarios"
     >
-      <div className="flex min-h-full flex-col">
-        <Table
-          data={tableRows}
-          allowActions
-          minWidth="360px"
-          sideScroll={false}
-          actions={ADJUSTMENT_ACTIONS}
-          getRowKey={getTableRowKey}
-          className="mt-5 overflow-hidden rounded-xl border border-border-subtle bg-surface-card"
-          onActionClick={handleTableActionClick}
-          onCellChange={handleTableCellChange}
-        />
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">
+          <div className="grid gap-4">
+            <Table
+              data={tableRows}
+              allowActions
+              minWidth="360px"
+              sideScroll={false}
+              actions={ADJUSTMENT_ACTIONS}
+              getRowKey={getTableRowKey}
+              className="overflow-hidden rounded-xl border border-border-subtle bg-surface-card"
+              onActionClick={handleTableActionClick}
+              onCellChange={handleTableCellChange}
+            />
 
-        <Button
-          variant="text"
-          icon="plus"
-          iconPlacement="start"
-          color="primary"
-          value="Adicionar registro"
-          onClick={handleAddRecord}
-        />
+            <Button
+              variant="text"
+              icon="plus"
+              iconPlacement="start"
+              color="primary"
+              value="Adicionar registro"
+              disabled={isSubmitting}
+              onClick={handleAddRecord}
+            />
 
-        <TextArea
-          label="Justificativa"
-          value={form.justification}
-          onChange={handleJustificationChange}
-        />
+            <TextArea
+              label="Justificativa"
+              value={form.justification}
+              onChange={handleJustificationChange}
+            />
 
-        {errorMessage ? (
-          <Typography
-            variant="legal"
-            value={errorMessage}
-            className="mt-3 text-danger-700"
+            {errorMessage ? (
+              <Typography
+                variant="legal"
+                value={errorMessage}
+                className="text-danger-700"
+              />
+            ) : null}
+          </div>
+        </div>
+
+        <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
+          <Button
+            fitWidth
+            value="Cancelar"
+            color="danger"
+            variant="outlined"
+            disabled={isSubmitting}
+            onClick={handleCancel}
           />
-        ) : null}
+
+          <Button
+            fitWidth
+            value="Salvar"
+            loading={isSubmitting}
+            onClick={handleConfirm}
+          />
+        </footer>
       </div>
-
-      <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
-        <Button
-          fitWidth
-          value="Cancelar"
-          color="danger"
-          variant="outlined"
-          onClick={handleCancel}
-        />
-
-        <Button
-          fitWidth
-          value="Salvar"
-          loading={isSubmitting}
-          onClick={handleConfirm}
-        />
-      </footer>
     </SidePanel>
   )
 })

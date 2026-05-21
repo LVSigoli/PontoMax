@@ -13,8 +13,8 @@ interface Props {
 
 export const Header: React.FC<Props> = ({ title, subtitle, onClose }) => {
   return (
-    <div className="w-full flex flex-col gap-1 justify-center items-start ">
-      <div className="w-full flex flex-row gap-2 justify-between items-center">
+    <div className="flex w-full items-start justify-between gap-4">
+      <div className="min-w-0 flex-1">
         <Typography
           variant="h4"
           value={title}
@@ -22,15 +22,23 @@ export const Header: React.FC<Props> = ({ title, subtitle, onClose }) => {
           className="uppercase tracking-[0.02em]"
         />
 
-        <Icon name="close" layout="inline" onClick={onClose} size="1.25rem" />
+        {subtitle ? (
+          <Typography
+            variant="b1"
+            value={subtitle}
+            className="mt-1 text-content-secondary"
+          />
+        ) : null}
       </div>
 
-      {subtitle ? (
-        <Typography
-          variant="b1"
-          value="Solicite o ajuste dos horários necessários"
-        />
-      ) : null}
+      <button
+        aria-label="Fechar painel lateral"
+        type="button"
+        className="inline-flex cursor-pointer size-10 shrink-0 items-center justify-center rounded-full text-content-muted transition hover:bg-surface-muted hover:text-content-primary"
+        onClick={onClose}
+      >
+        <Icon name="close" layout="inline" size="1.25rem" />
+      </button>
     </div>
   )
 }

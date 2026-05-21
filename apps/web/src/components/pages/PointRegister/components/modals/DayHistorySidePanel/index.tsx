@@ -42,52 +42,54 @@ export const DayHistorySidePanel = forwardRef<
   return (
     <SidePanel
       ref={sidePanelRef}
-      title="Histórico do dia"
+      title="Historico do dia"
       subtitle={subtitle}
       widthClassName="max-w-lg"
     >
-      <div className="flex min-h-full flex-col gap-6 p-6">
-        {record ? (
-          <div className="grid gap-3 rounded-xl bg-surface-muted p-4">
-            <div className="flex items-center justify-between gap-4">
-              <Typography variant="b2" value="Horas trabalhadas" />
-              <Typography
-                variant="b2"
-                fontWeight={700}
-                value={record.workedHours}
-              />
+      <div className="h-full overflow-y-auto px-4 py-5 sm:px-5">
+        <div className="grid gap-6">
+          {record ? (
+            <div className="grid gap-3 rounded-xl bg-surface-muted p-4">
+              <div className="flex items-center justify-between gap-4">
+                <Typography variant="b2" value="Horas trabalhadas" />
+                <Typography
+                  variant="b2"
+                  fontWeight={700}
+                  value={record.workedHours}
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <Typography variant="b2" value="Horas extras" />
+
+                <Typography
+                  variant="b2"
+                  fontWeight={700}
+                  value={record.extraHours}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <Typography variant="b2" value="Horas faltantes" />
+
+                <Typography
+                  variant="b2"
+                  fontWeight={700}
+                  value={record.missingHours}
+                />
+              </div>
             </div>
+          ) : null}
 
-            <div className="flex items-center justify-between gap-4">
-              <Typography variant="b2" value="Horas extras" />
+          <section className="grid gap-3">
+            <Typography variant="b1" fontWeight={700} value="Registros do dia" />
 
-              <Typography
-                variant="b2"
-                fontWeight={700}
-                value={record.extraHours}
-              />
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <Typography variant="b2" value="Horas faltantes" />
-
-              <Typography
-                variant="b2"
-                fontWeight={700}
-                value={record.missingHours}
-              />
-            </div>
-          </div>
-        ) : null}
-
-        <section className="grid gap-3">
-          <Typography variant="b1" fontWeight={700} value="Registros do dia" />
-
-          <Table
-            data={tableData}
-            minWidth="420px"
-            emptyMessage="Nenhum registro selecionado"
-          />
-        </section>
+            <Table
+              data={tableData}
+              minWidth="420px"
+              emptyMessage="Nenhum registro selecionado"
+            />
+          </section>
+        </div>
       </div>
     </SidePanel>
   )

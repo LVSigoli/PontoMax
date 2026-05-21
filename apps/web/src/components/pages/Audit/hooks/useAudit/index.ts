@@ -51,6 +51,7 @@ export function useAudit() {
   const [selectedPage, setSelectedPage] = useState(1)
   const [selectedAuditLog, setSelectedAuditLog] =
     useState<AuditLogApiItem | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const selectedCompanyId =
     selectedCompanyValue === ALL_OPTION_VALUE
@@ -300,7 +301,14 @@ export function useAudit() {
   }
 
   async function handleRefreshAuditLogs() {
-    await mutate()
+    if (isRefreshing) return
+
+    try {
+      setIsRefreshing(true)
+      await mutate()
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   return {
@@ -326,6 +334,7 @@ export function useAudit() {
     handleRefreshAuditLogs,
     handleToDateChange,
     isLoading,
+    isRefreshing,
     meta,
     pageSizeOptions,
     selectedActionOption,

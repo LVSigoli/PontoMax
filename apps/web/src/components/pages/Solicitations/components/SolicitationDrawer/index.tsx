@@ -1,5 +1,11 @@
 // External Libraries
-import { forwardRef, useCallback, useImperativeHandle, useRef } from "react"
+import {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react"
 
 // Components
 import { Button } from "@/components/structure/Button"
@@ -111,6 +117,9 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
   ({ element }, ref) => {
     // Refs
     const sidePanelRef = useRef<SidePanelMethods>(null)
+    const [pendingDecision, setPendingDecision] = useState<
+      "Aprovado" | "Recusado" | null
+    >(null)
 
     // Contexts
     const { updateSolicitationStatus } = useSolicitationsContext()
@@ -177,27 +186,33 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
     )
 
     async function handleApprove() {
-      if (!element || !isPending) return
+      if (!element || !isPending || pendingDecision) return
 
       try {
+        setPendingDecision("Aprovado")
         await updateSolicitationStatus(element.id, "Aprovado")
         handleClose()
-      } catch {}
+      } catch {} finally {
+        setPendingDecision(null)
+      }
     }
 
     async function handleRefuse() {
-      if (!element || !isPending) return
+      if (!element || !isPending || pendingDecision) return
 
       try {
+        setPendingDecision("Recusado")
         await updateSolicitationStatus(element.id, "Recusado")
         handleClose()
-      } catch {}
+      } catch {} finally {
+        setPendingDecision(null)
+      }
     }
 
     function renderFooter() {
       if (!isPending) {
         return (
-          <footer className="border-t border-border-subtle bg-surface-page">
+          <footer className="border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
             <Button
               fitWidth
               value="Fechar"
@@ -210,15 +225,23 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
       }
 
       return (
-        <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page">
+        <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
           <Button
             fitWidth
             value="Recusar"
             color="danger"
+            disabled={pendingDecision === "Aprovado"}
+            loading={pendingDecision === "Recusado"}
             onClick={handleRefuse}
           />
 
-          <Button fitWidth value="Aprovar" onClick={handleApprove} />
+          <Button
+            fitWidth
+            value="Aprovar"
+            disabled={pendingDecision === "Recusado"}
+            loading={pendingDecision === "Aprovado"}
+            onClick={handleApprove}
+          />
         </footer>
       )
     }
@@ -231,13 +254,13 @@ export const SolicitationDrawer = forwardRef<SolicitationDrawerMethods, Props>(
         className="bg-surface-page"
         widthClassName="max-w-[504px]"
       >
-        <div className="flex w-full h-full flex-col justify-evenly py-5">
-          <div className=" flex flex-col overflow-y-auto gap-4">
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 sm:px-5">
             <Table
               data={tableData}
               minWidth="100%"
               sideScroll={false}
-              className="mt-5 max-h-80 overflow-y-auto rounded-xl bg-surface-card"
+              className="max-h-80 overflow-y-auto rounded-xl bg-surface-card"
               emptyMessage="Nenhum horario informado"
               getRowKey={(_, index) => element?.points[index]?.id ?? index}
             />

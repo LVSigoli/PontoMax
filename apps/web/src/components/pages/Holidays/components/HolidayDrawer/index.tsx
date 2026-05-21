@@ -51,6 +51,7 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
     const [form, setForm] = useState<HolidayForm>(() =>
       getDefaultForm(element, user?.role)
     )
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Constants
     const mode = element ? "edit" : "create"
@@ -125,10 +126,15 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
     }
 
     async function handleSave() {
+      if (isSubmitting) return
+
       try {
+        setIsSubmitting(true)
         await saveHoliday(element, form)
         handleClose()
-      } catch {}
+      } catch {} finally {
+        setIsSubmitting(false)
+      }
     }
 
     function renderSingleSelect({
@@ -167,8 +173,8 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
         widthClassName="max-w-[504px]"
         className="bg-surface-page"
       >
-        <div className="flex min-h-full flex-col">
-          <div className="flex-1 overflow-y-auto px-4 py-7 sm:px-5">
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">
             <form
               className="grid gap-3"
               onSubmit={(event) => event.preventDefault()}
@@ -221,10 +227,16 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
               value="Cancelar"
               color="primary"
               variant="outlined"
+              disabled={isSubmitting}
               onClick={handleClose}
             />
 
-            <Button fitWidth value="Salvar" onClick={handleSave} />
+            <Button
+              fitWidth
+              value="Salvar"
+              loading={isSubmitting}
+              onClick={handleSave}
+            />
           </footer>
         </div>
       </SidePanel>

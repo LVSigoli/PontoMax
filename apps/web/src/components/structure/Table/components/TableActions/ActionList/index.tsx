@@ -8,6 +8,7 @@ import { Props } from "./types"
 export const ActionList: React.FC<Props> = ({
   actions,
   onActionClick,
+  getActionState,
   position,
 }) => {
   return (
@@ -20,6 +21,7 @@ export const ActionList: React.FC<Props> = ({
         <ActionItem
           key={`${action.id}+${index}`}
           action={action}
+          state={getActionState?.(action.id)}
           onActionClick={onActionClick}
         />
       ))}

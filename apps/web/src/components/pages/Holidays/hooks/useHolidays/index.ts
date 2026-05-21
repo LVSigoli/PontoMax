@@ -21,6 +21,7 @@ export function useHolidays() {
   // States
   const [selectedElement, setSelectedElement] = useState<Holiday | null>(null)
   const [drawerRequestKey, setDrawerRequestKey] = useState(0)
+  const [pendingRemovalId, setPendingRemovalId] = useState<number | null>(null)
 
   // Constants
   const { user } = useAuth()
@@ -45,12 +46,24 @@ export function useHolidays() {
     return holidays[index]?.id ?? index
   }
 
-  function handleActionClick(actionId: string, row: TableRowData) {
+  async function handleActionClick(actionId: string, row: TableRowData) {
     const holiday = getHolidayByRow(row)
     if (!holiday) return
     if (!canManageHoliday(holiday)) return
 
-    if (actionId === "remove") return removeHoliday(holiday.id)
+    if (actionId === "remove") {
+      setPendingRemovalId(holiday.id)
+
+      try {
+        await removeHoliday(holiday.id)
+      } finally {
+        setPendingRemovalId((currentId) =>
+          currentId === holiday.id ? null : currentId
+        )
+      }
+
+      return
+    }
 
     if (actionId === "edit") openDrawer(holiday)
   }
@@ -86,11 +99,25 @@ export function useHolidays() {
     return false
   }
 
+  function getActionState(actionId: string, row: TableRowData) {
+    const holiday = getHolidayByRow(row)
+
+    if (!holiday || pendingRemovalId !== holiday.id) {
+      return undefined
+    }
+
+    return {
+      disabled: true,
+      loading: actionId === "remove",
+    }
+  }
+
   return {
     drawerRef,
     selectedElement,
     tableData,
     getRowKey,
+    getActionState,
     handleActionClick,
     handleAddClick,
     handleRowSelect,

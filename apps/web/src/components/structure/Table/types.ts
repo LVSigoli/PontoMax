@@ -71,6 +71,11 @@ export interface TableAction {
   color?: string
 }
 
+export interface TableActionState {
+  disabled?: boolean
+  loading?: boolean
+}
+
 export interface Props<T extends TableRowData> {
   data: T[]
   actions?: TableAction[]
@@ -81,7 +86,14 @@ export interface Props<T extends TableRowData> {
   sideScroll?: boolean
   getRowKey?: (row: T, index: number) => Key
   onRowSelect?: (row: T) => void
-  onActionClick?: (actionId: TableAction["id"], row: T) => void
+  onActionClick?: (
+    actionId: TableAction["id"],
+    row: T
+  ) => void | Promise<void>
+  getActionState?: (
+    actionId: TableAction["id"],
+    row: T
+  ) => TableActionState | undefined
   onCellChange?: (row: T, cellKey: keyof T, value: string) => void
 }
 
@@ -96,5 +108,12 @@ export interface TableCellProps<T extends TableRowData> {
 export interface TableActionsProps<T extends TableRowData> {
   actions: TableAction[]
   row: T
-  handleActionClick?: (actionId: TableAction["id"], row: T) => void
+  handleActionClick?: (
+    actionId: TableAction["id"],
+    row: T
+  ) => void | Promise<void>
+  getActionState?: (
+    actionId: TableAction["id"],
+    row: T
+  ) => TableActionState | undefined
 }

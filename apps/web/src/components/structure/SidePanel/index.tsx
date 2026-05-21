@@ -62,17 +62,17 @@ export const SidePanel = forwardRef<SidePanelMethods, SidePanelProps>(
         />
 
         <aside
-          className={`relative z-10 h-full w-full ${widthClassName} overflow-y-auto border-l border-border-subtle bg-surface-overlay shadow-[-24px_0_80px_rgba(15,23,42,0.18)] ${className}`}
+          className={`relative z-10 flex h-full w-full flex-col ${widthClassName} overflow-hidden border-l border-border-subtle bg-surface-overlay shadow-[-24px_0_80px_rgba(15,23,42,0.18)] ${className}`}
         >
-          <div className="h-full w-full px-4 py-7 sm:px-5 sm:py-7">
+          <div className="shrink-0 border-b border-border-subtle px-4 py-6 sm:px-5">
             <Header
               title={title}
               subtitle={subtitle}
               onClose={closeSidePanel}
             />
-
-            {children}
           </div>
+
+          <div className="min-h-0 flex-1">{children}</div>
         </aside>
       </div>
     )

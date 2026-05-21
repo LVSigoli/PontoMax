@@ -39,6 +39,7 @@ export const Audit: React.FC = () => {
     handleRefreshAuditLogs,
     handleToDateChange,
     isLoading,
+    isRefreshing,
     meta,
     pageSizeOptions,
     selectedActionOption,
@@ -78,6 +79,7 @@ export const Audit: React.FC = () => {
                 variant="outlined"
                 color="primary"
                 fitWidth
+                loading={isRefreshing}
                 onClick={handleRefreshAuditLogs}
               />
             </div>

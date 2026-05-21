@@ -38,6 +38,7 @@ export function useManagement() {
   const [selectedElement, setSelectedElement] =
     useState<ManagementEntity | null>(null)
   const [shouldOpenInviteModal, setShouldOpenInviteModal] = useState(false)
+  const [pendingRemovalKey, setPendingRemovalKey] = useState<string | null>(null)
 
   // Hooks
   const { companies, employees, journeys, invite, removeEntity } =
@@ -86,11 +87,25 @@ export function useManagement() {
     return activeItems[index]?.id ?? index
   }
 
-  function handleActionClick(actionId: string, row: TableRowData) {
+  async function handleActionClick(actionId: string, row: TableRowData) {
     const entity = getRowEntity(row)
     if (!entity) return
 
-    if (actionId === "remove") return removeEntity(activeTab.id, entity.id)
+    if (actionId === "remove") {
+      const removalKey = buildRemovalKey(activeTab.id, entity.id)
+
+      setPendingRemovalKey(removalKey)
+
+      try {
+        await removeEntity(activeTab.id, entity.id)
+      } finally {
+        setPendingRemovalKey((currentKey) =>
+          currentKey === removalKey ? null : currentKey
+        )
+      }
+
+      return
+    }
 
     if (actionId === "edit") {
       setSelectedElement(entity)
@@ -120,6 +135,22 @@ export function useManagement() {
     setShouldOpenInviteModal(true)
   }
 
+  function getActionState(actionId: string, row: TableRowData) {
+    const entity = getRowEntity(row)
+
+    if (!entity) return undefined
+
+    const isPendingRemoval =
+      pendingRemovalKey === buildRemovalKey(activeTab.id, entity.id)
+
+    if (!isPendingRemoval) return undefined
+
+    return {
+      disabled: true,
+      loading: actionId === "remove",
+    }
+  }
+
   return {
     invite,
     availableTabs,
@@ -129,10 +160,15 @@ export function useManagement() {
     inviteModalRef,
     selectedElement,
     getRowKey,
+    getActionState,
     handleAddClick,
     handleRowSelect,
     handleTabChange,
     handleActionClick,
     handleInviteSuccess,
   }
+}
+
+function buildRemovalKey(tabId: string, entityId: number) {
+  return `${tabId}:${entityId}:remove`
 }
