@@ -18,7 +18,6 @@ export interface ManagementDrawerMethods {
 export interface Props {
   element: ManagementEntity | null
   view: ManagementTabOption
-  onSuccess: () => void
 }
 
 export type CompanyFormData = CompanyForm

@@ -47,7 +47,7 @@ import {
 } from "../../utils"
 
 export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
-  ({ element, view, onSuccess }, ref) => {
+  ({ element, view }, ref) => {
     // Refs
     const sidePanelRef = useRef<SidePanelMethods>(null)
 
@@ -115,8 +115,6 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
         await saveEntity(view.id, element, form)
 
         handleClose()
-
-        if (view.id === "employees" && !element) onSuccess()
       } catch (error) {
         console.log(error)
       } finally {

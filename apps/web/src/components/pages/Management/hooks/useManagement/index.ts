@@ -12,13 +12,11 @@ import { makeTableData } from "./utils"
 
 // Types
 import type { TableRowData } from "@/components/structure/Table/types"
-import type { InviteModalMethods } from "../../components/InviteModal/types"
 import type { ManagementDrawerMethods } from "../../components/ManagementDrawer/types"
 import type { ManagementEntity, ManagementTabOption } from "../../types"
 
 export function useManagement() {
   // Refs
-  const inviteModalRef = useRef<InviteModalMethods>(null)
   const drawerRef = useRef<ManagementDrawerMethods>(null)
 
   const { user } = useAuth()
@@ -37,11 +35,10 @@ export function useManagement() {
   )
   const [selectedElement, setSelectedElement] =
     useState<ManagementEntity | null>(null)
-  const [shouldOpenInviteModal, setShouldOpenInviteModal] = useState(false)
   const [pendingRemovalKey, setPendingRemovalKey] = useState<string | null>(null)
 
   // Hooks
-  const { companies, employees, journeys, invite, isLoading, removeEntity } =
+  const { companies, employees, journeys, isLoading, removeEntity } =
     useManagementContext()
 
   // Constants
@@ -57,13 +54,6 @@ export function useManagement() {
 
     drawerRef.current?.open()
   }, [drawerRequestKey])
-
-  useEffect(() => {
-    if (!shouldOpenInviteModal || !invite.copyText) return
-
-    inviteModalRef.current?.open()
-    setShouldOpenInviteModal(false)
-  }, [invite.copyText, shouldOpenInviteModal])
 
   // Functions
   function getActiveItems(): ManagementEntity[] {
@@ -131,10 +121,6 @@ export function useManagement() {
     setSelectedElement(null)
   }
 
-  function handleInviteSuccess() {
-    setShouldOpenInviteModal(true)
-  }
-
   function getActionState(actionId: string, row: TableRowData) {
     const entity = getRowEntity(row)
 
@@ -152,13 +138,11 @@ export function useManagement() {
   }
 
   return {
-    invite,
     availableTabs,
     activeTab,
     isLoading,
     tableData,
     drawerRef,
-    inviteModalRef,
     selectedElement,
     getRowKey,
     getActionState,
@@ -166,7 +150,6 @@ export function useManagement() {
     handleRowSelect,
     handleTabChange,
     handleActionClick,
-    handleInviteSuccess,
   }
 }
 

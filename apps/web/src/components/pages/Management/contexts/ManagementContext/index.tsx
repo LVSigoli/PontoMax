@@ -1,9 +1,7 @@
 // External Libraries
-import { createContext, useContext, useMemo, useState } from "react"
+import { createContext, useContext, useMemo } from "react"
 import { useSWRConfig } from "swr"
 
-// Services
-import type { UserInviteApiItem } from "@/services/domain"
 import {
   createCompany,
   createJourney,
@@ -32,7 +30,6 @@ import {
   mapJourneyApiToJourney,
   mapUserApiToEmployee,
 } from "../../utils"
-import { makeInitialInvite } from "./utils"
 
 // Types
 import type {
@@ -51,9 +48,6 @@ const ManagementContext = createContext<ManagementContextValue | null>(null)
 export const ManagementProvider: React.FC<ManagementProviderProps> = ({
   children,
 }) => {
-  // States
-  const [invite, setInvite] = useState<UserInviteApiItem>(makeInitialInvite)
-
   const { mutate: mutateSWRCache } = useSWRConfig()
   const { data: companyItems = [], isLoading: isLoadingCompanies } =
     useCompaniesSWR()
@@ -161,8 +155,7 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
         return
       }
 
-      const createdEmployeeResponse = await createUser(payload)
-      setInvite(createdEmployeeResponse.invite)
+      await createUser(payload)
       await revalidateManagementData()
     } catch (error) {
       console.log(error)
@@ -200,7 +193,6 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
     companies,
     employees,
     journeys,
-    invite,
     removeEntity,
     saveEntity,
   }
