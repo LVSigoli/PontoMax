@@ -15,9 +15,13 @@ import type { SolicitationChartItem } from "../../types"
 
 interface Props {
   items: SolicitationChartItem[]
+  title?: string
 }
 
-export const SolicitationBarChart: React.FC<Props> = ({ items }) => {
+export const SolicitationBarChart: React.FC<Props> = ({
+  items,
+  title = "Solicitacoes de ajuste de ponto",
+}) => {
   const safeItems =
     items.length > 0
       ? items
@@ -105,7 +109,7 @@ export const SolicitationBarChart: React.FC<Props> = ({ items }) => {
   return (
     <section className="rounded-xl bg-surface-card px-6 py-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Typography variant="h4" value="Solicitacoes de ajuste de ponto" />
+        <Typography variant="h4" value={title} />
 
         <div className="flex flex-wrap items-center gap-4 text-xs text-content-secondary">
           <Legend color="bg-danger-500" label="Recusado" />

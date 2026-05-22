@@ -13,9 +13,13 @@ import type { WorkedHoursItem } from "../../types"
 
 interface Props {
   items: WorkedHoursItem[]
+  title?: string
 }
 
-export const WorkedHoursLineChart: React.FC<Props> = ({ items }) => {
+export const WorkedHoursLineChart: React.FC<Props> = ({
+  items,
+  title = "Horas Trabalhadas por Dia",
+}) => {
   const safeItems = items.length > 0 ? items : [{ label: "-", hours: 0 }]
   const maxHours = getRoundedMax(
     safeItems.map((item) => item.hours),
@@ -99,7 +103,7 @@ export const WorkedHoursLineChart: React.FC<Props> = ({ items }) => {
 
   return (
     <section className="rounded-xl bg-surface-card px-6 py-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-      <Typography variant="h4" value="Horas Trabalhadas por Dia" />
+      <Typography variant="h4" value={title} />
 
       <div className="mt-8 overflow-hidden rounded-lg">
         <ApexChart

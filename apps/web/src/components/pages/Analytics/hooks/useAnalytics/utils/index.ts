@@ -1,3 +1,5 @@
 export * from "./buildAnalyticsMetrics"
+export * from "./buildAnalyticsPeriodSummary"
 export * from "./buildBalances"
 export * from "./buildCompanyOptions"
+export * from "./resolveAnalyticsDateRange"

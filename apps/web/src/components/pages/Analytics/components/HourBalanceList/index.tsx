@@ -7,12 +7,16 @@ import type { EmployeeHourBalance } from "../../types"
 
 interface Props {
   items: EmployeeHourBalance[]
+  title?: string
 }
 
-export const HourBalanceList: React.FC<Props> = ({ items }) => {
+export const HourBalanceList: React.FC<Props> = ({
+  items,
+  title = "Saldo de horas por funcionario",
+}) => {
   return (
     <section className="rounded-xl bg-surface-card px-5 py-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-      <Typography variant="h4" value="Saldo de horas por funcionario" />
+      <Typography variant="h4" value={title} />
 
       <div className="mt-7 grid">
         {items.map((item) => (

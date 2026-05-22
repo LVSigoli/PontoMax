@@ -126,10 +126,24 @@ describe("analytics routes", () => {
 
     mocked.getAnalyticsDashboardMock.mockResolvedValue(dashboard)
 
-    const response = await request(app).get("/analytics/dashboard?companyId=10")
+    const response = await request(app).get(
+      "/analytics/dashboard?companyId=10&period=custom&from=2026-05-01&to=2026-05-15"
+    )
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual(dashboard)
-    expect(mocked.getAnalyticsDashboardMock).toHaveBeenCalledWith(10)
+    expect(mocked.getAnalyticsDashboardMock).toHaveBeenCalledWith({
+      companyId: 10,
+      period: "custom",
+      from: "2026-05-01",
+      to: "2026-05-15",
+    })
+  })
+
+  it("validates custom periods before delegating to the service", async () => {
+    const response = await request(app).get("/analytics/dashboard?period=custom")
+
+    expect(response.status).toBe(400)
+    expect(mocked.getAnalyticsDashboardMock).not.toHaveBeenCalled()
   })
 })

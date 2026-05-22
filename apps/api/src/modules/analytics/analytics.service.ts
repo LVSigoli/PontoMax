@@ -1,268 +1,224 @@
-import { subDays } from './date-helpers.js';
-
-import type { Journey, UserJourneyAssignment } from '@prisma/client';
-
+import { endOfDay, getDateOnly, startOfDay } from '../../common/utils/date.js';
 import { prisma } from '../../lib/prisma.js';
-import { getDateOnly } from '../../common/utils/date.js';
-import { getUserWorkdaySummary } from '../time-records/time-records.service.js';
+import { subDays } from './date-helpers.js';
+import {
+  DEFAULT_ANALYTICS_PERIOD,
+  type AnalyticsDashboardParams,
+  type AnalyticsPeriod,
+} from './analytics.types.js';
 
-type JourneyAssignmentWithJourney = UserJourneyAssignment & {
-  journey: Journey;
+type AnalyticsRange = {
+  from: Date;
+  period: AnalyticsPeriod;
+  to: Date;
+};
+
+type BalanceEntry = {
+  balanceMinutes: number;
+  id: number;
+  name: string;
 };
 
 function getDateKey(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
-function formatWeekdayLabel(value: Date) {
+function addDays(value: Date, amount: number) {
+  return new Date(
+    Date.UTC(
+      value.getUTCFullYear(),
+      value.getUTCMonth(),
+      value.getUTCDate() + amount,
+    ),
+  );
+}
+
+function getRangeLength(from: Date, to: Date) {
+  return Math.floor((to.getTime() - from.getTime()) / 86400000) + 1;
+}
+
+function listRangeDates(from: Date, to: Date) {
+  const dates: Date[] = [];
+
+  for (let current = from; current.getTime() <= to.getTime(); current = addDays(current, 1)) {
+    dates.push(current);
+  }
+
+  return dates;
+}
+
+function formatChartLabel(value: Date, totalDays: number) {
+  if (totalDays <= 7) {
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      weekday: 'short',
+    })
+      .format(value)
+      .replace(',', '')
+      .replaceAll('.', '');
+  }
+
   return new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
   }).format(value);
 }
 
-function formatShortDayLabel(value: Date) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    weekday: 'short',
-  })
-    .format(value)
-    .replace(',', '');
+function resolveAnalyticsRange(
+  params: AnalyticsDashboardParams = {},
+): AnalyticsRange {
+  const today = getDateOnly(new Date());
+  const period = params.period ?? DEFAULT_ANALYTICS_PERIOD;
+
+  if (period === 'today') {
+    return {
+      from: today,
+      period,
+      to: today,
+    };
+  }
+
+  if (period === 'last30Days') {
+    return {
+      from: subDays(today, 29),
+      period,
+      to: today,
+    };
+  }
+
+  if (period === 'currentMonth') {
+    return {
+      from: new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)),
+      period,
+      to: today,
+    };
+  }
+
+  if (period === 'custom' && params.from && params.to) {
+    return {
+      from: getDateOnly(params.from),
+      period,
+      to: getDateOnly(params.to),
+    };
+  }
+
+  return {
+    from: subDays(today, 6),
+    period: DEFAULT_ANALYTICS_PERIOD,
+    to: today,
+  };
 }
 
-function diffInDays(start: Date, end: Date) {
-  return Math.floor((end.getTime() - start.getTime()) / 86400000);
-}
-
-function findJourneyAssignmentForDate(
-  assignments: JourneyAssignmentWithJourney[],
-  userId: number,
-  date: Date,
+export async function getAnalyticsDashboard(
+  params: AnalyticsDashboardParams = {},
 ) {
-  const dateTime = date.getTime();
+  const range = resolveAnalyticsRange(params);
+  const totalDays = getRangeLength(range.from, range.to);
 
-  for (let index = assignments.length - 1; index >= 0; index -= 1) {
-    const assignment = assignments[index];
+  const [activeUsers, workdays, adjustments] = await Promise.all([
+    prisma.user.findMany({
+      where: {
+        companyId: params.companyId ?? undefined,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        fullName: true,
+      },
+    }),
+    prisma.workday.findMany({
+      where: {
+        companyId: params.companyId ?? undefined,
+        date: {
+          gte: range.from,
+          lte: range.to,
+        },
+      },
+      include: {
+        timeEntries: {
+          where: {
+            status: 'ACTIVE',
+          },
+        },
+      },
+    }),
+    prisma.adjustmentRequest.findMany({
+      where: {
+        companyId: params.companyId ?? undefined,
+        requestedAt: {
+          gte: startOfDay(range.from),
+          lte: endOfDay(range.to),
+        },
+      },
+    }),
+  ]);
 
-    if (assignment.userId !== userId) {
+  const companyEmployees = activeUsers.length;
+  const presentEmployees = new Set(
+    workdays
+      .filter((workday) =>
+        workday.timeEntries.some((entry) => entry.kind === 'ENTRY'),
+      )
+      .map((workday) => workday.userId),
+  ).size;
+  const lateWorkdays = workdays.filter((workday) => workday.status === 'LATE').length;
+  const overtimeMinutes = workdays.reduce(
+    (total, workday) => total + workday.overtimeMinutes,
+    0,
+  );
+  const pendingAdjustments = adjustments.filter(
+    (adjustment) => adjustment.status === 'PENDING',
+  ).length;
+  const inconsistentWorkdays = workdays.filter(
+    (workday) =>
+      workday.status === 'INCONSISTENT' ||
+      workday.status === 'PENDING_ADJUSTMENT',
+  ).length;
+
+  const balancesByUser = new Map<number, BalanceEntry>(
+    activeUsers.map((user) => [
+      user.id,
+      {
+        balanceMinutes: 0,
+        id: user.id,
+        name: user.fullName,
+      },
+    ]),
+  );
+
+  for (const workday of workdays) {
+    const balance = balancesByUser.get(workday.userId);
+
+    if (!balance) {
       continue;
     }
 
-    const validFrom = assignment.validFrom.getTime();
-    const validTo = assignment.validTo ? assignment.validTo.getTime() : null;
-
-    if (validFrom <= dateTime && (validTo === null || validTo >= dateTime)) {
-      return assignment;
-    }
+    balance.balanceMinutes += workday.overtimeMinutes - workday.missingMinutes;
   }
 
-  return null;
-}
-
-function isScheduledWorkday(assignment: JourneyAssignmentWithJourney, date: Date) {
-  const scaleCode = assignment.journey.scaleCode.trim().toUpperCase();
-
-  if (scaleCode === '5X2') {
-    const weekday = date.getUTCDay();
-    return weekday >= 1 && weekday <= 5;
-  }
-
-  if (scaleCode === '6X1') {
-    return date.getUTCDay() !== 0;
-  }
-
-  if (scaleCode === '12X36') {
-    return diffInDays(assignment.validFrom, date) % 2 === 0;
-  }
-
-  const cycleMatch = scaleCode.match(/^(\d+)X(\d+)$/);
-
-  if (!cycleMatch) {
-    return false;
-  }
-
-  const workDays = Number(cycleMatch[1]);
-  const offDays = Number(cycleMatch[2]);
-
-  if (workDays <= 0 || offDays <= 0 || workDays > 7 || offDays > 7) {
-    return false;
-  }
-
-  const cycleLength = workDays + offDays;
-  const dayIndex = diffInDays(assignment.validFrom, date) % cycleLength;
-
-  return dayIndex < workDays;
-}
-
-function getExpectedScheduledMinutes(
-  assignments: JourneyAssignmentWithJourney[],
-  userId: number,
-  date: Date,
-  isHoliday: boolean,
-) {
-  if (isHoliday) {
-    return 0;
-  }
-
-  const assignment = findJourneyAssignmentForDate(assignments, userId, date);
-
-  if (!assignment) {
-    return 0;
-  }
-
-  return isScheduledWorkday(assignment, date) ? assignment.journey.dailyWorkMinutes : 0;
-}
-
-export async function getAnalyticsDashboard(companyId?: number) {
-  const today = getDateOnly(new Date());
-  const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
-  const sixCompletedDaysAgo = subDays(today, 6);
-  const fiveCompletedDaysAgo = subDays(today, 5);
-
-  const [companyEmployees, todayWorkdays, monthlyWorkdays, monthlyAdjustments, recentWorkdays, activeUsers, assignments] =
-    await Promise.all([
-      prisma.user.count({
-        where: {
-          companyId: companyId ?? undefined,
-          isActive: true,
-        },
-      }),
-      prisma.workday.findMany({
-        where: {
-          companyId: companyId ?? undefined,
-          date: today,
-        },
-        include: {
-          timeEntries: {
-            where: {
-              status: 'ACTIVE',
-            },
-          },
-          user: true,
-        },
-      }),
-      prisma.workday.findMany({
-        where: {
-          companyId: companyId ?? undefined,
-          date: {
-            gte: monthStart,
-            lt: today,
-          },
-        },
-      }),
-      prisma.adjustmentRequest.findMany({
-        where: {
-          companyId: companyId ?? undefined,
-          requestedAt: {
-            gte: sixCompletedDaysAgo,
-          },
-        },
-      }),
-      prisma.workday.findMany({
-        where: {
-          companyId: companyId ?? undefined,
-          date: {
-            gte: fiveCompletedDaysAgo,
-            lt: today,
-          },
-        },
-      }),
-      prisma.user.findMany({
-        where: {
-          companyId: companyId ?? undefined,
-          isActive: true,
-        },
-        include: {
-          company: {
-            select: {
-              timezone: true,
-            },
-          },
-        },
-      }),
-      prisma.userJourneyAssignment.findMany({
-        where: {
-          user: {
-            companyId: companyId ?? undefined,
-            isActive: true,
-          },
-          validFrom: {
-            lt: today,
-          },
-          OR: [{ validTo: null }, { validTo: { gte: monthStart } }],
-        },
-        include: {
-          journey: true,
-        },
-        orderBy: {
-          validFrom: 'asc',
-        },
-      }),
-    ]);
-
-  const presentEmployees = todayWorkdays.filter((workday) =>
-    workday.timeEntries.some((entry) => entry.kind === 'ENTRY'),
-  ).length;
-  const overtimeMinutes = monthlyWorkdays.reduce((total, workday) => {
-    const scheduledMinutes = getExpectedScheduledMinutes(
-      assignments,
-      workday.userId,
-      workday.date,
-      workday.isHoliday,
-    );
-
-    return total + Math.max(0, workday.workedMinutes - scheduledMinutes);
-  }, 0);
-  const inconsistentWorkdays = monthlyWorkdays.filter(
-    (workday) => workday.status === 'INCONSISTENT' || workday.status === 'PENDING_ADJUSTMENT',
-  ).length;
-  const lateWorkdays = todayWorkdays.filter(
-    (workday) => workday.status === 'LATE',
-  ).length;
-  const pendingAdjustments = monthlyAdjustments.filter(
-    (adjustment) => adjustment.status === 'PENDING',
-  ).length;
-
-  const balances = (
-    await Promise.all(
-      activeUsers.map(async (user) => {
-        const summary = await getUserWorkdaySummary({
-          companyId: user.companyId,
-          userId: user.id,
-          timezone: user.company.timezone,
-        });
-
-        return {
-          id: user.id,
-          name: user.fullName,
-          balanceMinutes: summary.balanceMinutes,
-        };
-      }),
+  const balances = [...balancesByUser.values()]
+    .sort(
+      (left, right) =>
+        right.balanceMinutes - left.balanceMinutes ||
+        left.name.localeCompare(right.name, 'pt-BR'),
     )
-  )
-    .sort((left, right) => right.balanceMinutes - left.balanceMinutes)
     .slice(0, 7);
 
-  const adjustmentsByDay = new Map<
-    string,
-    {
-      approved: number;
-      pending: number;
-      refused: number;
-    }
-  >();
+  const rangeDates = listRangeDates(range.from, range.to);
+  const solicitationBuckets = new Map(
+    rangeDates.map((date) => [
+      getDateKey(date),
+      {
+        approved: 0,
+        pending: 0,
+        refused: 0,
+      },
+    ]),
+  );
 
-  for (let index = 0; index < 6; index += 1) {
-    const date = subDays(today, 6 - index);
-    adjustmentsByDay.set(getDateKey(date), {
-      approved: 0,
-      pending: 0,
-      refused: 0,
-    });
-  }
-
-  for (const adjustment of monthlyAdjustments) {
+  for (const adjustment of adjustments) {
     const key = getDateKey(getDateOnly(adjustment.requestedAt));
-    const bucket = adjustmentsByDay.get(key);
+    const bucket = solicitationBuckets.get(key);
 
     if (!bucket) {
       continue;
@@ -283,25 +239,17 @@ export async function getAnalyticsDashboard(companyId?: number) {
     }
   }
 
-  const solicitationChart = [...adjustmentsByDay.entries()].map(([key, bucket]) => ({
-    label: formatShortDayLabel(new Date(`${key}T00:00:00`)),
-    approved: bucket.approved,
-    pending: bucket.pending,
-    refused: bucket.refused,
-  }));
+  const workedHoursBuckets = new Map(
+    rangeDates.map((date) => [
+      getDateKey(date),
+      {
+        totalMinutes: 0,
+      },
+    ]),
+  );
 
-  const workedHoursByDay = new Map<string, { totalMinutes: number }>();
-
-  for (let index = 0; index < 5; index += 1) {
-    const date = subDays(today, 5 - index);
-    workedHoursByDay.set(getDateKey(date), {
-      totalMinutes: 0,
-    });
-  }
-
-  for (const workday of recentWorkdays) {
-    const key = getDateKey(workday.date);
-    const bucket = workedHoursByDay.get(key);
+  for (const workday of workdays) {
+    const bucket = workedHoursBuckets.get(getDateKey(workday.date));
 
     if (!bucket) {
       continue;
@@ -310,19 +258,42 @@ export async function getAnalyticsDashboard(companyId?: number) {
     bucket.totalMinutes += workday.workedMinutes;
   }
 
-  const workedHours = [...workedHoursByDay.entries()].map(([key, bucket]) => ({
-    label: formatWeekdayLabel(new Date(`${key}T00:00:00`)),
-    hours: Number((bucket.totalMinutes / 60).toFixed(1)),
-  }));
+  const solicitationChart = rangeDates.map((date) => {
+    const key = getDateKey(date);
+    const bucket = solicitationBuckets.get(key) ?? {
+      approved: 0,
+      pending: 0,
+      refused: 0,
+    };
+
+    return {
+      approved: bucket.approved,
+      label: formatChartLabel(date, totalDays),
+      pending: bucket.pending,
+      refused: bucket.refused,
+    };
+  });
+
+  const workedHours = rangeDates.map((date) => {
+    const key = getDateKey(date);
+    const bucket = workedHoursBuckets.get(key) ?? {
+      totalMinutes: 0,
+    };
+
+    return {
+      hours: Number((bucket.totalMinutes / 60).toFixed(1)),
+      label: formatChartLabel(date, totalDays),
+    };
+  });
 
   return {
     metrics: {
-      presentEmployees,
       companyEmployees,
+      inconsistentWorkdays,
       lateWorkdays,
       overtimeMinutes,
       pendingAdjustments,
-      inconsistentWorkdays,
+      presentEmployees,
     },
     balances,
     solicitationChart,

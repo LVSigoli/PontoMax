@@ -2,39 +2,52 @@ import { AnalyticsDashboardResponse } from "@/services/domain"
 import { formatHoursWithMinutes } from "@/services/utils"
 import { AnalyticsMetric } from "../../../types"
 
+interface BuildAnalyticsMetricsOptions {
+  isSingleDayRange: boolean
+}
+
 export function buildAnalyticsMetrics(
-  dashboard: AnalyticsDashboardResponse
+  dashboard: AnalyticsDashboardResponse,
+  options: BuildAnalyticsMetricsOptions
 ): AnalyticsMetric[] {
+  const rangeLabel = options.isSingleDayRange ? "hoje" : "no periodo"
+  const presenceLabel = options.isSingleDayRange
+    ? "Colaboradores presentes hoje"
+    : "Colaboradores com registros no periodo"
+  const presenceSubtitle = options.isSingleDayRange
+    ? "Quantidade de colaboradores ativos que registraram entrada hoje"
+    : "Quantidade de colaboradores ativos que registraram entrada no intervalo selecionado"
+
   return [
     {
-      label: "Funcionarios presentes hoje",
+      label: presenceLabel,
       data: `${dashboard.metrics.presentEmployees}/${dashboard.metrics.companyEmployees}`,
       type: "present",
-      subtitle: "Quantidade de funcionarios que ja registraram entrada hoje",
+      subtitle: presenceSubtitle,
     },
     {
-      label: "Atrasos hoje",
+      label: `Atrasos ${rangeLabel}`,
       data: `${dashboard.metrics.lateWorkdays} registros`,
       type: "late",
-      subtitle: "Funcionarios com entrada ou saida fora da tolerancia",
+      subtitle: "Colaboradores com entrada ou saida fora da tolerancia",
     },
     {
-      label: "Horas extras da semana",
+      label: `Horas extras ${rangeLabel}`,
       data: formatHoursWithMinutes(dashboard.metrics.overtimeMinutes),
       type: "extra-hours",
-      subtitle: "Total acumulado de horas extras da equipe",
+      subtitle: "Total acumulado de horas extras da equipe no intervalo selecionado",
     },
     {
-      label: "Ajustes com pendencias",
+      label: `Ajustes pendentes ${rangeLabel}`,
       data: `${dashboard.metrics.pendingAdjustments} solicitacoes`,
       type: "pending",
-      subtitle: "Solicitacoes de correcao aguardando aprovacao",
+      subtitle: "Solicitacoes de correcao aguardando aprovacao no intervalo selecionado",
     },
     {
-      label: "Inconsistencia de pontos",
+      label: `Inconsistencias ${rangeLabel}`,
       data: `${dashboard.metrics.inconsistentWorkdays} registros`,
       type: "issues",
-      subtitle: "Casos com falta de registros ou jornadas incompletas",
+      subtitle: "Casos com falta de registros ou jornadas incompletas no intervalo selecionado",
     },
   ]
 }

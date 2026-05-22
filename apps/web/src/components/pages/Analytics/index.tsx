@@ -4,14 +4,13 @@ import React from "react"
 // Components
 import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
-import { Skeleton } from "@/components/structure/Skeleton"
-import { Select } from "@/components/structure/Select"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Typography } from "@/components/structure/Typography"
 import {
   AnalyticsContentSkeleton,
   AnalyticsMetricsSkeleton,
 } from "./components/AnalyticsLoading"
+import { AnalyticsFilters } from "./components/AnalyticsFilters"
 import { HourBalanceList } from "./components/HourBalanceList"
 import { MetricCard } from "./components/MetricCard"
 import { SolicitationBarChart } from "./components/SolicitationBarChart"
@@ -21,16 +20,28 @@ import { useAnalytics } from "./hooks/useAnalytics"
 export const Analytics: React.FC = () => {
   const {
     balances,
+    balancesTitle,
     companyOptions,
+    customFrom,
+    customTo,
     errorMessage,
     handleCompanyFilterChange,
-    isCompaniesLoading,
+    handleCustomFromChange,
+    handleCustomToChange,
+    handlePeriodChange,
     isLoading,
+    isCompaniesLoading,
     isPlatformAdmin,
     metrics,
+    periodOptions,
+    periodSummary,
+    selectedPeriod,
+    selectedPeriodOption,
     selectedCompanyOption,
     solicitationChart,
+    solicitationChartTitle,
     workedHours,
+    workedHoursTitle,
   } = useAnalytics()
   const showAnalyticsSkeleton = isLoading && !errorMessage
 
@@ -52,47 +63,47 @@ export const Analytics: React.FC = () => {
             <div className=" w-full flex flex-wrap items-start justify-between gap-4">
               <Header
                 label="Painel Gerencial"
-                subtitle="Receba analise detalhada das horas trabalhadas na sua empresa"
+                subtitle="Acompanhe os principais indicadores operacionais da sua equipe por periodo."
               />
 
-              <div className="w-full flex flex-wrap items-center gap-2">
-                {isPlatformAdmin ? (
-                  <div className="w-full min-w-64 sm:w-72">
-                    {isCompaniesLoading && companyOptions.length <= 1 ? (
-                      <Skeleton className="h-11 w-full rounded-xl" />
-                    ) : (
-                      <Select
-                        options={companyOptions}
-                        selectedItem={selectedCompanyOption}
-                        buttonClassName="h-11 bg-surface-card"
-                        onSelectionChange={handleCompanyFilterChange}
-                      />
-                    )}
-                  </div>
-                ) : null}
+              <div className="w-full flex flex-wrap items-center justify-end gap-2 sm:w-auto">
+                <Button
+                  fitWidth
+                  value="Exportar Relatorio"
+                  color="primary"
+                  variant="outlined"
+                  onClick={handleExportReport}
+                />
 
-                <div className="w-full flex flex-row items-center justify-between gap-2 ">
-                  <Button
-                    fitWidth
-                    value="Exportar Relatorio"
-                    color="primary"
-                    variant="outlined"
-                    onClick={handleExportReport}
-                  />
-
-                  <Button
-                    fitWidth
-                    value="Exportar excel"
-                    onClick={handleExportExcel}
-                  />
-                </div>
+                <Button
+                  fitWidth
+                  value="Exportar excel"
+                  onClick={handleExportExcel}
+                />
               </div>
             </div>
+
+            <AnalyticsFilters
+              companyOptions={companyOptions}
+              customFrom={customFrom}
+              customTo={customTo}
+              handleCompanyChange={handleCompanyFilterChange}
+              handleCustomFromChange={handleCustomFromChange}
+              handleCustomToChange={handleCustomToChange}
+              handlePeriodChange={handlePeriodChange}
+              isCompaniesLoading={isCompaniesLoading}
+              isPlatformAdmin={isPlatformAdmin}
+              periodOptions={periodOptions}
+              periodSummary={periodSummary}
+              selectedCompanyOption={selectedCompanyOption}
+              selectedPeriod={selectedPeriod}
+              selectedPeriodOption={selectedPeriodOption}
+            />
 
             <section className="grid gap-4">
               <Typography
                 variant="h4"
-                value="Analise de solicitacoes"
+                value="Resumo do periodo"
                 className="text-xl"
               />
 
@@ -119,11 +130,17 @@ export const Analytics: React.FC = () => {
               <AnalyticsContentSkeleton />
             ) : (
               <section className="grid gap-4 xl:grid-cols-[0.9fr_1.7fr]">
-                <HourBalanceList items={balances} />
+                <HourBalanceList items={balances} title={balancesTitle} />
 
                 <div className="grid gap-4">
-                  <SolicitationBarChart items={solicitationChart} />
-                  <WorkedHoursLineChart items={workedHours} />
+                  <SolicitationBarChart
+                    items={solicitationChart}
+                    title={solicitationChartTitle}
+                  />
+                  <WorkedHoursLineChart
+                    items={workedHours}
+                    title={workedHoursTitle}
+                  />
                 </div>
               </section>
             )}

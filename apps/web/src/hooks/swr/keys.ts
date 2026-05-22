@@ -1,3 +1,5 @@
+import type { AnalyticsDashboardRequest } from "@/services/domain"
+
 type SWRKeyParams = Record<
   string,
   string | number | boolean | null | undefined
@@ -69,8 +71,8 @@ export const swrKeys = {
     }) => buildSWRKey("audit-logs", params),
   },
   analytics: {
-    dashboard: (params?: { companyId?: number }) =>
-      buildSWRKey("analytics/dashboard", params),
+    dashboard: (params?: AnalyticsDashboardRequest) =>
+      buildSWRKey("analytics/dashboard", params as SWRKeyParams | undefined),
   },
   timeRecords: {
     today: () => "time-records/today",

@@ -2,10 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocked = vi.hoisted(() => {
   return {
-    getUserWorkdaySummaryMock: vi.fn(),
     prisma: {
       user: {
-        count: vi.fn(),
         findMany: vi.fn(),
       },
       workday: {
@@ -14,16 +12,9 @@ const mocked = vi.hoisted(() => {
       adjustmentRequest: {
         findMany: vi.fn(),
       },
-      userJourneyAssignment: {
-        findMany: vi.fn(),
-      },
     },
   }
 })
-
-vi.mock("../../../src/modules/time-records/time-records.service.js", () => ({
-  getUserWorkdaySummary: mocked.getUserWorkdaySummaryMock,
-}))
 
 vi.mock("../../../src/lib/prisma.js", () => ({
   prisma: mocked.prisma,
@@ -37,12 +28,9 @@ beforeEach(() => {
   vi.useFakeTimers()
   vi.setSystemTime(new Date("2026-05-15T12:00:00.000Z"))
 
-  mocked.getUserWorkdaySummaryMock.mockReset()
-  mocked.prisma.user.count.mockReset()
   mocked.prisma.user.findMany.mockReset()
   mocked.prisma.workday.findMany.mockReset()
   mocked.prisma.adjustmentRequest.findMany.mockReset()
-  mocked.prisma.userJourneyAssignment.findMany.mockReset()
 })
 
 afterEach(() => {
@@ -50,152 +38,132 @@ afterEach(() => {
 })
 
 describe("analytics service", () => {
-  it("aggregates dashboard metrics and ranking data", async () => {
-    mocked.prisma.user.count.mockResolvedValue(4)
-    mocked.prisma.workday.findMany
-      .mockResolvedValueOnce([
-        {
-          userId: 1,
-          date: new Date("2026-05-15T00:00:00.000Z"),
-          status: "LATE",
-          overtimeMinutes: 30,
-          workedMinutes: 510,
-          isHoliday: false,
-          timeEntries: [{ kind: "ENTRY" }],
-          user: {
-            fullName: "Maria Demo",
-          },
-        },
-        {
-          userId: 2,
-          date: new Date("2026-05-15T00:00:00.000Z"),
-          status: "CLOSED",
-          overtimeMinutes: 0,
-          workedMinutes: 480,
-          isHoliday: false,
-          timeEntries: [],
-          user: {
-            fullName: "Joao Demo",
-          },
-        },
-      ])
-      .mockResolvedValueOnce([
-        {
-          userId: 1,
-          date: new Date("2026-05-14T00:00:00.000Z"),
-          status: "PENDING_ADJUSTMENT",
-          overtimeMinutes: 60,
-          workedMinutes: 540,
-          isHoliday: false,
-        },
-      ])
-      .mockResolvedValueOnce([
-        {
-          userId: 1,
-          date: new Date("2026-05-14T00:00:00.000Z"),
-          status: "CLOSED",
-          overtimeMinutes: 0,
-          workedMinutes: 480,
-          isHoliday: false,
-        },
-      ])
-    mocked.prisma.adjustmentRequest.findMany.mockResolvedValue([
-      {
-        requestedAt: new Date("2026-05-13T00:00:00.000Z"),
-        status: "PENDING",
-      },
-      {
-        requestedAt: new Date("2026-05-13T00:00:00.000Z"),
-        status: "APPROVED",
-      },
-      {
-        requestedAt: new Date("2026-05-13T00:00:00.000Z"),
-        status: "REJECTED",
-      },
-    ])
+  it("aggregates dashboard metrics for the selected range", async () => {
     mocked.prisma.user.findMany.mockResolvedValue([
       {
         id: 1,
-        companyId: 10,
         fullName: "Maria Demo",
-        company: {
-          timezone: "America/Sao_Paulo",
-        },
       },
       {
         id: 2,
-        companyId: 10,
         fullName: "Joao Demo",
-        company: {
-          timezone: "America/Sao_Paulo",
-        },
+      },
+      {
+        id: 3,
+        fullName: "Ana Demo",
       },
     ])
-    mocked.prisma.userJourneyAssignment.findMany.mockResolvedValue([
+    mocked.prisma.workday.findMany.mockResolvedValue([
       {
         userId: 1,
-        validFrom: new Date("2026-05-01T00:00:00.000Z"),
-        validTo: null,
-        journey: {
-          scaleCode: "5X2",
-          dailyWorkMinutes: 480,
-          expectedEntryTime: new Date("1970-01-01T08:00:00.000Z"),
-          expectedExitTime: new Date("1970-01-01T17:00:00.000Z"),
-          flexibleSchedule: false,
-          toleranceMinutes: 10,
-          nightShift: false,
-        },
+        date: new Date("2026-05-10T00:00:00.000Z"),
+        status: "PENDING_ADJUSTMENT",
+        overtimeMinutes: 120,
+        missingMinutes: 0,
+        workedMinutes: 600,
+        timeEntries: [{ kind: "ENTRY", status: "ACTIVE" }],
+      },
+      {
+        userId: 2,
+        date: new Date("2026-05-12T00:00:00.000Z"),
+        status: "LATE",
+        overtimeMinutes: 30,
+        missingMinutes: 15,
+        workedMinutes: 450,
+        timeEntries: [{ kind: "ENTRY", status: "ACTIVE" }],
+      },
+      {
+        userId: 2,
+        date: new Date("2026-05-14T00:00:00.000Z"),
+        status: "INCONSISTENT",
+        overtimeMinutes: 0,
+        missingMinutes: 60,
+        workedMinutes: 240,
+        timeEntries: [],
       },
     ])
-    mocked.getUserWorkdaySummaryMock
-      .mockResolvedValueOnce({
-        workedDays: 10,
-        balanceMinutes: 50,
-        inconsistentCount: 1,
-        pendingAdjustments: 0,
-      })
-      .mockResolvedValueOnce({
-        workedDays: 8,
-        balanceMinutes: 20,
-        inconsistentCount: 0,
-        pendingAdjustments: 0,
-      })
+    mocked.prisma.adjustmentRequest.findMany.mockResolvedValue([
+      {
+        requestedAt: new Date("2026-05-10T12:00:00.000Z"),
+        status: "PENDING",
+      },
+      {
+        requestedAt: new Date("2026-05-12T12:00:00.000Z"),
+        status: "APPROVED",
+      },
+      {
+        requestedAt: new Date("2026-05-12T18:00:00.000Z"),
+        status: "REJECTED",
+      },
+    ])
 
-    const dashboard = await getAnalyticsDashboard(10)
+    const dashboard = await getAnalyticsDashboard({
+      companyId: 10,
+      period: "custom",
+      from: "2026-05-10",
+      to: "2026-05-15",
+    })
 
     expect(dashboard.metrics).toEqual({
-      presentEmployees: 1,
-      companyEmployees: 4,
+      presentEmployees: 2,
+      companyEmployees: 3,
       lateWorkdays: 1,
-      overtimeMinutes: 60,
+      overtimeMinutes: 150,
       pendingAdjustments: 1,
-      inconsistentWorkdays: 1,
+      inconsistentWorkdays: 2,
     })
     expect(dashboard.balances).toEqual([
       {
         id: 1,
         name: "Maria Demo",
-        balanceMinutes: 50,
+        balanceMinutes: 120,
+      },
+      {
+        id: 3,
+        name: "Ana Demo",
+        balanceMinutes: 0,
       },
       {
         id: 2,
         name: "Joao Demo",
-        balanceMinutes: 20,
+        balanceMinutes: -45,
       },
     ])
-    expect(dashboard.solicitationChart).toContainEqual(
-      expect.objectContaining({
-        approved: 1,
-        pending: 1,
-        refused: 1,
-      })
-    )
-    expect(dashboard.workedHours).toHaveLength(5)
+    expect(dashboard.solicitationChart).toHaveLength(6)
+    expect(
+      dashboard.solicitationChart.reduce(
+        (summary, item) => ({
+          approved: summary.approved + item.approved,
+          pending: summary.pending + item.pending,
+          refused: summary.refused + item.refused,
+        }),
+        {
+          approved: 0,
+          pending: 0,
+          refused: 0,
+        }
+      )
+    ).toEqual({
+      approved: 1,
+      pending: 1,
+      refused: 1,
+    })
+    expect(dashboard.workedHours).toHaveLength(6)
     expect(dashboard.workedHours).toContainEqual(
       expect.objectContaining({
-        hours: 8,
+        hours: 10,
       })
     )
-    expect(mocked.getUserWorkdaySummaryMock).toHaveBeenCalledTimes(2)
+    expect(mocked.prisma.workday.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          companyId: 10,
+          date: {
+            gte: new Date("2026-05-10T00:00:00.000Z"),
+            lte: new Date("2026-05-15T00:00:00.000Z"),
+          },
+        }),
+      })
+    )
   })
 })

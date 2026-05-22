@@ -9,13 +9,56 @@ import { getDateOnly } from "../../common/utils/date.js"
 import { validateRequest } from "../../common/validation/validate-request.js"
 import { prisma } from "../../lib/prisma.js"
 import { getAnalyticsDashboard } from "./analytics.service.js"
+import {
+  ANALYTICS_PERIODS,
+  DEFAULT_ANALYTICS_PERIOD,
+} from "./analytics.types.js"
 
 export const analyticsRouter = Router()
 
-const analyticsQuerySchema = z.object({
+const overviewQuerySchema = z.object({
   query: z.object({
     companyId: z.coerce.number().int().positive().optional(),
   }),
+})
+
+const dashboardQuerySchema = z.object({
+  query: z
+    .object({
+      companyId: z.coerce.number().int().positive().optional(),
+      period: z.enum(ANALYTICS_PERIODS).default(DEFAULT_ANALYTICS_PERIOD),
+      from: z.string().date().optional(),
+      to: z.string().date().optional(),
+    })
+    .superRefine((query, context) => {
+      if (query.period !== "custom") {
+        return
+      }
+
+      if (!query.from) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "from is required when period=custom.",
+          path: ["from"],
+        })
+      }
+
+      if (!query.to) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "to is required when period=custom.",
+          path: ["to"],
+        })
+      }
+
+      if (query.from && query.to && query.from > query.to) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "from must be before or equal to to.",
+          path: ["from"],
+        })
+      }
+    }),
 })
 
 analyticsRouter.use(
@@ -25,7 +68,7 @@ analyticsRouter.use(
 
 analyticsRouter.get(
   "/overview",
-  validateRequest(analyticsQuerySchema),
+  validateRequest(overviewQuerySchema),
   asyncHandler(async (request, response) => {
     const today = getDateOnly(new Date())
     const companyId = getOptionalRequestCompanyId(
@@ -100,13 +143,19 @@ analyticsRouter.get(
 
 analyticsRouter.get(
   "/dashboard",
-  validateRequest(analyticsQuerySchema),
+  validateRequest(dashboardQuerySchema),
   asyncHandler(async (request, response) => {
+    const query = request.query as unknown as z.infer<
+      typeof dashboardQuerySchema
+    >["query"]
+
     const dashboard = await getAnalyticsDashboard(
-      getOptionalRequestCompanyId(
-        request,
-        request.query.companyId ? Number(request.query.companyId) : undefined
-      )
+      {
+        companyId: getOptionalRequestCompanyId(request, query.companyId),
+        period: query.period,
+        from: query.from,
+        to: query.to,
+      }
     )
 
     response.json(dashboard)
