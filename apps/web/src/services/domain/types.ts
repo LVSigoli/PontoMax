@@ -19,7 +19,7 @@ export interface ApiItemResponse<T> {
 }
 
 export interface NotificationResponse {
-  channel: "resend" | "file"
+  channel: "smtp" | "file"
   previewPath?: string
 }
 
@@ -57,7 +57,6 @@ export interface UserApiItem {
 
 export interface UserInviteApiItem {
   email: string
-  temporaryPassword: string
   invitationUrl: string
   requiresPasswordChange: boolean
   copyText: string

@@ -12,6 +12,7 @@ const mocked = vi.hoisted(() => {
     hashPasswordMock: vi.fn(),
     issuePasswordResetTokenMock: vi.fn(),
     makePasswordSetupUrlMock: vi.fn(),
+    sendInviteEmailMock: vi.fn(),
     prisma: {
       user: {
         findMany: vi.fn(),
@@ -48,6 +49,10 @@ vi.mock("../../../src/common/auth/password.service.js", () => ({
 vi.mock("../../../src/modules/auth/password-reset.service.js", () => ({
   issuePasswordResetToken: mocked.issuePasswordResetTokenMock,
   makePasswordSetupUrl: mocked.makePasswordSetupUrlMock,
+}))
+
+vi.mock("../../../src/modules/auth/auth-email.service.js", () => ({
+  sendInviteEmail: mocked.sendInviteEmailMock,
 }))
 
 vi.mock("../../../src/lib/prisma.js", () => ({
@@ -91,6 +96,10 @@ beforeEach(() => {
   mocked.prisma.journey.findUniqueOrThrow.mockReset()
   mocked.prisma.userJourneyAssignment.upsert.mockReset()
   mocked.prisma.auditLog.create.mockReset()
+  mocked.sendInviteEmailMock.mockReset()
+  mocked.sendInviteEmailMock.mockResolvedValue({
+    channel: "smtp",
+  })
 })
 
 describe("users routes", () => {
@@ -161,7 +170,6 @@ describe("users routes", () => {
       },
       invite: {
         email: "maria@example.com",
-        temporaryPassword: "123456",
         invitationUrl:
           "http://localhost:3000/login?view=replace-password&token=reset-token",
         requiresPasswordChange: true,
@@ -184,6 +192,12 @@ describe("users routes", () => {
     })
     expect(mocked.prisma.userJourneyAssignment.upsert).toHaveBeenCalledOnce()
     expect(mocked.issuePasswordResetTokenMock).toHaveBeenCalledWith(99)
+    expect(mocked.sendInviteEmailMock).toHaveBeenCalledWith({
+      to: "maria@example.com",
+      fullName: "Maria Demo",
+      passwordSetupUrl:
+        "http://localhost:3000/login?view=replace-password&token=reset-token",
+    })
   })
 
   it("updates an existing user and reassigns the journey", async () => {

@@ -2,21 +2,34 @@ import fs from "node:fs/promises"
 
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { env } from "../../../src/config/env.js"
-import { sendMail } from "../../../src/common/email/mail.service.js"
+const {
+  createSmtpTransportMock,
+  isSmtpConfiguredMock,
+} = vi.hoisted(() => ({
+  createSmtpTransportMock: vi.fn(),
+  isSmtpConfiguredMock: vi.fn(),
+}))
 
-const originalResendKey = env.RESEND_API_KEY
+vi.mock("../../../src/common/email/smtp.client.js", () => ({
+  createSmtpTransport: createSmtpTransportMock,
+  isSmtpConfigured: isSmtpConfiguredMock,
+}))
+
+const { env } = await import("../../../src/config/env.js")
+const { sendMail } = await import("../../../src/common/email/mail.service.js")
+
 const originalNodeEnv = env.NODE_ENV
 
 describe("sendMail", () => {
   afterEach(async () => {
-    env.RESEND_API_KEY = originalResendKey
     env.NODE_ENV = originalNodeEnv
+    createSmtpTransportMock.mockReset()
+    isSmtpConfiguredMock.mockReset()
     vi.unstubAllGlobals()
   })
 
-  it("writes a preview file when Resend is not configured", async () => {
-    env.RESEND_API_KEY = undefined
+  it("writes a preview file when SMTP is not configured", async () => {
+    isSmtpConfiguredMock.mockReturnValue(false)
     env.NODE_ENV = "test"
 
     const result = await sendMail({
@@ -35,8 +48,8 @@ describe("sendMail", () => {
     await fs.unlink(result.previewPath!)
   })
 
-  it("requires Resend in production", async () => {
-    env.RESEND_API_KEY = undefined
+  it("requires SMTP in production", async () => {
+    isSmtpConfiguredMock.mockReturnValue(false)
     env.NODE_ENV = "production"
 
     await expect(
@@ -45,17 +58,17 @@ describe("sendMail", () => {
         subject: "Hello",
         text: "Body",
       }),
-    ).rejects.toThrow("Missing RESEND_API_KEY for production e-mail delivery.")
+    ).rejects.toThrow("Missing SMTP configuration for production e-mail delivery.")
   })
 
-  it("sends through Resend when the API key is configured", async () => {
-    env.RESEND_API_KEY = "resend-key"
+  it("sends through SMTP when it is configured", async () => {
+    isSmtpConfiguredMock.mockReturnValue(true)
     env.NODE_ENV = "test"
 
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
+    const smtpSendMailMock = vi.fn().mockResolvedValue(undefined)
+    createSmtpTransportMock.mockReturnValue({
+      sendMail: smtpSendMailMock,
     })
-    vi.stubGlobal("fetch", fetchMock)
 
     const result = await sendMail({
       to: "demo@example.com",
@@ -64,23 +77,26 @@ describe("sendMail", () => {
     })
 
     expect(result).toEqual({
-      channel: "resend",
+      channel: "smtp",
     })
-    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(smtpSendMailMock).toHaveBeenCalledWith({
+      from: env.MAIL_FROM,
+      to: "demo@example.com",
+      subject: "Hello",
+      text: "Body",
+    })
   })
 
-  it("surfaces Resend API errors", async () => {
-    env.RESEND_API_KEY = "resend-key"
+  it("surfaces SMTP transport errors", async () => {
+    isSmtpConfiguredMock.mockReturnValue(true)
     env.NODE_ENV = "test"
 
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        text: vi.fn().mockResolvedValue("upstream failure"),
-      }),
-    )
+    const smtpSendMailMock = vi
+      .fn()
+      .mockRejectedValue(new Error("smtp failure"))
+    createSmtpTransportMock.mockReturnValue({
+      sendMail: smtpSendMailMock,
+    })
 
     await expect(
       sendMail({
@@ -88,8 +104,6 @@ describe("sendMail", () => {
         subject: "Hello",
         text: "Body",
       }),
-    ).rejects.toThrow(
-      "Unable to send e-mail via Resend: 500 upstream failure",
-    )
+    ).rejects.toThrow("smtp failure")
   })
 })

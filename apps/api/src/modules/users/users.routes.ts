@@ -16,6 +16,7 @@ import { getOptionalRequestCompanyId, getRequestCompanyId } from '../../common/u
 import { validateRequest } from '../../common/validation/validate-request.js';
 import { prisma } from '../../lib/prisma.js';
 import { getDateOnly } from '../../common/utils/date.js';
+import { sendInviteEmail } from '../auth/auth-email.service.js';
 import { issuePasswordResetToken, makePasswordSetupUrl } from '../auth/password-reset.service.js';
 
 export const usersRouter = Router();
@@ -196,11 +197,15 @@ usersRouter.post(
       'Convite de acesso ao PontoMax',
       '',
       `E-mail cadastrado: ${createdUser.email}`,
-      `Senha temporaria: ${temporaryPassword}`,
       `URL de convite: ${passwordSetupUrl}`,
       '',
-      'No primeiro acesso, a troca de senha sera obrigatoria.',
+      'Use o link acima para definir sua senha e ativar seu acesso.',
     ].join('\n');
+    const mailDelivery = await sendInviteEmail({
+      to: createdUser.email,
+      fullName: createdUser.fullName,
+      passwordSetupUrl,
+    });
 
     await recordAuditLog(prisma, {
       companyId: createdUser.companyId,
@@ -217,6 +222,8 @@ usersRouter.post(
             requiresPasswordChange: true,
             temporaryPasswordProvided: Boolean(request.body.password),
             invitationUrlGenerated: true,
+            deliveryChannel: mailDelivery.channel,
+            previewPath: mailDelivery.previewPath ?? null,
           },
         },
       },
@@ -239,7 +246,6 @@ usersRouter.post(
       },
       invite: {
         email: createdUser.email,
-        temporaryPassword,
         invitationUrl: passwordSetupUrl,
         requiresPasswordChange: true,
         copyText: inviteMessage,

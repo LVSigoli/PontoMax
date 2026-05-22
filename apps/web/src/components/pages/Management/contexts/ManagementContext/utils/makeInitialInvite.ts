@@ -5,7 +5,6 @@ export function makeInitialInvite(): UserInviteApiItem {
     email: "",
     copyText: "",
     invitationUrl: "",
-    temporaryPassword: "",
     requiresPasswordChange: true,
   }
 }

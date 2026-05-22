@@ -17,14 +17,13 @@ describe("auth-email.service", () => {
     await sendInviteEmail({
       to: "demo@example.com",
       fullName: "Ana Demo",
-      temporaryPassword: "123456",
       passwordSetupUrl: "http://localhost/invite",
     })
 
     expect(sendMailMock).toHaveBeenCalledWith({
       to: "demo@example.com",
-      subject: "Sua conta no PontoMax foi criada",
-      text: expect.stringContaining("Senha temporaria: 123456"),
+      subject: "Ative sua conta no PontoMax",
+      text: expect.stringContaining("http://localhost/invite"),
     })
   })
 

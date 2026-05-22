@@ -30,6 +30,7 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.7",
     "zod": "^4.1.12"
   },
   "devDependencies": {
@@ -37,6 +38,7 @@
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.7.2",
+    "@types/nodemailer": "^8.0.0",
     "@types/supertest": "^7.2.0",
     "@vitest/coverage-v8": "^4.1.6",
     "prisma": "^6.16.2",

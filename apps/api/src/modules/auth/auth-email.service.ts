@@ -3,7 +3,6 @@ import { sendMail } from '../../common/email/mail.service.js';
 interface SendInviteEmailParams {
   to: string;
   fullName: string;
-  temporaryPassword: string;
   passwordSetupUrl: string;
 }
 
@@ -14,21 +13,20 @@ interface SendResetEmailParams {
 }
 
 export async function sendInviteEmail(params: SendInviteEmailParams) {
-  const { to, fullName, temporaryPassword, passwordSetupUrl } = params;
+  const { to, fullName, passwordSetupUrl } = params;
 
   return sendMail({
     to,
-    subject: 'Sua conta no PontoMax foi criada',
+    subject: 'Ative sua conta no PontoMax',
     text: [
       `Ola, ${fullName}.`,
       '',
-      'Sua conta no PontoMax foi criada com uma senha temporaria.',
-      `Senha temporaria: ${temporaryPassword}`,
+      'Sua conta no PontoMax foi criada com acesso protegido.',
       '',
-      'Antes de acessar o sistema, defina sua senha final no link abaixo:',
+      'Use o link abaixo para definir sua senha e ativar seu acesso:',
       passwordSetupUrl,
       '',
-      'Se voce preferir, tambem pode tentar entrar com a senha temporaria e o sistema vai pedir a troca imediatamente.',
+      'Se voce nao esperava este convite, ignore este e-mail.',
     ].join('\n'),
   });
 }

@@ -26,6 +26,40 @@ function readOptionalString(name: string) {
   return value || undefined
 }
 
+function readOptionalPort(name: string) {
+  const rawPort = process.env[name]?.trim()
+
+  if (!rawPort) {
+    return undefined
+  }
+
+  const parsedPort = Number(rawPort)
+
+  if (!Number.isInteger(parsedPort) || parsedPort <= 0) {
+    throw new Error(`${name} must be a positive integer`)
+  }
+
+  return parsedPort
+}
+
+function readOptionalBoolean(name: string) {
+  const rawValue = process.env[name]?.trim().toLowerCase()
+
+  if (!rawValue) {
+    return undefined
+  }
+
+  if (rawValue === "true" || rawValue === "1" || rawValue === "yes") {
+    return true
+  }
+
+  if (rawValue === "false" || rawValue === "0" || rawValue === "no") {
+    return false
+  }
+
+  throw new Error(`${name} must be true or false`)
+}
+
 function readPort() {
   const rawPort = process.env.PORT?.trim()
 
@@ -71,7 +105,12 @@ function loadEnv() {
     APP_URL: process.env.APP_URL?.trim() || "http://localhost:3000",
     MAIL_FROM:
       process.env.MAIL_FROM?.trim() || "PontoMax <no-reply@pontomax.local>",
-    RESEND_API_KEY: readOptionalString("RESEND_API_KEY"),
+    SMTP_SERVICE: readOptionalString("SMTP_SERVICE"),
+    SMTP_HOST: readOptionalString("SMTP_HOST"),
+    SMTP_PORT: readOptionalPort("SMTP_PORT"),
+    SMTP_SECURE: readOptionalBoolean("SMTP_SECURE"),
+    SMTP_USER: readOptionalString("SMTP_USER"),
+    SMTP_PASS: readOptionalString("SMTP_PASS"),
   }
 }
 

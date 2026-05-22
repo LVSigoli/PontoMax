@@ -33,7 +33,8 @@ Variaveis obrigatorias:
 - `JWT_REFRESH_EXPIRES_IN`
 - `APP_URL`
 - `MAIL_FROM` para envio real de e-mail
-- `RESEND_API_KEY` para envio real de e-mail em producao
+- `SMTP_SERVICE`, `SMTP_USER` e `SMTP_PASS` para envio via Nodemailer + Gmail
+- ou `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER` e `SMTP_PASS` para outro SMTP
 
 ## Como testar localmente
 
@@ -56,7 +57,20 @@ Fluxo sugerido:
 2. Configurar `DATABASE_URL` com a conexao pooler e `DIRECT_URL` com a conexao direta
 3. Publicar `apps/api` como projeto na Vercel
 4. Publicar `apps/web` como outro projeto na Vercel com `NEXT_PUBLIC_API_URL` apontando para a API
-5. Configurar `RESEND_API_KEY` antes de usar envio de e-mail em producao
+5. Configurar SMTP antes de usar envio de e-mail em producao
+
+## Gmail com Nodemailer
+
+Exemplo recomendado para Gmail:
+
+```env
+MAIL_FROM=PontoMax <seuemail@gmail.com>
+SMTP_SERVICE=gmail
+SMTP_USER=seuemail@gmail.com
+SMTP_PASS=sua-app-password-do-google
+```
+
+Use uma `App Password` do Google, nao a senha normal da conta.
 
 ## Credenciais demo
 

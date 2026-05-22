@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { env } from '../../config/env.js';
+import { createSmtpTransport, isSmtpConfigured } from './smtp.client.js';
 
 interface SendMailParams {
   to: string;
@@ -11,7 +12,7 @@ interface SendMailParams {
 }
 
 export interface MailDeliveryResult {
-  channel: 'resend' | 'file';
+  channel: 'smtp' | 'file';
   previewPath?: string;
 }
 
@@ -21,39 +22,29 @@ const workspaceRoot = path.resolve(currentDirectoryPath, '../../../../..');
 const outboxDirectoryPath = path.join(workspaceRoot, '.tmp', 'mail-outbox');
 
 export async function sendMail(params: SendMailParams): Promise<MailDeliveryResult> {
-  if (env.RESEND_API_KEY) {
-    await sendWithResend(params);
+  if (isSmtpConfigured()) {
+    await sendWithSmtp(params);
     return {
-      channel: 'resend',
+      channel: 'smtp',
     };
   }
 
   if (env.NODE_ENV === 'production') {
-    throw new Error('Missing RESEND_API_KEY for production e-mail delivery.');
+    throw new Error('Missing SMTP configuration for production e-mail delivery.');
   }
 
   return writeMailToOutbox(params);
 }
 
-async function sendWithResend(params: SendMailParams) {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: env.MAIL_FROM,
-      to: [params.to],
-      subject: params.subject,
-      text: params.text,
-    }),
-  });
+async function sendWithSmtp(params: SendMailParams) {
+  const transporter = createSmtpTransport();
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Unable to send e-mail via Resend: ${response.status} ${errorBody}`);
-  }
+  await transporter.sendMail({
+    from: env.MAIL_FROM,
+    to: params.to,
+    subject: params.subject,
+    text: params.text,
+  });
 }
 
 async function writeMailToOutbox(params: SendMailParams): Promise<MailDeliveryResult> {
