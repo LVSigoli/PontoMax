@@ -1,11 +1,12 @@
 // External Libraries
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 //  Components
 import type { SelectionOption } from "@/components/structure/Select/types"
 
 // Hooks
 import { useAuth } from "@/contexts/AuthContext"
+import { useToastContext } from "@/contexts/ToastContext"
 import { useAnalyticsDashboardSWR, useCompaniesSWR } from "@/hooks/swr"
 import type {
   AnalyticsDashboardRequest,
@@ -36,6 +37,7 @@ import type {
 
 export function useAnalytics() {
   const defaultRange = resolveAnalyticsDateRange(DEFAULT_ANALYTICS_PERIOD)
+  const { showToast } = useToastContext()
   const [selectedCompanyId, setSelectedCompanyId] = useState("all")
   const [selectedPeriodValue, setSelectedPeriodValue] =
     useState<AnalyticsPeriod>(DEFAULT_ANALYTICS_PERIOD)
@@ -151,6 +153,15 @@ export function useAnalytics() {
     ? "Horas trabalhadas no dia"
     : "Horas trabalhadas no periodo"
 
+  useEffect(() => {
+    if (!errorMessage) return
+
+    showToast({
+      variant: "error",
+      message: errorMessage,
+    })
+  }, [errorMessage, showToast])
+
   // Functions
   function handleCompanyFilterChange(selection: SelectionOption[]) {
     const nextCompanyId = selection[0]?.value
@@ -201,7 +212,6 @@ export function useAnalytics() {
     customFrom,
     customTo,
     workedHours,
-    errorMessage,
     isLoading: isDashboardLoading,
     isCompaniesLoading,
     companyOptions,

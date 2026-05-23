@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useAuth } from "@/contexts/AuthContext"
+import { useToastContext } from "@/contexts/ToastContext"
 import {
   useAuditLogsSWR,
   useCompaniesSWR,
@@ -10,6 +11,7 @@ import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
 import type { SelectionOption } from "@/components/structure/Select/types"
 import type { TableRowData } from "@/components/structure/Table/types"
 import type { AuditLogApiItem } from "@/services/domain"
+import { getErrorMessage } from "@/utils/getErrorMessage"
 
 import {
   ALL_OPTION_VALUE,
@@ -26,6 +28,7 @@ type AuditFilterValue = string
 
 export function useAudit() {
   const { user } = useAuth()
+  const { showToast } = useToastContext()
   const detailsSidePanelRef = useRef<SidePanelMethods>(null)
 
   const isPlatformAdmin = user?.role === "PLATFORM_ADMIN"
@@ -196,6 +199,15 @@ export function useAudit() {
     }
   }, [actorOptions, canShowActorFilter, selectedActorValue])
 
+  useEffect(() => {
+    if (!error) return
+
+    showToast({
+      variant: "error",
+      message: getErrorMessage(error, "Nao foi possivel carregar os eventos de auditoria."),
+    })
+  }, [error, showToast])
+
   function closeDetailsPanel() {
     detailsSidePanelRef.current?.close()
   }
@@ -327,7 +339,6 @@ export function useAudit() {
     companyOptions,
     detailsSidePanelRef,
     entityOptions,
-    error,
     handleActionChange,
     handleActorChange,
     handleAuditRowSelect,

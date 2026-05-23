@@ -4,12 +4,13 @@ import { useState } from "react"
 
 // Contexts
 import { useAuth } from "@/contexts/AuthContext"
+import { useToastContext } from "@/contexts/ToastContext"
+import { getErrorMessage } from "@/utils/getErrorMessage"
 
 // Utils
 import { makeInitialCredential } from "./utils"
 
 // Types
-import { useToastContext } from "@/contexts/ToastContext"
 import { Credential } from "./types"
 
 export function useLogin() {
@@ -19,15 +20,12 @@ export function useLogin() {
   const { showToast } = useToastContext()
 
   // States
-  const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPassWordType, setIsPasswordType] = useState(true)
   const [credential, setCredential] = useState(makeInitialCredential)
 
   // Functions
   function handleCredentialChange(key: keyof Credential, value: string) {
-    setErrorMessage("")
-
     setCredential((currentCredential) => ({
       ...currentCredential,
       [key]: value,
@@ -45,7 +43,10 @@ export function useLogin() {
     const password = credential.password
 
     if (!email || !password) {
-      setErrorMessage("Preencha e-mail e senha para continuar.")
+      showToast({
+        variant: "error",
+        message: "Preencha e-mail e senha para continuar.",
+      })
       return
     }
 
@@ -69,8 +70,13 @@ export function useLogin() {
 
       await router.push("/")
     } catch (error) {
-      console.log(error)
-      showToast({ variant: "error", message: "Erro ao realizar login" })
+      showToast({
+        variant: "error",
+        message: getErrorMessage(
+          error,
+          "Nao foi possivel realizar login. Verifique suas credenciais e tente novamente."
+        ),
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -78,7 +84,6 @@ export function useLogin() {
 
   return {
     credential,
-    errorMessage,
     isSubmitting,
     isPassWordType,
     handleCredentialChange,

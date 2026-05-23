@@ -19,7 +19,6 @@ export const ReplacePasswordForm: React.FC<Props> = ({
 }) => {
   const {
     credential,
-    errorMessage,
     handleCredentialChange,
     handleConfirmPasswordIconClick,
     handlePasswordIconClick,
@@ -27,7 +26,6 @@ export const ReplacePasswordForm: React.FC<Props> = ({
     isConfirmPasswordHidden,
     isPasswordHidden,
     isSubmitting,
-    successMessage,
   } = useReplacePassword()
 
   async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -83,22 +81,6 @@ export const ReplacePasswordForm: React.FC<Props> = ({
         className="mt-7"
         loading={isSubmitting}
       />
-
-      {errorMessage ? (
-        <Typography
-          variant="legal"
-          value={errorMessage}
-          className="mt-3 text-danger-700"
-        />
-      ) : null}
-
-      {successMessage ? (
-        <Typography
-          variant="legal"
-          value={successMessage}
-          className="mt-3 text-success-700"
-        />
-      ) : null}
 
       <Button
         fitWidth

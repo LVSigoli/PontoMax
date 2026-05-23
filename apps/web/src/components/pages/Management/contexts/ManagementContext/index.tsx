@@ -1,7 +1,8 @@
 // External Libraries
-import { createContext, useContext, useMemo } from "react"
+import { createContext, useContext, useEffect, useMemo } from "react"
 import { useSWRConfig } from "swr"
 
+import { useToastContext } from "@/contexts/ToastContext"
 import {
   createCompany,
   createJourney,
@@ -20,6 +21,7 @@ import {
   useJourneysSWR,
   useUsersSWR,
 } from "@/hooks/swr"
+import { getErrorMessage } from "@/utils/getErrorMessage"
 
 // Utils
 import {
@@ -48,13 +50,23 @@ const ManagementContext = createContext<ManagementContextValue | null>(null)
 export const ManagementProvider: React.FC<ManagementProviderProps> = ({
   children,
 }) => {
+  const { showToast } = useToastContext()
   const { mutate: mutateSWRCache } = useSWRConfig()
-  const { data: companyItems = [], isLoading: isLoadingCompanies } =
-    useCompaniesSWR()
-  const { data: employeeItems = [], isLoading: isLoadingEmployees } =
-    useUsersSWR()
-  const { data: journeyItems = [], isLoading: isLoadingJourneys } =
-    useJourneysSWR()
+  const {
+    data: companyItems = [],
+    error: companiesError,
+    isLoading: isLoadingCompanies,
+  } = useCompaniesSWR()
+  const {
+    data: employeeItems = [],
+    error: employeesError,
+    isLoading: isLoadingEmployees,
+  } = useUsersSWR()
+  const {
+    data: journeyItems = [],
+    error: journeysError,
+    isLoading: isLoadingJourneys,
+  } = useJourneysSWR()
 
   const companies = useMemo(
     () => companyItems.map(mapCompanyApiToCompany),
@@ -70,6 +82,20 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
   )
   const isLoading =
     isLoadingCompanies || isLoadingEmployees || isLoadingJourneys
+  const managementLoadError =
+    companiesError ?? employeesError ?? journeysError
+
+  useEffect(() => {
+    if (!managementLoadError) return
+
+    showToast({
+      variant: "error",
+      message: getErrorMessage(
+        managementLoadError,
+        "Nao foi possivel carregar os dados de gerenciamento."
+      ),
+    })
+  }, [managementLoadError, showToast])
 
   async function revalidateManagementData() {
     await Promise.all([
@@ -85,19 +111,37 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
       if (view === "companies") {
         await deleteCompany(id)
         await revalidateManagementData()
+        showToast({
+          variant: "success",
+          message: "Empresa removida com sucesso.",
+        })
         return
       }
 
       if (view === "employees") {
         await deleteUser(id)
         await revalidateManagementData()
+        showToast({
+          variant: "success",
+          message: "Funcionario removido com sucesso.",
+        })
         return
       }
 
       await deleteJourney(id)
       await revalidateManagementData()
+      showToast({
+        variant: "success",
+        message: "Jornada removida com sucesso.",
+      })
     } catch (error) {
-      console.log(error)
+      showToast({
+        variant: "error",
+        message: getErrorMessage(
+          error,
+          getManagementErrorMessage(view, "delete")
+        ),
+      })
       throw error
     }
   }
@@ -134,13 +178,24 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
       if (entity) {
         await updateCompany(entity.id, payload)
         await revalidateManagementData()
+        showToast({
+          variant: "success",
+          message: "Empresa atualizada com sucesso.",
+        })
         return
       }
 
       await createCompany(payload)
       await revalidateManagementData()
+      showToast({
+        variant: "success",
+        message: "Empresa criada com sucesso.",
+      })
     } catch (error) {
-      console.log(error)
+      showToast({
+        variant: "error",
+        message: getErrorMessage(error, getManagementErrorMessage("companies", "save")),
+      })
       throw error
     }
   }
@@ -152,13 +207,24 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
       if (entity) {
         await updateUser(entity.id, payload)
         await revalidateManagementData()
+        showToast({
+          variant: "success",
+          message: "Funcionario atualizado com sucesso.",
+        })
         return
       }
 
       await createUser(payload)
       await revalidateManagementData()
+      showToast({
+        variant: "success",
+        message: "Funcionario criado com sucesso.",
+      })
     } catch (error) {
-      console.log(error)
+      showToast({
+        variant: "error",
+        message: getErrorMessage(error, getManagementErrorMessage("employees", "save")),
+      })
       throw error
     }
   }
@@ -177,13 +243,24 @@ export const ManagementProvider: React.FC<ManagementProviderProps> = ({
       if (entity) {
         await updateJourney(entity.id, payload)
         await revalidateManagementData()
+        showToast({
+          variant: "success",
+          message: "Jornada atualizada com sucesso.",
+        })
         return
       }
 
       await createJourney(payload)
       await revalidateManagementData()
+      showToast({
+        variant: "success",
+        message: "Jornada criada com sucesso.",
+      })
     } catch (error) {
-      console.log(error)
+      showToast({
+        variant: "error",
+        message: getErrorMessage(error, getManagementErrorMessage("journeys", "save")),
+      })
       throw error
     }
   }
@@ -214,4 +291,25 @@ export function useManagementContext() {
   }
 
   return context
+}
+
+function getManagementErrorMessage(
+  view: ManagementTabId,
+  action: "delete" | "save"
+) {
+  if (view === "companies") {
+    return action === "delete"
+      ? "Nao foi possivel remover a empresa."
+      : "Nao foi possivel salvar a empresa."
+  }
+
+  if (view === "employees") {
+    return action === "delete"
+      ? "Nao foi possivel remover o funcionario."
+      : "Nao foi possivel salvar o funcionario."
+  }
+
+  return action === "delete"
+    ? "Nao foi possivel remover a jornada."
+    : "Nao foi possivel salvar a jornada."
 }

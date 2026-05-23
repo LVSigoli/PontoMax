@@ -28,8 +28,7 @@ export const ConfirmationModal = forwardRef<
       setIsLoading(true)
       await onConfirm()
       modalRef.current?.close()
-    } catch (error) {
-      console.log(error)
+    } catch {
     } finally {
       setIsLoading(false)
     }

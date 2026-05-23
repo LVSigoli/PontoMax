@@ -30,7 +30,6 @@ export const Audit: React.FC = () => {
     companyOptions,
     detailsSidePanelRef,
     entityOptions,
-    error,
     handleActionChange,
     handleActorChange,
     handleAuditRowSelect,
@@ -201,14 +200,6 @@ export const Audit: React.FC = () => {
                       onSelectionChange={handlePageSizeChange}
                     />
                   </div>
-
-                  {error ? (
-                    <Typography
-                      variant="legal"
-                      value={error.message}
-                      className="text-danger-700"
-                    />
-                  ) : null}
                 </section>
 
                 <section className="grid gap-4 rounded-2xl border border-border-subtle bg-surface-card p-6 shadow-[0_18px_50px_rgba(15,23,42,0.04)]">

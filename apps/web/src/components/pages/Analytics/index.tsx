@@ -24,7 +24,6 @@ export const Analytics: React.FC = () => {
     companyOptions,
     customFrom,
     customTo,
-    errorMessage,
     handleCompanyFilterChange,
     handleCustomFromChange,
     handleCustomToChange,
@@ -43,7 +42,7 @@ export const Analytics: React.FC = () => {
     workedHours,
     workedHoursTitle,
   } = useAnalytics()
-  const showAnalyticsSkeleton = isLoading && !errorMessage
+  const showAnalyticsSkeleton = isLoading
 
   function handleExportPdf() {
     console.log("export pdf")
@@ -97,14 +96,6 @@ export const Analytics: React.FC = () => {
                 value="Resumo do periodo"
                 className="text-xl"
               />
-
-              {errorMessage ? (
-                <Typography
-                  variant="legal"
-                  value={errorMessage}
-                  className="text-danger-700"
-                />
-              ) : null}
 
               {showAnalyticsSkeleton ? (
                 <AnalyticsMetricsSkeleton />

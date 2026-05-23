@@ -115,8 +115,7 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
         await saveEntity(view.id, element, form)
 
         handleClose()
-      } catch (error) {
-        console.log(error)
+      } catch {
       } finally {
         setIsSubmitting(false)
       }

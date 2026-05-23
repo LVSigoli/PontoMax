@@ -3,10 +3,7 @@ import React from "react"
 
 // Components
 import { Header } from "@/components/structure/Header"
-import { Skeleton } from "@/components/structure/Skeleton"
-import { Select } from "@/components/structure/Select"
 import { Sidebar } from "@/components/structure/Sidebar"
-import { Typography } from "@/components/structure/Typography"
 import { AdjustmentRequestSidePanel } from "../PointRegister/components/modals/AdjustmentRequestSidePanel"
 import { DayHistorySidePanel } from "../PointRegister/components/modals/DayHistorySidePanel"
 import { HistoryFilters } from "./components/HistoryFilters"
@@ -31,7 +28,6 @@ export const History: React.FC = () => {
     customFrom,
     customTo,
     dayHistorySidePanelRef,
-    errorMessage,
     handleAdjustmentRequestSubmitted,
     handleHistoryCompanyChange,
     handleCustomFromChange,
@@ -60,7 +56,7 @@ export const History: React.FC = () => {
     tableData,
     getRowKey,
   } = useHistory()
-  const showHistorySkeleton = isInitialLoading && !errorMessage
+  const showHistorySkeleton = isInitialLoading
 
   return (
     <main className="h-screen overflow-hidden bg-surface-page text-content-primary">
@@ -98,10 +94,7 @@ export const History: React.FC = () => {
             {showHistorySkeleton ? (
               <HistoryAnalysisSkeleton />
             ) : (
-              <HistoryAnalysisSection
-                items={analysisItems}
-                errorMessage={errorMessage}
-              />
+              <HistoryAnalysisSection items={analysisItems} />
             )}
 
             {showHistorySkeleton ? (

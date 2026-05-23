@@ -34,7 +34,6 @@ export function useAdjustmentRequest({
   const sidePanelRef = useRef<SidePanelMethods>(null)
 
   // States
-  const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [form, setForm] = useState<AdjustmentRequestForm>(makeInitialForm)
 
@@ -46,8 +45,6 @@ export function useAdjustmentRequest({
     if (!records.length) return
 
     setForm(buildCurrentForm(records))
-
-    setErrorMessage("")
   }, [records])
 
   // Constans
@@ -58,7 +55,6 @@ export function useAdjustmentRequest({
   )
 
   function handleAddRecord() {
-    setErrorMessage("")
     setForm((currentForm) => ({
       ...currentForm,
       records: [...currentForm.records, buildNewRecord(currentForm.records, workdayDate, records)],
@@ -66,7 +62,6 @@ export function useAdjustmentRequest({
   }
 
   function handleCancel() {
-    setErrorMessage("")
     setForm(makeInitialForm())
     sidePanelRef.current?.close()
   }
@@ -84,25 +79,31 @@ export function useAdjustmentRequest({
     if (isSubmitting || !effectiveWorkdayDate) return
 
     if (!form.justification.trim()) {
-      setErrorMessage("Informe uma justificativa para continuar.")
+      showToast({
+        variant: "error",
+        message: "Informe uma justificativa para continuar.",
+      })
       return
     }
 
     try {
       setIsSubmitting(true)
-      setErrorMessage("")
 
       const adjustmentRecords = buildAdjustmentRecords(records, form.records)
 
       if (adjustmentRecords.length === 0) {
-        setErrorMessage(
-          "Altere ao menos um horario antes de solicitar o ajuste."
-        )
+        showToast({
+          variant: "error",
+          message: "Altere ao menos um horario antes de solicitar o ajuste.",
+        })
         return
       }
 
       if (!normalizedWorkdayDate) {
-        setErrorMessage("Informe um horario valido para continuar.")
+        showToast({
+          variant: "error",
+          message: "Informe um horario valido para continuar.",
+        })
         return
       }
 
@@ -138,7 +139,6 @@ export function useAdjustmentRequest({
   }
 
   function handleOpen() {
-    setErrorMessage("")
     setForm(buildCurrentForm(records))
     sidePanelRef.current?.open()
   }
@@ -148,8 +148,6 @@ export function useAdjustmentRequest({
   }
 
   function handleJustificationChange(value: string) {
-    setErrorMessage("")
-
     setForm((currentForm) => ({ ...currentForm, justification: value }))
   }
 
@@ -158,8 +156,6 @@ export function useAdjustmentRequest({
   }
 
   function handleRecordRemove(id: number) {
-    setErrorMessage("")
-
     setForm((currentForm) => ({
       ...currentForm,
       records: currentForm.records.filter((record) => record.id !== id),
@@ -167,7 +163,6 @@ export function useAdjustmentRequest({
   }
 
   function handleRecordTimeChange(id: number, value: string) {
-    setErrorMessage("")
     setForm((currentForm) => ({
       ...currentForm,
       records: currentForm.records.map((record) =>
@@ -177,7 +172,6 @@ export function useAdjustmentRequest({
   }
 
   function handleRecordTypeChange(id: number, value: PointRecord["type"]) {
-    setErrorMessage("")
     setForm((currentForm) => ({
       ...currentForm,
       records: currentForm.records.map((record) =>
@@ -212,7 +206,6 @@ export function useAdjustmentRequest({
   }
 
   return {
-    errorMessage,
     isSubmitting,
     form,
     sidePanelRef,

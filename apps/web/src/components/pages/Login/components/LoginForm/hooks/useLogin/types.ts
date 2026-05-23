@@ -7,7 +7,6 @@ export interface Credential {
 
 export interface UseLoginResult {
   credential: Credential
-  errorMessage: string
   isSubmitting: boolean
   handleCredentialChange: (key: keyof Credential, value: string) => void
   handleSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>

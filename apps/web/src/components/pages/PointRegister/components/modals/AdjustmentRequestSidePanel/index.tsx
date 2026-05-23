@@ -6,7 +6,6 @@ import { Button } from "@/components/structure/Button"
 import { SidePanel } from "@/components/structure/SidePanel"
 import { Table } from "@/components/structure/Table"
 import { TextArea } from "@/components/structure/TextArea"
-import { Typography } from "@/components/structure/Typography"
 
 // Utils
 import { ADJUSTMENT_ACTIONS } from "./constants"
@@ -25,7 +24,6 @@ export const AdjustmentRequestSidePanel = forwardRef<
   AdjustmentRequestSidePanelProps
 >(({ records, workdayDate, onSubmitted }, ref) => {
   const {
-    errorMessage,
     isSubmitting,
     form,
     sidePanelRef,
@@ -90,14 +88,6 @@ export const AdjustmentRequestSidePanel = forwardRef<
               value={form.justification}
               onChange={handleJustificationChange}
             />
-
-            {errorMessage ? (
-              <Typography
-                variant="legal"
-                value={errorMessage}
-                className="text-danger-700"
-              />
-            ) : null}
           </div>
         </div>
 

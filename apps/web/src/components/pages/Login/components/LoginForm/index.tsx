@@ -18,7 +18,6 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
   const {
     credential,
     isSubmitting,
-    errorMessage,
     isPassWordType,
     handleSubmit,
     handleIconClick,
@@ -68,14 +67,6 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
           onChange={(v) => handleCredentialChange("password", v)}
         />
       </div>
-
-      {errorMessage ? (
-        <Typography
-          className="mt-3 text-center text-feedback-negative"
-          variant="caption"
-          value={errorMessage}
-        />
-      ) : null}
 
       <Button
         fitWidth

@@ -19,8 +19,6 @@ export const RecoverPasswordForm: React.FC<Props> = ({
 }) => {
   const {
     email,
-    errorMessage,
-    successMessage,
     isSubmitting,
     handleEmailChange,
     handleSubmit,
@@ -59,22 +57,6 @@ export const RecoverPasswordForm: React.FC<Props> = ({
         className="mt-6"
         onChange={handleEmailChange}
       />
-
-      {errorMessage ? (
-        <Typography
-          variant="legal"
-          value={errorMessage}
-          className="mt-3 text-danger-700"
-        />
-      ) : null}
-
-      {successMessage ? (
-        <Typography
-          variant="legal"
-          value={successMessage}
-          className="mt-3 text-success-700"
-        />
-      ) : null}
 
       <Button
         fitWidth

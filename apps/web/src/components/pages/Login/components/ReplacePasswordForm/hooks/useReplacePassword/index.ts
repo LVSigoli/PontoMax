@@ -2,6 +2,7 @@
 import { useRouter } from "next/router"
 import { useEffect, useRef, useState } from "react"
 
+import { useToastContext } from "@/contexts/ToastContext"
 // Services
 import { postResetPassword } from "@/services/auth"
 
@@ -19,12 +20,11 @@ const RESET_PASSWORD_SUCCESS_MESSAGE =
 export function useReplacePassword() {
   const router = useRouter()
   const redirectTimeoutRef = useRef<number | null>(null)
+  const { showToast } = useToastContext()
 
   const [credential, setCredential] = useState(
     makeInitialReplacePasswordCredential
   )
-  const [errorMessage, setErrorMessage] = useState("")
-  const [successMessage, setSuccessMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPasswordHidden, setIsPasswordHidden] = useState(true)
   const [isConfirmPasswordHidden, setIsConfirmPasswordHidden] = useState(true)
@@ -40,8 +40,6 @@ export function useReplacePassword() {
     value: string
   ) {
     clearRedirectTimeout()
-    setErrorMessage("")
-    setSuccessMessage("")
     setCredential((currentCredential) => ({
       ...currentCredential,
       [key]: value,
@@ -79,24 +77,31 @@ export function useReplacePassword() {
       typeof router.query.token === "string" ? router.query.token.trim() : ""
 
     if (!token) {
-      setErrorMessage("Abra esta tela com o token de redefinicao na URL.")
+      showToast({
+        variant: "error",
+        message: "Abra esta tela com o token de redefinicao na URL.",
+      })
       return
     }
 
     if (!credential.password || !credential.confirmPassword) {
-      setErrorMessage("Preencha e confirme a nova senha.")
+      showToast({
+        variant: "error",
+        message: "Preencha e confirme a nova senha.",
+      })
       return
     }
 
     if (credential.password !== credential.confirmPassword) {
-      setErrorMessage("As senhas informadas precisam ser iguais.")
+      showToast({
+        variant: "error",
+        message: "As senhas informadas precisam ser iguais.",
+      })
       return
     }
 
     try {
       setIsSubmitting(true)
-      setErrorMessage("")
-      setSuccessMessage("")
 
       await postResetPassword({
         token,
@@ -104,17 +109,20 @@ export function useReplacePassword() {
       })
 
       setCredential(makeInitialReplacePasswordCredential())
-      setSuccessMessage(RESET_PASSWORD_SUCCESS_MESSAGE)
+      showToast({
+        variant: "success",
+        message: RESET_PASSWORD_SUCCESS_MESSAGE,
+      })
       scheduleLoginRedirect()
     } catch (error) {
       clearRedirectTimeout()
-      setSuccessMessage("")
-      setErrorMessage(
-        getErrorMessage(
+      showToast({
+        variant: "error",
+        message: getErrorMessage(
           error,
           "Nao foi possivel atualizar sua senha. Verifique se o link ainda esta valido."
-        )
-      )
+        ),
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -122,8 +130,6 @@ export function useReplacePassword() {
 
   return {
     credential,
-    errorMessage,
-    successMessage,
     isSubmitting,
     isPasswordHidden,
     isConfirmPasswordHidden,
