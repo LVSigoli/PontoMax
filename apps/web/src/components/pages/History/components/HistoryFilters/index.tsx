@@ -4,43 +4,49 @@ import { Skeleton } from "@/components/structure/Skeleton"
 import type { SelectionOption } from "@/components/structure/Select/types"
 import { Typography } from "@/components/structure/Typography"
 
-import type { AnalyticsPeriod } from "@/services/domain"
-
 interface Props {
+  canFilterHistory: boolean
   companyOptions: SelectionOption[]
   customFrom: string
   customTo: string
   handleCompanyChange: (selection: SelectionOption[]) => void
   handleCustomFromChange: (value: string) => void
   handleCustomToChange: (value: string) => void
+  handleHistoryUserChange: (selection: SelectionOption[]) => void
   handlePeriodChange: (selection: SelectionOption[]) => void
+  historyUserOptions: SelectionOption[]
   isCompaniesLoading: boolean
+  isCustomPeriod: boolean
   isPlatformAdmin: boolean
+  isUsersLoading: boolean
   periodOptions: SelectionOption[]
   periodSummary: string
   selectedCompanyOption: SelectionOption[]
-  selectedPeriod: AnalyticsPeriod
+  selectedHistoryUserOption: SelectionOption[]
   selectedPeriodOption: SelectionOption[]
 }
 
-export const AnalyticsFilters: React.FC<Props> = ({
+export const HistoryFilters: React.FC<Props> = ({
+  canFilterHistory,
   companyOptions,
   customFrom,
   customTo,
   handleCompanyChange,
   handleCustomFromChange,
   handleCustomToChange,
+  handleHistoryUserChange,
   handlePeriodChange,
+  historyUserOptions,
   isCompaniesLoading,
+  isCustomPeriod,
   isPlatformAdmin,
+  isUsersLoading,
   periodOptions,
   periodSummary,
   selectedCompanyOption,
-  selectedPeriod,
+  selectedHistoryUserOption,
   selectedPeriodOption,
 }) => {
-  const isCustomPeriod = selectedPeriod === "custom"
-
   return (
     <section className="grid gap-4 rounded-2xl border border-border-subtle bg-surface-card p-5 shadow-[0_18px_50px_rgba(15,23,42,0.04)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -53,7 +59,7 @@ export const AnalyticsFilters: React.FC<Props> = ({
 
           <Typography
             variant="legal"
-            value="Todos os indicadores abaixo respeitam o periodo selecionado."
+            value="O resumo e a tabela abaixo usam o mesmo intervalo de datas."
             className="text-content-muted"
           />
         </div>
@@ -66,16 +72,8 @@ export const AnalyticsFilters: React.FC<Props> = ({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-        <Select
-          label="Periodo"
-          options={periodOptions}
-          selectedItem={selectedPeriodOption}
-          buttonClassName="h-11 bg-surface-card"
-          onSelectionChange={handlePeriodChange}
-        />
-
         {isPlatformAdmin ? (
-          isCompaniesLoading && companyOptions.length <= 1 ? (
+          isCompaniesLoading ? (
             <Skeleton className="h-11 w-full rounded-xl" />
           ) : (
             <Select
@@ -88,21 +86,35 @@ export const AnalyticsFilters: React.FC<Props> = ({
           )
         ) : null}
 
+        {canFilterHistory ? (
+          isUsersLoading ? (
+            <Skeleton className="h-11 w-full rounded-xl" />
+          ) : (
+            <Select
+              label="Colaborador"
+              options={historyUserOptions}
+              selectedItem={selectedHistoryUserOption}
+              buttonClassName="h-11 bg-surface-card"
+              onSelectionChange={handleHistoryUserChange}
+            />
+          )
+        ) : null}
+
+        <Select
+          label="Periodo"
+          options={periodOptions}
+          selectedItem={selectedPeriodOption}
+          buttonClassName="h-11 bg-surface-card"
+          onSelectionChange={handlePeriodChange}
+        />
+
         {isCustomPeriod ? (
           <div className="col-span-full grid gap-3 rounded-xl border border-border-subtle bg-surface-muted/35 p-4">
-            <div className="grid gap-1">
-              <Typography
-                variant="legal"
-                value="Intervalo personalizado"
-                className="font-semibold text-content-secondary"
-              />
-
-              <Typography
-                variant="legal"
-                value="Defina o periodo manualmente. Em telas menores os campos se reorganizam automaticamente."
-                className="text-content-muted"
-              />
-            </div>
+            <Typography
+              variant="legal"
+              value="Intervalo personalizado"
+              className="font-semibold text-content-secondary"
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Picker

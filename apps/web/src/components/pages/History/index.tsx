@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/structure/Sidebar"
 import { Typography } from "@/components/structure/Typography"
 import { AdjustmentRequestSidePanel } from "../PointRegister/components/modals/AdjustmentRequestSidePanel"
 import { DayHistorySidePanel } from "../PointRegister/components/modals/DayHistorySidePanel"
+import { HistoryFilters } from "./components/HistoryFilters"
 import { HistoryAnalysisSection } from "./components/HistoryAnalysisSection"
 import {
   HistoryAnalysisSkeleton,
@@ -26,21 +27,35 @@ export const History: React.FC = () => {
     adjustmentWorkdayDate,
     analysisItems,
     canFilterHistory,
+    companyOptions,
+    customFrom,
+    customTo,
     dayHistorySidePanelRef,
     errorMessage,
     handleAdjustmentRequestSubmitted,
+    handleHistoryCompanyChange,
+    handleCustomFromChange,
+    handleCustomToChange,
     handleHistoryActionClick,
     handleHistoryRecordSelect,
     handleHistoryUserChange,
+    handlePeriodChange,
     historyRecords,
     historySubtitle,
     historyUserOptions,
+    isCompaniesLoading,
+    isCustomPeriod,
     isInitialLoading,
+    isPlatformAdmin,
     isUsersLoading,
     loadMoreLabel,
     loadMoreRef,
+    periodOptions,
+    periodSummary,
+    selectedCompanyOption,
     selectedHistoryRecord,
     selectedHistoryUserOption,
+    selectedPeriodOption,
     tableActions,
     tableData,
     getRowKey,
@@ -56,38 +71,29 @@ export const History: React.FC = () => {
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <Header label="Historico de ponto" subtitle={historySubtitle} />
-
-              {canFilterHistory ? (
-                <section className="w-full max-w-xl rounded-2xl border border-border-subtle bg-surface-card p-4 shadow-[0_18px_50px_rgba(15,23,42,0.04)]">
-                  <div className="grid gap-3">
-                    <div className="grid gap-1">
-                      <Typography
-                        variant="b2"
-                        value="Visualizar historico de"
-                        className="font-semibold"
-                      />
-
-                      <Typography
-                        variant="legal"
-                        value="Selecione um colaborador da sua empresa para trocar o escopo da consulta."
-                        className="text-content-muted"
-                      />
-                    </div>
-
-                    {isUsersLoading ? (
-                      <Skeleton className="h-11 w-full rounded-xl" />
-                    ) : (
-                      <Select
-                        options={historyUserOptions}
-                        selectedItem={selectedHistoryUserOption}
-                        buttonClassName="h-11"
-                        onSelectionChange={handleHistoryUserChange}
-                      />
-                    )}
-                  </div>
-                </section>
-              ) : null}
             </div>
+
+            <HistoryFilters
+              canFilterHistory={canFilterHistory}
+              companyOptions={companyOptions}
+              customFrom={customFrom}
+              customTo={customTo}
+              handleCompanyChange={handleHistoryCompanyChange}
+              handleCustomFromChange={handleCustomFromChange}
+              handleCustomToChange={handleCustomToChange}
+              handleHistoryUserChange={handleHistoryUserChange}
+              handlePeriodChange={handlePeriodChange}
+              historyUserOptions={historyUserOptions}
+              isCompaniesLoading={isCompaniesLoading}
+              isCustomPeriod={isCustomPeriod}
+              isPlatformAdmin={isPlatformAdmin}
+              isUsersLoading={isUsersLoading}
+              periodOptions={periodOptions}
+              periodSummary={periodSummary}
+              selectedCompanyOption={selectedCompanyOption}
+              selectedHistoryUserOption={selectedHistoryUserOption}
+              selectedPeriodOption={selectedPeriodOption}
+            />
 
             {showHistorySkeleton ? (
               <HistoryAnalysisSkeleton />

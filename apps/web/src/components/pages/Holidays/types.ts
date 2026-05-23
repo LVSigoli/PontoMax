@@ -1,4 +1,4 @@
-export type HolidayType = "Nacional" | "Municipal" | "Estadual"
+export type HolidayType = "Nacional" | "Municipal" | "Estadual" | "Empresa"
 export type HolidayStatus = "Ativo" | "Inativo"
 
 export interface HolidayCompany {

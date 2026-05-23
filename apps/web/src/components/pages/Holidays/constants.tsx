@@ -32,11 +32,11 @@ export const INITIAL_HOLIDAYS: Holiday[] = [
   },
   {
     id: 4,
-    companyIds: [],
-    companies: [],
-    name: "FERIADO",
+    companyIds: [1],
+    companies: [{ id: 1, name: "PontoMax" }],
+    name: "ANIVERSARIO DA EMPRESA",
     date: "2026-01-01",
-    type: "Nacional",
+    type: "Empresa",
     status: "Ativo",
   },
 ]
@@ -48,6 +48,7 @@ export const HOLIDAY_TYPE_OPTIONS: Array<{
   { value: "Nacional", label: "Nacional" },
   { value: "Municipal", label: "Municipal" },
   { value: "Estadual", label: "Estadual" },
+  { value: "Empresa", label: "Empresa" },
 ]
 
 export const HOLIDAY_ACTIONS: TableAction[] = [

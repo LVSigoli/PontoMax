@@ -8,6 +8,7 @@ import { SkeletonTable } from "@/components/structure/Skeleton"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Table } from "@/components/structure/Table"
 import { HolidayDrawer } from "./components/HolidayDrawer"
+import { HolidaysFilters } from "./components/HolidaysFilters"
 
 // Constants
 import { HOLIDAY_ACTIONS } from "./constants"
@@ -28,15 +29,27 @@ export const Holidays: React.FC = () => {
 
 const HolidaysContent: React.FC = () => {
   const {
+    companyOptions,
     drawerRef,
     isLoading,
+    isCompaniesLoading,
+    isPlatformAdmin,
+    resultLabel,
     selectedElement,
+    selectedCompanyOption,
+    selectedTypeOption,
+    selectedYearOption,
     tableData,
+    typeOptions,
+    yearOptions,
     getRowKey,
     getActionState,
     handleActionClick,
     handleAddClick,
+    handleCompanyChange,
     handleRowSelect,
+    handleTypeChange,
+    handleYearChange,
   } = useHolidays()
 
   return (
@@ -60,6 +73,21 @@ const HolidaysContent: React.FC = () => {
                 onClick={handleAddClick}
               />
             </div>
+
+            <HolidaysFilters
+              companyOptions={companyOptions}
+              isCompaniesLoading={isCompaniesLoading}
+              isPlatformAdmin={isPlatformAdmin}
+              resultLabel={resultLabel}
+              selectedCompanyOption={selectedCompanyOption}
+              selectedTypeOption={selectedTypeOption}
+              selectedYearOption={selectedYearOption}
+              typeOptions={typeOptions}
+              yearOptions={yearOptions}
+              handleCompanyChange={handleCompanyChange}
+              handleTypeChange={handleTypeChange}
+              handleYearChange={handleYearChange}
+            />
 
             {isLoading ? (
               <SkeletonTable

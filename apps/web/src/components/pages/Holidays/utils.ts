@@ -40,6 +40,7 @@ export function mapHolidayApiToHoliday(holiday: HolidayApiItem): Holiday {
 export function mapHolidayTypeToApi(type: HolidayForm["type"]): HolidayApiItem["type"] {
   if (type === "Nacional") return "NATIONAL"
   if (type === "Municipal") return "MUNICIPAL"
+  if (type === "Empresa") return "COMPANY"
 
   return "STATE"
 }
@@ -47,6 +48,7 @@ export function mapHolidayTypeToApi(type: HolidayForm["type"]): HolidayApiItem["
 function mapHolidayTypeFromApi(type: HolidayApiItem["type"]) {
   if (type === "NATIONAL") return "Nacional"
   if (type === "MUNICIPAL") return "Municipal"
+  if (type === "COMPANY") return "Empresa"
 
   return "Estadual"
 }

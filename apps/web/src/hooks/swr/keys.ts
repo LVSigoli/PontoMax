@@ -54,7 +54,12 @@ export const swrKeys = {
     list: () => "holidays",
   },
   adjustmentRequests: {
-    list: (params?: { status?: string; from?: string; to?: string }) =>
+    list: (params?: {
+      companyId?: number
+      status?: string
+      from?: string
+      to?: string
+    }) =>
       buildSWRKey("adjustment-requests", params),
   },
   auditLogs: {
@@ -77,7 +82,7 @@ export const swrKeys = {
   timeRecords: {
     today: () => "time-records/today",
     teamToday: () => "time-records/team/today",
-    summary: (params?: { userId?: number }) =>
+    summary: (params?: { userId?: number; from?: string; to?: string }) =>
       buildSWRKey("time-records/summary", params),
   },
 }

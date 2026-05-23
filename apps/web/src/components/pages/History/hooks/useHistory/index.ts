@@ -5,7 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 
 // Hooks
-import { useUsersSWR } from "@/hooks/swr"
+import { useDateRangeFilter } from "@/hooks/useDateRangeFilter"
+import { useCompaniesSWR, useUsersSWR } from "@/hooks/swr"
 
 // Hooks
 import { useHistoryTable } from "../useHistoryTable"
@@ -23,6 +24,9 @@ import type {
 } from "@/components/pages/PointRegister/types"
 import type { TableRowData } from "@/components/structure/Table/types"
 import type { UserApiItem } from "@/services/domain"
+import { addDays, buildDateInputValue } from "@/utils/dateRangeFilter"
+
+const ALL_OPTION_VALUE = "__all__"
 
 export function useHistory() {
   const { user } = useAuth()
@@ -33,23 +37,85 @@ export function useHistory() {
 
   const canFilterHistory =
     user?.role === "PLATFORM_ADMIN" || user?.role === "COMPANY_ADMIN"
-  const [selectedUserId, setSelectedUserId] = useState(
-    Number(user?.id ?? 0)
+  const isPlatformAdmin = user?.role === "PLATFORM_ADMIN"
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(
+    user ? Number(user.id) : null
   )
+  const [selectedCompanyValue, setSelectedCompanyValue] =
+    useState(ALL_OPTION_VALUE)
+  const historyReferenceDate = useMemo(() => addDays(new Date(), -1), [])
+  const maxHistoryDate = useMemo(
+    () => buildDateInputValue(historyReferenceDate),
+    [historyReferenceDate]
+  )
+  const {
+    activeRange,
+    customFrom,
+    customTo,
+    isCustomPeriod,
+    periodOptions,
+    periodSummary,
+    selectedPeriodOption,
+    handleCustomFromChange,
+    handleCustomToChange,
+    handlePeriodChange,
+  } = useDateRangeFilter({
+    defaultPreset: "last30Days",
+    referenceDate: historyReferenceDate,
+    maxDate: maxHistoryDate,
+  })
+  const selectedCompanyId = useMemo(() => {
+    if (!isPlatformAdmin || selectedCompanyValue === ALL_OPTION_VALUE) {
+      return undefined
+    }
+
+    return Number(selectedCompanyValue)
+  }, [isPlatformAdmin, selectedCompanyValue])
+  const {
+    data: companies = [],
+    isLoading: isCompaniesLoading,
+  } = useCompaniesSWR({
+    enabled: isPlatformAdmin,
+  })
+  const userCompanyScope = isPlatformAdmin
+    ? selectedCompanyId
+    : user?.companyId
 
   const {
     data: companyUsers = [],
     isLoading: isUsersLoading,
   } = useUsersSWR(
-    { companyId: user?.companyId },
+    { companyId: userCompanyScope },
     {
-      enabled: canFilterHistory && Boolean(user?.companyId),
+      enabled:
+        canFilterHistory && (isPlatformAdmin || Boolean(user?.companyId)),
     }
   )
+  const companyOptions = useMemo<SelectionOption[]>(() => {
+    if (!isPlatformAdmin) return []
+
+    return [
+      { value: ALL_OPTION_VALUE, label: "Todas as empresas" },
+      ...companies.map((company) => ({
+        value: String(company.id),
+        label: company.tradeName?.trim() || company.name,
+      })),
+    ]
+  }, [companies, isPlatformAdmin])
+  const selectedCompanyOption = useMemo<SelectionOption[]>(() => {
+    return companyOptions.filter(
+      (option) => option.value === selectedCompanyValue
+    )
+  }, [companyOptions, selectedCompanyValue])
 
   const historyUserOptions = useMemo<SelectionOption[]>(() => {
     if (!user) return []
 
+    const shouldIncludeSelfOption =
+      !canFilterHistory ||
+      !isPlatformAdmin ||
+      selectedCompanyId === undefined ||
+      user.companyId === selectedCompanyId
     const selfOption: SelectionOption = {
       value: String(user.id),
       label: "Meus registros",
@@ -66,21 +132,31 @@ export function useHistory() {
       )
       .map<SelectionOption>((companyUser) => ({
         value: String(companyUser.id),
-        label: buildHistoryUserLabel(companyUser),
+        label: buildHistoryUserLabel(companyUser, isPlatformAdmin),
       }))
 
-    return [selfOption, ...otherUsers]
-  }, [canFilterHistory, companyUsers, user])
+    return shouldIncludeSelfOption ? [selfOption, ...otherUsers] : otherUsers
+  }, [
+    canFilterHistory,
+    companyUsers,
+    isPlatformAdmin,
+    selectedCompanyId,
+    user,
+  ])
 
   const selectedHistoryUserOption = useMemo<SelectionOption[]>(() => {
+    if (selectedUserId === null) return []
+
     return historyUserOptions.filter(
       (option) => option.value === String(selectedUserId)
     )
   }, [historyUserOptions, selectedUserId])
 
   const historySubtitle = canFilterHistory
-    ? "Escolha um colaborador da empresa para visualizar o historico."
-    : "Acompanhe seus registros e ajustes anteriores."
+    ? isPlatformAdmin
+      ? "Escolha uma empresa, selecione o colaborador e ajuste o periodo para visualizar o historico."
+      : "Escolha um colaborador e ajuste o periodo para visualizar o historico."
+    : "Acompanhe seus registros e ajustes anteriores por periodo."
 
   const [selectedHistoryRecord, setSelectedHistoryRecord] =
     useState<WorkdaySummary | null>(null)
@@ -102,24 +178,50 @@ export function useHistory() {
     getRowKey,
     getHistoryRecordByRow,
     refreshLoadedHistory,
-  } = useHistoryTable(selectedUserId)
+  } = useHistoryTable(selectedUserId, activeRange)
 
   useEffect(() => {
     if (!user) return
 
     if (!canFilterHistory) {
-      setSelectedUserId(Number(user.id))
+      const ownUserId = Number(user.id)
+
+      if (selectedUserId !== ownUserId) {
+        setSelectedUserId(ownUserId)
+      }
+
       return
     }
 
-    const hasSelectedUser = historyUserOptions.some(
-      (option) => option.value === String(selectedUserId)
-    )
+    const hasSelectedUser =
+      selectedUserId !== null &&
+      historyUserOptions.some(
+        (option) => option.value === String(selectedUserId)
+      )
 
-    if (!hasSelectedUser) {
-      setSelectedUserId(Number(user.id))
+    if (hasSelectedUser) return
+
+    const fallbackUserId = Number(historyUserOptions[0]?.value)
+
+    if (fallbackUserId > 0) {
+      setSelectedUserId(fallbackUserId)
+      resetHistorySelection()
+      return
+    }
+
+    if (selectedUserId !== null) {
+      setSelectedUserId(null)
+      resetHistorySelection()
     }
   }, [canFilterHistory, historyUserOptions, selectedUserId, user])
+
+  function resetHistorySelection() {
+    setSelectedHistoryRecord(null)
+    setAdjustmentWorkdayDate("")
+    setAdjustmentRequestRecords([])
+    dayHistorySidePanelRef.current?.close()
+    adjustmentRequestSidePanelRef.current?.close()
+  }
 
   function handleHistoryRecordSelect(row: TableRowData) {
     const record = getHistoryRecordByRow(row)
@@ -150,11 +252,16 @@ export function useHistory() {
     if (!nextUser) return
 
     setSelectedUserId(Number(nextUser.value))
-    setSelectedHistoryRecord(null)
-    setAdjustmentWorkdayDate("")
-    setAdjustmentRequestRecords([])
-    dayHistorySidePanelRef.current?.close()
-    adjustmentRequestSidePanelRef.current?.close()
+    resetHistorySelection()
+  }
+
+  function handleHistoryCompanyChange(selection: SelectionOption[]) {
+    const nextCompany = selection[0]
+
+    if (!nextCompany) return
+
+    setSelectedCompanyValue(nextCompany.value)
+    resetHistorySelection()
   }
 
   async function handleAdjustmentRequestSubmitted() {
@@ -165,10 +272,20 @@ export function useHistory() {
 
   return {
     canFilterHistory,
+    companyOptions,
+    customFrom,
+    customTo,
     errorMessage,
     historySubtitle,
     historyUserOptions,
+    isCompaniesLoading,
+    isCustomPeriod,
+    isPlatformAdmin,
+    periodOptions,
+    periodSummary,
+    selectedCompanyOption,
     selectedHistoryUserOption,
+    selectedPeriodOption,
     adjustmentRequestRecords,
     adjustmentRequestSidePanelRef,
     adjustmentWorkdayDate,
@@ -176,9 +293,13 @@ export function useHistory() {
     dayHistorySidePanelRef,
     getRowKey,
     handleAdjustmentRequestSubmitted,
+    handleCustomFromChange,
+    handleCustomToChange,
     handleHistoryActionClick,
+    handleHistoryCompanyChange,
     handleHistoryRecordSelect,
     handleHistoryUserChange,
+    handlePeriodChange,
     hasMore,
     historyRecords,
     isInitialLoading,
@@ -192,10 +313,19 @@ export function useHistory() {
   }
 }
 
-function buildHistoryUserLabel(user: UserApiItem) {
+function buildHistoryUserLabel(
+  user: UserApiItem,
+  includeCompanyName = false
+) {
+  const parts = [user.fullName]
+
   if (user.position?.trim()) {
-    return `${user.fullName} - ${user.position.trim()}`
+    parts.push(user.position.trim())
   }
 
-  return user.fullName
+  if (includeCompanyName && user.companyName?.trim()) {
+    parts.push(user.companyName.trim())
+  }
+
+  return parts.join(" - ")
 }

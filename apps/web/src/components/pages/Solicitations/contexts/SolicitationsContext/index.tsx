@@ -31,6 +31,7 @@ const SolicitationsContext = createContext<SolicitationsContextValue | null>(
 
 export const SolicitationsProvider: React.FC<SolicitationsProviderProps> = ({
   children,
+  filters,
 }) => {
   const { showToast } = useToastContext()
   const { mutate: mutateSWRCache } = useSWRConfig()
@@ -38,7 +39,7 @@ export const SolicitationsProvider: React.FC<SolicitationsProviderProps> = ({
     data: adjustmentRequests = [],
     error,
     isLoading,
-  } = useAdjustmentRequestsSWR()
+  } = useAdjustmentRequestsSWR(filters)
 
   const solicitations = useMemo<Solicitation[]>(
     () => adjustmentRequests.map(mapAdjustmentApiToSolicitation),

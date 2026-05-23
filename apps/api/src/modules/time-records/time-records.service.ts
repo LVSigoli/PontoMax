@@ -10,7 +10,11 @@ import {
   type TimeEntryKind,
   type TimeEntrySource,
 } from "../../common/constants/domain-enums.js"
-import { getDateOnly } from "../../common/utils/date.js"
+import {
+  endOfDay,
+  getDateOnly,
+  startOfDay,
+} from "../../common/utils/date.js"
 import { calculateWorkedMinutes } from "../../common/utils/time-records.js"
 import { prisma } from "../../lib/prisma.js"
 
@@ -344,6 +348,8 @@ export async function getTodayWorkdaySnapshot(params: {
 
 export async function getWorkdayOverview(params: {
   companyId: number
+  from?: Date | string
+  to?: Date | string
   userId: number
   page: number
   pageSize: number
@@ -373,15 +379,27 @@ export async function getWorkdayOverview(params: {
 
 export async function getUserWorkdaySummary(params: {
   companyId: number
+  from?: Date | string
+  to?: Date | string
   userId: number
   timezone?: string
 }): Promise<WorkdayOverviewSummary> {
   const { assignments, workdays } = await getHistoricalWorkdays(params)
+  const requestedFrom = params.from
+    ? normalizeWorkdayDateInput(params.from, params.timezone)
+    : undefined
+  const requestedTo = params.to
+    ? normalizeWorkdayDateInput(params.to, params.timezone)
+    : undefined
 
   const [pendingAdjustments] = await Promise.all([
     prisma.adjustmentRequest.count({
       where: {
         companyId: params.companyId,
+        requestedAt: {
+          gte: requestedFrom ? startOfDay(requestedFrom) : undefined,
+          lte: requestedTo ? endOfDay(requestedTo) : undefined,
+        },
         userId: params.userId,
         status: "PENDING",
       },
@@ -777,17 +795,36 @@ function shouldIgnoreWorkdayInSummary(workday: WorkdayLike) {
 
 async function getHistoricalWorkdays(params: {
   companyId: number
+  from?: Date | string
+  to?: Date | string
   userId: number
   timezone?: string
 }) {
   const today = getDateOnly(new Date(), params.timezone)
-  const historyEndDate = addUtcDays(today, -1)
+  const defaultHistoryEndDate = addUtcDays(today, -1)
+  const requestedFrom = params.from
+    ? normalizeWorkdayDateInput(params.from, params.timezone)
+    : null
+  const requestedTo = params.to
+    ? normalizeWorkdayDateInput(params.to, params.timezone)
+    : null
+  const historyEndDate =
+    minDate(requestedTo, defaultHistoryEndDate) ?? defaultHistoryEndDate
+
+  if (requestedFrom && requestedFrom.getTime() > historyEndDate.getTime()) {
+    return {
+      assignments: [],
+      workdays: [],
+    }
+  }
 
   const [persistedWorkdays, assignments] = await Promise.all([
     prisma.workday.findMany({
       where: {
         userId: params.userId,
         date: {
+          gte: requestedFrom ?? undefined,
+          lte: historyEndDate,
           lt: today,
         },
       },
@@ -807,7 +844,7 @@ async function getHistoricalWorkdays(params: {
     }),
     getJourneyAssignmentsForRange({
       userId: params.userId,
-      from: new Date(Date.UTC(1970, 0, 1)),
+      from: requestedFrom ?? new Date(Date.UTC(1970, 0, 1)),
       to: historyEndDate,
     }),
   ])
@@ -822,7 +859,8 @@ async function getHistoricalWorkdays(params: {
   const earliestAssignmentDate = assignments[0]
     ? getStoredDateOnly(assignments[0].validFrom)
     : null
-  const historyStartDate = minDate(earliestPersistedDate, earliestAssignmentDate)
+  const historyStartDate =
+    requestedFrom ?? minDate(earliestPersistedDate, earliestAssignmentDate)
 
   if (
     !historyStartDate ||

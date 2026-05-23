@@ -205,16 +205,47 @@ describe("time records routes", () => {
     })
 
     const response = await request(app).get(
-      "/time-records/overview?page=1&pageSize=20"
+      "/time-records/overview?page=1&pageSize=20&from=2026-05-01&to=2026-05-15"
     )
 
     expect(response.status).toBe(200)
     expect(mocked.getWorkdayOverviewMock).toHaveBeenCalledWith({
       companyId: 10,
+      from: "2026-05-01",
       userId: 1,
       page: 1,
       pageSize: 20,
       timezone: "America/Sao_Paulo",
+      to: "2026-05-15",
+    })
+  })
+
+  it("passes the selected period when loading the summary", async () => {
+    mocked.prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: 1,
+      companyId: 10,
+      company: {
+        timezone: "America/Sao_Paulo",
+      },
+    })
+    mocked.getUserWorkdaySummaryMock.mockResolvedValue({
+      workedDays: 10,
+      balanceMinutes: 120,
+      inconsistentCount: 1,
+      pendingAdjustments: 2,
+    })
+
+    const response = await request(app).get(
+      "/time-records/summary?from=2026-05-01&to=2026-05-15"
+    )
+
+    expect(response.status).toBe(200)
+    expect(mocked.getUserWorkdaySummaryMock).toHaveBeenCalledWith({
+      companyId: 10,
+      from: "2026-05-01",
+      userId: 1,
+      timezone: "America/Sao_Paulo",
+      to: "2026-05-15",
     })
   })
 })

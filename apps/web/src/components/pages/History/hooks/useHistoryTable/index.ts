@@ -24,9 +24,14 @@ import {
 const LOAD_HISTORY_ERROR_MESSAGE =
   "Nao foi possivel carregar o historico de ponto."
 
-export function useHistoryTable(userId: number) {
+interface DateRange {
+  from: string
+  to: string
+}
+
+export function useHistoryTable(userId: number | null, range: DateRange) {
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
-  const selectedUserIdRef = useRef(userId)
+  const activeRequestKeyRef = useRef("")
 
   const [hasMore, setHasMore] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
@@ -40,7 +45,16 @@ export function useHistoryTable(userId: number) {
     data: summary,
     error: summaryError,
     mutate: mutateSummary,
-  } = useTimeRecordsSummarySWR({ userId })
+  } = useTimeRecordsSummarySWR(
+    {
+      userId: userId ?? undefined,
+      from: range.from,
+      to: range.to,
+    },
+    {
+      enabled: userId !== null,
+    }
+  )
 
   const analysisItems = useMemo<UserAnalysisItem[]>(
     () => (summary ? buildAnalysisItems(summary) : []),
@@ -68,7 +82,17 @@ export function useHistoryTable(userId: number) {
   )
 
   const loadInitialHistory = useCallback(async () => {
-    const scopeUserId = userId
+    const scopeRequestKey = `${userId ?? "none"}:${range.from}:${range.to}`
+
+    if (userId === null) {
+      setErrorMessage("")
+      setHasMore(false)
+      setIsInitialLoading(false)
+      setIsLoadingMore(false)
+      setPagination(makeInitialPagination())
+      setHistoryRecords([])
+      return
+    }
 
     try {
       setErrorMessage("")
@@ -80,20 +104,22 @@ export function useHistoryTable(userId: number) {
 
       const [overview] = await Promise.all([
         getTimeRecordsOverview({
+          from: range.from,
+          to: range.to,
           page: 1,
           pageSize: PAGE_SIZE,
-          userId: scopeUserId,
+          userId,
         }),
         mutateSummary(),
       ])
 
-      if (selectedUserIdRef.current !== scopeUserId) return
+      if (activeRequestKeyRef.current !== scopeRequestKey) return
 
       setHasMore(overview.meta.page < overview.meta.totalPages)
       setPagination(overview.meta)
       setHistoryRecords(overview.items)
     } catch (error) {
-      if (selectedUserIdRef.current !== scopeUserId) return
+      if (activeRequestKeyRef.current !== scopeRequestKey) return
 
       const message = getErrorMessage(error, LOAD_HISTORY_ERROR_MESSAGE)
 
@@ -103,19 +129,25 @@ export function useHistoryTable(userId: number) {
         message,
       })
     } finally {
-      if (selectedUserIdRef.current !== scopeUserId) return
+      if (activeRequestKeyRef.current !== scopeRequestKey) return
 
       setIsInitialLoading(false)
       setIsLoadingMore(false)
     }
-  }, [mutateSummary, showToast, userId])
+  }, [mutateSummary, range.from, range.to, showToast, userId])
 
   const loadMoreHistory = useCallback(async () => {
-    if (isInitialLoading || isLoadingMore || !hasMore || pagination.page <= 0) {
+    if (
+      userId === null ||
+      isInitialLoading ||
+      isLoadingMore ||
+      !hasMore ||
+      pagination.page <= 0
+    ) {
       return
     }
 
-    const scopeUserId = userId
+    const scopeRequestKey = `${userId}:${range.from}:${range.to}`
     const nextPage = pagination.page + 1
 
     try {
@@ -123,18 +155,20 @@ export function useHistoryTable(userId: number) {
       setIsLoadingMore(true)
 
       const overview = await getTimeRecordsOverview({
+        from: range.from,
+        to: range.to,
         page: nextPage,
         pageSize: PAGE_SIZE,
-        userId: scopeUserId,
+        userId,
       })
 
-      if (selectedUserIdRef.current !== scopeUserId) return
+      if (activeRequestKeyRef.current !== scopeRequestKey) return
 
       setHasMore(overview.meta.page < overview.meta.totalPages)
       setPagination(overview.meta)
       setHistoryRecords((current) => buildHistoryRecords(current, overview))
     } catch (error) {
-      if (selectedUserIdRef.current !== scopeUserId) return
+      if (activeRequestKeyRef.current !== scopeRequestKey) return
 
       const message = getErrorMessage(error, LOAD_HISTORY_ERROR_MESSAGE)
 
@@ -144,19 +178,24 @@ export function useHistoryTable(userId: number) {
         message,
       })
     } finally {
-      if (selectedUserIdRef.current !== scopeUserId) return
+      if (activeRequestKeyRef.current !== scopeRequestKey) return
 
       setIsLoadingMore(false)
     }
-  }, [hasMore, isInitialLoading, isLoadingMore, pagination.page, showToast, userId])
+  }, [hasMore, isInitialLoading, isLoadingMore, pagination.page, range.from, range.to, showToast, userId])
 
   const refreshLoadedHistory = useCallback(async () => {
+    if (userId === null) {
+      await loadInitialHistory()
+      return
+    }
+
     if (pagination.page <= 0) {
       await loadInitialHistory()
       return
     }
 
-    const scopeUserId = userId
+    const scopeRequestKey = `${userId}:${range.from}:${range.to}`
 
     try {
       setErrorMessage("")
@@ -165,9 +204,11 @@ export function useHistoryTable(userId: number) {
         { length: pagination.page },
         (_, index) =>
           getTimeRecordsOverview({
+            from: range.from,
+            to: range.to,
             page: index + 1,
             pageSize: PAGE_SIZE,
-            userId: scopeUserId,
+            userId,
           })
       )
 
@@ -176,7 +217,7 @@ export function useHistoryTable(userId: number) {
         mutateSummary(),
       ])
 
-      if (selectedUserIdRef.current !== scopeUserId) return
+      if (activeRequestKeyRef.current !== scopeRequestKey) return
 
       const latestPage = pages.at(-1)
 
@@ -186,7 +227,7 @@ export function useHistoryTable(userId: number) {
       setPagination(latestPage.meta)
       setHistoryRecords(pages.flatMap((page) => page.items))
     } catch (error) {
-      if (selectedUserIdRef.current !== scopeUserId) return
+      if (activeRequestKeyRef.current !== scopeRequestKey) return
 
       const message = getErrorMessage(error, LOAD_HISTORY_ERROR_MESSAGE)
 
@@ -198,11 +239,11 @@ export function useHistoryTable(userId: number) {
 
       throw error
     }
-  }, [loadInitialHistory, mutateSummary, pagination.page, showToast, userId])
+  }, [loadInitialHistory, mutateSummary, pagination.page, range.from, range.to, showToast, userId])
 
   useEffect(() => {
-    selectedUserIdRef.current = userId
-  }, [userId])
+    activeRequestKeyRef.current = `${userId ?? "none"}:${range.from}:${range.to}`
+  }, [range.from, range.to, userId])
 
   useEffect(() => {
     void loadInitialHistory()

@@ -12,3 +12,5 @@ export async function getAdjustmentRequests(params?: HttpRequest) {
 
   return response.data.items
 }
+
+export type { HttpRequest as GetAdjustmentRequestsRequest } from "./request"

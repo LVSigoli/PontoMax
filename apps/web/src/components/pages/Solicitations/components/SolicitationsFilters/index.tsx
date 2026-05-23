@@ -1,46 +1,59 @@
 import { Picker } from "@/components/structure/Picker"
+import { SearchInput } from "@/components/structure/SearchInput"
 import { Select } from "@/components/structure/Select"
 import { Skeleton } from "@/components/structure/Skeleton"
 import type { SelectionOption } from "@/components/structure/Select/types"
 import { Typography } from "@/components/structure/Typography"
 
-import type { AnalyticsPeriod } from "@/services/domain"
+import type { DateRangePreset } from "@/utils/dateRangeFilter"
 
 interface Props {
   companyOptions: SelectionOption[]
   customFrom: string
   customTo: string
+  filteredCount: number
+  isCompaniesLoading: boolean
+  isCustomPeriod: boolean
+  isPlatformAdmin: boolean
+  periodOptions: SelectionOption[]
+  periodSummary: string
+  search: string
+  selectedCompanyOption: SelectionOption[]
+  selectedPeriod: DateRangePreset
+  selectedPeriodOption: SelectionOption[]
+  selectedStatusOption: SelectionOption[]
+  statusOptions: SelectionOption[]
   handleCompanyChange: (selection: SelectionOption[]) => void
   handleCustomFromChange: (value: string) => void
   handleCustomToChange: (value: string) => void
   handlePeriodChange: (selection: SelectionOption[]) => void
-  isCompaniesLoading: boolean
-  isPlatformAdmin: boolean
-  periodOptions: SelectionOption[]
-  periodSummary: string
-  selectedCompanyOption: SelectionOption[]
-  selectedPeriod: AnalyticsPeriod
-  selectedPeriodOption: SelectionOption[]
+  handleSearchChange: (value: string) => void
+  handleStatusFilterChange: (selection: SelectionOption[]) => void
 }
 
-export const AnalyticsFilters: React.FC<Props> = ({
+export const SolicitationsFilters: React.FC<Props> = ({
   companyOptions,
   customFrom,
   customTo,
+  filteredCount,
+  isCompaniesLoading,
+  isCustomPeriod,
+  isPlatformAdmin,
+  periodOptions,
+  periodSummary,
+  search,
+  selectedCompanyOption,
+  selectedPeriod,
+  selectedPeriodOption,
+  selectedStatusOption,
+  statusOptions,
   handleCompanyChange,
   handleCustomFromChange,
   handleCustomToChange,
   handlePeriodChange,
-  isCompaniesLoading,
-  isPlatformAdmin,
-  periodOptions,
-  periodSummary,
-  selectedCompanyOption,
-  selectedPeriod,
-  selectedPeriodOption,
+  handleSearchChange,
+  handleStatusFilterChange,
 }) => {
-  const isCustomPeriod = selectedPeriod === "custom"
-
   return (
     <section className="grid gap-4 rounded-2xl border border-border-subtle bg-surface-card p-5 shadow-[0_18px_50px_rgba(15,23,42,0.04)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -53,19 +66,35 @@ export const AnalyticsFilters: React.FC<Props> = ({
 
           <Typography
             variant="legal"
-            value="Todos os indicadores abaixo respeitam o periodo selecionado."
+            value="Refine as solicitacoes por periodo, status, empresa e usuario."
             className="text-content-muted"
           />
         </div>
 
         <Typography
           variant="legal"
-          value={`Periodo ativo: ${periodSummary}`}
+          value={`${filteredCount} solicitacao(oes) no periodo ${periodSummary.toLowerCase()}`}
           className="text-content-muted"
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        <SearchInput
+          search={handleSearchChange}
+          value={search}
+          placeHolder="Busque por usuario..."
+          className="xl:col-span-2"
+          startIcon="search"
+        />
+
+        <Select
+          label="Status"
+          options={statusOptions}
+          selectedItem={selectedStatusOption}
+          buttonClassName="h-11 bg-surface-card"
+          onSelectionChange={handleStatusFilterChange}
+        />
+
         <Select
           label="Periodo"
           options={periodOptions}
@@ -88,21 +117,13 @@ export const AnalyticsFilters: React.FC<Props> = ({
           )
         ) : null}
 
-        {isCustomPeriod ? (
+        {isCustomPeriod && selectedPeriod === "custom" ? (
           <div className="col-span-full grid gap-3 rounded-xl border border-border-subtle bg-surface-muted/35 p-4">
-            <div className="grid gap-1">
-              <Typography
-                variant="legal"
-                value="Intervalo personalizado"
-                className="font-semibold text-content-secondary"
-              />
-
-              <Typography
-                variant="legal"
-                value="Defina o periodo manualmente. Em telas menores os campos se reorganizam automaticamente."
-                className="text-content-muted"
-              />
-            </div>
+            <Typography
+              variant="legal"
+              value="Intervalo personalizado"
+              className="font-semibold text-content-secondary"
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Picker

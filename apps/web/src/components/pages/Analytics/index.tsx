@@ -2,7 +2,6 @@
 import React from "react"
 
 // Components
-import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Typography } from "@/components/structure/Typography"
@@ -10,6 +9,7 @@ import {
   AnalyticsContentSkeleton,
   AnalyticsMetricsSkeleton,
 } from "./components/AnalyticsLoading"
+import { AnalyticsExportMenu } from "./components/AnalyticsExportMenu"
 import { AnalyticsFilters } from "./components/AnalyticsFilters"
 import { HourBalanceList } from "./components/HourBalanceList"
 import { MetricCard } from "./components/MetricCard"
@@ -45,8 +45,8 @@ export const Analytics: React.FC = () => {
   } = useAnalytics()
   const showAnalyticsSkeleton = isLoading && !errorMessage
 
-  function handleExportReport() {
-    console.log("export report")
+  function handleExportPdf() {
+    console.log("export pdf")
   }
 
   function handleExportExcel() {
@@ -66,19 +66,10 @@ export const Analytics: React.FC = () => {
                 subtitle="Acompanhe os principais indicadores operacionais da sua equipe por periodo."
               />
 
-              <div className="w-full flex flex-wrap items-center justify-end gap-2 sm:w-auto">
-                <Button
-                  fitWidth
-                  value="Exportar Relatorio"
-                  color="primary"
-                  variant="outlined"
-                  onClick={handleExportReport}
-                />
-
-                <Button
-                  fitWidth
-                  value="Exportar excel"
-                  onClick={handleExportExcel}
+              <div className="w-full flex items-center justify-end sm:w-auto">
+                <AnalyticsExportMenu
+                  onExportExcel={handleExportExcel}
+                  onExportPdf={handleExportPdf}
                 />
               </div>
             </div>

@@ -91,6 +91,42 @@ beforeEach(() => {
 })
 
 describe("adjustment requests routes", () => {
+  it("applies platform company filters when listing requests", async () => {
+    authUser = {
+      id: 99,
+      companyId: 0,
+      role: "PLATFORM_ADMIN",
+      email: "platform@example.com",
+    }
+
+    mocked.prisma.adjustmentRequest.findMany.mockResolvedValue([])
+
+    const response = await request(app).get(
+      "/adjustment-requests?companyId=42&status=PENDING&from=2026-05-01&to=2026-05-31"
+    )
+
+    expect(response.status).toBe(200)
+    expect(mocked.prisma.adjustmentRequest.findMany).toHaveBeenCalledWith({
+      where: {
+        companyId: 42,
+        userId: undefined,
+        status: "PENDING",
+        requestedAt: {
+          gte: expect.any(Date),
+          lte: expect.any(Date),
+        },
+      },
+      include: {
+        requestedBy: true,
+        pointAdjustments: true,
+        workday: true,
+      },
+      orderBy: {
+        requestedAt: "desc",
+      },
+    })
+  })
+
   it("creates a new adjustment request", async () => {
     mocked.ensureWorkdayMock.mockResolvedValue({
       id: 501,

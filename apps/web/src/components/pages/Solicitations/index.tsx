@@ -3,40 +3,79 @@ import React from "react"
 
 // Components
 import { Header } from "@/components/structure/Header"
-import { SearchInput } from "@/components/structure/SearchInput"
-import { Select } from "@/components/structure/Select"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { SolicitationCard } from "./components/SolicitationCard"
+import { SolicitationsFilters } from "./components/SolicitationsFilters"
 import { SolicitationsGridSkeleton } from "./components/SolicitationsLoading"
 import { SolicitationDrawer } from "./components/SolicitationDrawer"
-
-// Utils
-import { SOLICITATION_STATUS_OPTIONS } from "./constants"
 
 // Hooks
 import { SolicitationsProvider } from "./contexts/SolicitationsContext"
 import { useSolicitations } from "./hooks/useSolicitations"
+import { useSolicitationsFilters } from "./hooks/useSolicitationsFilters"
 
 export const Solicitations: React.FC = () => {
+  const filters = useSolicitationsFilters()
+
   return (
-    <SolicitationsProvider>
-      <SolicitationsContent />
+    <SolicitationsProvider filters={filters.requestParams}>
+      <SolicitationsContent {...filters} />
     </SolicitationsProvider>
   )
 }
 
-const SolicitationsContent: React.FC = () => {
+interface SolicitationsContentProps {
+  companyOptions: ReturnType<typeof useSolicitationsFilters>["companyOptions"]
+  customFrom: string
+  customTo: string
+  isCompaniesLoading: boolean
+  isCustomPeriod: boolean
+  isPlatformAdmin: boolean
+  periodOptions: ReturnType<typeof useSolicitationsFilters>["periodOptions"]
+  periodSummary: string
+  search: string
+  selectedCompanyOption: ReturnType<typeof useSolicitationsFilters>["selectedCompanyOption"]
+  selectedPeriod: ReturnType<typeof useSolicitationsFilters>["selectedPeriod"]
+  selectedPeriodOption: ReturnType<typeof useSolicitationsFilters>["selectedPeriodOption"]
+  selectedStatusOption: ReturnType<typeof useSolicitationsFilters>["selectedStatusOption"]
+  statusOptions: ReturnType<typeof useSolicitationsFilters>["statusOptions"]
+  handleCompanyChange: ReturnType<typeof useSolicitationsFilters>["handleCompanyChange"]
+  handleCustomFromChange: ReturnType<typeof useSolicitationsFilters>["handleCustomFromChange"]
+  handleCustomToChange: ReturnType<typeof useSolicitationsFilters>["handleCustomToChange"]
+  handlePeriodChange: ReturnType<typeof useSolicitationsFilters>["handlePeriodChange"]
+  handleSearchChange: ReturnType<typeof useSolicitationsFilters>["handleSearchChange"]
+  handleStatusFilterChange: ReturnType<typeof useSolicitationsFilters>["handleStatusFilterChange"]
+}
+
+const SolicitationsContent: React.FC<SolicitationsContentProps> = ({
+  companyOptions,
+  customFrom,
+  customTo,
+  isCompaniesLoading,
+  isCustomPeriod,
+  isPlatformAdmin,
+  periodOptions,
+  periodSummary,
+  search,
+  selectedCompanyOption,
+  selectedPeriod,
+  selectedPeriodOption,
+  selectedStatusOption,
+  statusOptions,
+  handleCompanyChange,
+  handleCustomFromChange,
+  handleCustomToChange,
+  handlePeriodChange,
+  handleSearchChange,
+  handleStatusFilterChange,
+}) => {
   const {
     drawerRef,
     filteredSolicitations,
     isLoading,
-    search,
     selectedElement,
-    statusFilter,
-    handleSearchChange,
     handleSolicitationSelect,
-    handleStatusFilterChange,
-  } = useSolicitations()
+  } = useSolicitations({ search })
 
   return (
     <main className="h-screen overflow-hidden bg-surface-page text-content-primary">
@@ -50,27 +89,29 @@ const SolicitationsContent: React.FC = () => {
               subtitle="Gerencie as solicitacoes de ajuste de ponto dos funcionarios"
             />
 
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <SearchInput
-                search={handleSearchChange}
-                value={search}
-                placeHolder="Busque por usuario..."
-                className="w-full max-w-xl"
-                startIcon="search"
-              />
-
-              <div className="flex w-full max-w-50 items-center gap-2 rounded-lg bg-surface-muted px-3">
-                <Select
-                  options={SOLICITATION_STATUS_OPTIONS}
-                  selectedItem={SOLICITATION_STATUS_OPTIONS.filter(
-                    (option) => option.value === statusFilter
-                  )}
-                  buttonClassName="h-11"
-                  className="flex-1"
-                  onSelectionChange={handleStatusFilterChange}
-                />
-              </div>
-            </div>
+            <SolicitationsFilters
+              companyOptions={companyOptions}
+              customFrom={customFrom}
+              customTo={customTo}
+              filteredCount={filteredSolicitations.length}
+              isCompaniesLoading={isCompaniesLoading}
+              isCustomPeriod={isCustomPeriod}
+              isPlatformAdmin={isPlatformAdmin}
+              periodOptions={periodOptions}
+              periodSummary={periodSummary}
+              search={search}
+              selectedCompanyOption={selectedCompanyOption}
+              selectedPeriod={selectedPeriod}
+              selectedPeriodOption={selectedPeriodOption}
+              selectedStatusOption={selectedStatusOption}
+              statusOptions={statusOptions}
+              handleCompanyChange={handleCompanyChange}
+              handleCustomFromChange={handleCustomFromChange}
+              handleCustomToChange={handleCustomToChange}
+              handlePeriodChange={handlePeriodChange}
+              handleSearchChange={handleSearchChange}
+              handleStatusFilterChange={handleStatusFilterChange}
+            />
 
             {isLoading && filteredSolicitations.length === 0 ? (
               <SolicitationsGridSkeleton />

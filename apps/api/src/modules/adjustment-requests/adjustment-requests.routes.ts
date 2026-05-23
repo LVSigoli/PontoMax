@@ -43,6 +43,7 @@ type CreateAdjustmentRequestBody = z.infer<typeof requestSchema>['body'];
 
 const listSchema = z.object({
   query: z.object({
+    companyId: z.coerce.number().int().positive().optional(),
     status: z.enum(ADJUSTMENT_REQUEST_STATUSES).optional(),
     userId: z.coerce.number().int().positive().optional(),
     from: z.string().date().optional(),
@@ -66,7 +67,10 @@ adjustmentRequestsRouter.get(
   '/',
   validateRequest(listSchema),
   asyncHandler(async (request, response) => {
-    const companyId = getOptionalRequestCompanyId(request);
+    const companyId = getOptionalRequestCompanyId(
+      request,
+      request.query.companyId ? Number(request.query.companyId) : undefined,
+    );
     const where =
       request.authUser!.role === 'EMPLOYEE'
         ? {

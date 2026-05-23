@@ -36,6 +36,8 @@ const listSchema = z.object({
 
 const overviewSchema = z.object({
   query: userScopeSchema.extend({
+    from: z.string().date().optional(),
+    to: z.string().date().optional(),
     page: z.coerce.number().int().positive().default(1),
     pageSize: z.coerce.number().int().positive().max(100).default(20),
   }),
@@ -46,7 +48,10 @@ const todaySchema = z.object({
 })
 
 const summarySchema = z.object({
-  query: userScopeSchema,
+  query: userScopeSchema.extend({
+    from: z.string().date().optional(),
+    to: z.string().date().optional(),
+  }),
 })
 
 const registerSchema = z.object({
@@ -67,10 +72,12 @@ timeRecordsRouter.get(
 
     const overview = await getWorkdayOverview({
       companyId: user.companyId,
+      from: request.query.from as string | undefined,
       userId,
       page: Number(request.query.page ?? 1),
       pageSize: Number(request.query.pageSize ?? 20),
       timezone: user.company.timezone,
+      to: request.query.to as string | undefined,
     })
 
     response.json(overview)
@@ -101,8 +108,10 @@ timeRecordsRouter.get(
 
     const summary = await getUserWorkdaySummary({
       companyId: user.companyId,
+      from: request.query.from as string | undefined,
       userId,
       timezone: user.company.timezone,
+      to: request.query.to as string | undefined,
     })
 
     response.json({ summary })

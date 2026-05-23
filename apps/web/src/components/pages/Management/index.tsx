@@ -8,6 +8,7 @@ import { SkeletonTable } from "@/components/structure/Skeleton"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Table } from "@/components/structure/Table"
 import { TextSwitch } from "@/components/structure/TextSwitch"
+import { ManagementFilters } from "./components/ManagementFilters"
 import { ManagementDrawer } from "./components/ManagementDrawer"
 
 // Constants
@@ -34,7 +35,16 @@ const ManagementContent: React.FC = () => {
   const {
     availableTabs,
     activeTab,
+    companyOptions,
     isLoading,
+    isPlatformAdmin,
+    resultLabel,
+    roleOptions,
+    search,
+    selectedCompanyOption,
+    selectedRoleOption,
+    showCompanyFilter,
+    showRoleFilter,
     tableData,
     drawerRef,
     selectedElement,
@@ -42,7 +52,10 @@ const ManagementContent: React.FC = () => {
     getActionState,
     handleActionClick,
     handleAddClick,
+    handleCompanyChange,
+    handleRoleChange,
     handleRowSelect,
+    handleSearchChange,
     handleTabChange,
   } = useManagement()
 
@@ -73,6 +86,22 @@ const ManagementContent: React.FC = () => {
                 onClick={handleAddClick}
               />
             </div>
+
+            <ManagementFilters
+              activeTabId={activeTab.id}
+              companyOptions={companyOptions}
+              isPlatformAdmin={isPlatformAdmin}
+              resultLabel={resultLabel}
+              roleOptions={roleOptions}
+              search={search}
+              selectedCompanyOption={selectedCompanyOption}
+              selectedRoleOption={selectedRoleOption}
+              showCompanyFilter={showCompanyFilter}
+              showRoleFilter={showRoleFilter}
+              handleCompanyChange={handleCompanyChange}
+              handleRoleChange={handleRoleChange}
+              handleSearchChange={handleSearchChange}
+            />
 
             {isLoading ? (
               <SkeletonTable

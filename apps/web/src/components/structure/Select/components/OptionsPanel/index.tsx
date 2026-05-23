@@ -32,19 +32,25 @@ export const OptionsPanel: React.FC<Props> = ({
       className="fixed z-70 overflow-y-auto rounded-lg border border-border-subtle bg-surface-overlay py-1 shadow-[0_14px_40px_rgba(15,23,42,0.14)]"
       style={PANEL_POSITION}
     >
-      {options.map((option) => {
-        const isSelected = selectedItems.some(
-          (item) => item.value === option.value
-        )
-        return (
-          <SelectOption
-            key={option.value}
-            option={option}
-            selected={isSelected}
-            onClick={onOptionClick}
-          />
-        )
-      })}
+      {options.length > 0 ? (
+        options.map((option) => {
+          const isSelected = selectedItems.some(
+            (item) => item.value === option.value
+          )
+          return (
+            <SelectOption
+              key={option.value}
+              option={option}
+              selected={isSelected}
+              onClick={onOptionClick}
+            />
+          )
+        })
+      ) : (
+        <div className="px-3 py-2 text-sm text-content-muted">
+          {"nenhuma op\u00e7\u00e3o encontrada"}
+        </div>
+      )}
     </div>,
     document.body
   )

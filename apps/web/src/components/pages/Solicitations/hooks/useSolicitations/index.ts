@@ -5,22 +5,21 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useSolicitationsContext } from "../../contexts/SolicitationsContext"
 
 // Types
-import type { SelectionOption } from "@/components/structure/Select/types"
 import type { SolicitationDrawerMethods } from "../../components/SolicitationDrawer/types"
 import type { Solicitation } from "../../types"
-import type { SolicitationStatusFilter } from "./types"
 
 // Utils
 import { filterSolicitations } from "./utils"
 
-export function useSolicitations() {
+interface Params {
+  search: string
+}
+
+export function useSolicitations({ search }: Params) {
   // Refs
   const drawerRef = useRef<SolicitationDrawerMethods>(null)
 
   // States
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] =
-    useState<SolicitationStatusFilter>("all")
   const [selectedElement, setSelectedElement] = useState<Solicitation | null>(
     null
   )
@@ -29,8 +28,8 @@ export function useSolicitations() {
   // Constants
   const { isLoading, solicitations } = useSolicitationsContext()
   const filteredSolicitations = useMemo(
-    () => filterSolicitations({ search, solicitations, statusFilter }),
-    [search, solicitations, statusFilter]
+    () => filterSolicitations({ search, solicitations }),
+    [search, solicitations]
   )
 
   // Effects
@@ -41,17 +40,6 @@ export function useSolicitations() {
   }, [drawerRequestKey])
 
   // Functions
-  function handleSearchChange(value: string) {
-    setSearch(value)
-  }
-
-  function handleStatusFilterChange(selection: SelectionOption[]) {
-    const selectedValue = selection[0]?.value
-    if (!selectedValue) return
-
-    setStatusFilter(selectedValue as SolicitationStatusFilter)
-  }
-
   function handleSolicitationSelect(solicitation: Solicitation) {
     setSelectedElement(solicitation)
     setDrawerRequestKey((currentValue) => currentValue + 1)
@@ -61,12 +49,8 @@ export function useSolicitations() {
     drawerRef,
     filteredSolicitations,
     isLoading,
-    search,
     selectedElement,
-    statusFilter,
-    handleSearchChange,
     handleSolicitationSelect,
-    handleStatusFilterChange,
   }
 }
 

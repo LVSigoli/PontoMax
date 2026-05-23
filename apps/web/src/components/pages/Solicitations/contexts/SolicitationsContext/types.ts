@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import type { GetAdjustmentRequestsRequest } from "@/services/domain"
 import type { Solicitation, SolicitationStatus } from "../../types"
 
 export interface SolicitationsContextValue {
@@ -9,4 +10,5 @@ export interface SolicitationsContextValue {
 
 export interface SolicitationsProviderProps {
   children: ReactNode
+  filters?: GetAdjustmentRequestsRequest
 }
