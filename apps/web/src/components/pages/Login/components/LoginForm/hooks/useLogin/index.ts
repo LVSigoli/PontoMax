@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToastContext } from "@/contexts/ToastContext"
 import { getErrorMessage } from "@/utils/getErrorMessage"
+import { ensureLocationPermission } from "@/utils/location"
 
 // Utils
 import { makeInitialCredential } from "./utils"
@@ -67,6 +68,16 @@ export function useLogin() {
         })
         return
       }
+
+      void ensureLocationPermission().catch((error) => {
+        showToast({
+          variant: "error",
+          message: getErrorMessage(
+            error,
+            "Permita o acesso a localizacao para registrar o ponto."
+          ),
+        })
+      })
 
       await router.push("/")
     } catch (error) {

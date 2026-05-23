@@ -22,6 +22,7 @@ import type { DayHistorySidePanelMethods } from "../../components/modals/DayHist
 
 // Utils
 import { getErrorMessage } from "@/utils/getErrorMessage"
+import { requestCurrentLocation } from "@/utils/location"
 import {
   formatPointDate,
   formatPointTime,
@@ -161,7 +162,14 @@ export function usePointRegister() {
 
   async function handleRegisterPoint() {
     try {
+      const location = await requestCurrentLocation()
+
       await registerTimeRecord({
+        location: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          accuracyMeters: location.accuracyMeters ?? undefined,
+        },
         timezone: WORKDAY_TIMEZONE,
       })
 

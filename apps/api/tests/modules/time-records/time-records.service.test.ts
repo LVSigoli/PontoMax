@@ -178,6 +178,9 @@ describe("time records service", () => {
       status: "ACTIVE",
       sequence: 1,
       timezone: "America/Sao_Paulo",
+      latitude: -23.55052,
+      longitude: -46.633308,
+      accuracyMeters: 12.5,
       recordedAt: new Date("2026-05-11T11:00:00.000Z"),
     } as never)
 
@@ -199,6 +202,9 @@ describe("time records service", () => {
           status: "ACTIVE",
           sequence: 1,
           timezone: "America/Sao_Paulo",
+          latitude: -23.55052,
+          longitude: -46.633308,
+          accuracyMeters: 12.5,
           recordedAt: new Date("2026-05-11T11:00:00.000Z"),
         } as never,
       ],
@@ -212,6 +218,11 @@ describe("time records service", () => {
       sequence: 1,
       timezone: "America/Sao_Paulo",
       recordedAt: new Date("2026-05-11T11:00:00.000Z"),
+      location: {
+        latitude: -23.55052,
+        longitude: -46.633308,
+        accuracyMeters: 12.5,
+      },
     })
     expect(serializedWorkday).toEqual({
       id: 42,

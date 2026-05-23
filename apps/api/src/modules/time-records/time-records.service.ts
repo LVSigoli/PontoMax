@@ -54,6 +54,12 @@ export interface WorkdayOverviewResponse {
   }
 }
 
+interface TimeEntryLocationInput {
+  latitude: number
+  longitude: number
+  accuracyMeters?: number
+}
+
 const NIGHT_SHIFT_CARRYOVER_MINUTES = 12 * 60
 
 function mapWorkedStatus(params: {
@@ -540,6 +546,7 @@ export async function recalculateWorkday(workdayId: number) {
 
 export async function createTimeEntry(params: {
   companyId: number
+  location?: TimeEntryLocationInput
   userId: number
   recordedAt: Date
   source: TimeEntrySource
@@ -592,8 +599,11 @@ export async function createTimeEntry(params: {
 
   const createdEntry = await prisma.timeEntry.create({
     data: {
+      accuracyMeters: params.location?.accuracyMeters ?? null,
       workdayId: workday.id,
       userId: params.userId,
+      latitude: params.location?.latitude ?? null,
+      longitude: params.location?.longitude ?? null,
       recordedAt: params.recordedAt,
       source: params.source,
       kind,
@@ -619,6 +629,14 @@ export function serializeTimeEntry(entry: TimeEntry) {
     sequence: entry.sequence,
     timezone: entry.timezone,
     recordedAt: entry.recordedAt,
+    location:
+      entry.latitude === null || entry.longitude === null
+        ? null
+        : {
+            latitude: entry.latitude,
+            longitude: entry.longitude,
+            accuracyMeters: entry.accuracyMeters,
+          },
   }
 }
 

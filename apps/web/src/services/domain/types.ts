@@ -97,6 +97,12 @@ export interface HolidayApiItem {
   }>
 }
 
+export interface TimeEntryLocationApiItem {
+  latitude: number
+  longitude: number
+  accuracyMeters: number | null
+}
+
 export interface TimeEntryApiItem {
   id: number
   kind: "ENTRY" | "EXIT"
@@ -105,6 +111,7 @@ export interface TimeEntryApiItem {
   sequence: number
   timezone: string
   recordedAt: string
+  location: TimeEntryLocationApiItem | null
 }
 
 export interface WorkdayApiItem {

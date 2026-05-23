@@ -85,7 +85,7 @@ export const DayHistorySidePanel = forwardRef<
 
             <Table
               data={tableData}
-              minWidth="420px"
+              minWidth="680px"
               emptyMessage="Nenhum registro selecionado"
             />
           </section>

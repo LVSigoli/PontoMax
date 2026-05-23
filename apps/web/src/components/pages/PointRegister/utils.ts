@@ -138,6 +138,23 @@ export function mapTimeEntryKindToPointType(
   return kind === "ENTRY" ? "Entrada" : "Saida"
 }
 
+export function formatPointLocation(
+  location: TimeEntryApiItem["location"]
+) {
+  if (!location) {
+    return "Nao informada"
+  }
+
+  const latitude = location.latitude.toFixed(6)
+  const longitude = location.longitude.toFixed(6)
+  const accuracyLabel =
+    location.accuracyMeters != null
+      ? ` | Precisao: ${Math.round(location.accuracyMeters)} m`
+      : ""
+
+  return `Lat ${latitude}, Long ${longitude}${accuracyLabel}`
+}
+
 export function mapWorkdayToPointRecords(workday: WorkdayApiItem) {
   return [...workday.timeEntries]
     .sort((left, right) => {
@@ -156,6 +173,7 @@ export function mapWorkdayToPointRecords(workday: WorkdayApiItem) {
       workdayDate: workday.date,
       timeEntryId: timeEntry.id,
       recordedAt: timeEntry.recordedAt,
+      location: timeEntry.location,
       time: formatTimeLabel(timeEntry.recordedAt),
       workedHours: formatHoursWithMinutes(workday.workedMinutes),
       extraHours: formatHoursWithMinutes(workday.overtimeMinutes),

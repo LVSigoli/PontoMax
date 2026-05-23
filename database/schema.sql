@@ -134,6 +134,9 @@ CREATE TABLE time_entries (
   status time_entry_status NOT NULL DEFAULT 'ACTIVE',
   sequence INTEGER NOT NULL CHECK (sequence > 0),
   timezone VARCHAR(64) NOT NULL DEFAULT 'America/Sao_Paulo',
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  accuracy_meters DOUBLE PRECISION,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT uq_time_entries_workday_sequence UNIQUE (workday_id, sequence)

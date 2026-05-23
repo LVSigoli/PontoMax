@@ -1,3 +1,5 @@
+import type { TimeEntryLocationApiItem } from "@/services/domain"
+
 export type PointRecordStatus =
   | "Registrado"
   | "Pendente"
@@ -13,6 +15,7 @@ export interface PointRecord {
   workdayDate?: string
   timeEntryId?: number
   recordedAt?: string
+  location?: TimeEntryLocationApiItem | null
   time: string
   workedHours: string
   extraHours: string

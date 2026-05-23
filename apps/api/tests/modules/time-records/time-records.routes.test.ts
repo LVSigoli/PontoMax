@@ -92,6 +92,9 @@ describe("time records routes", () => {
       entry: {
         id: 900,
         kind: "ENTRY",
+        latitude: -23.55052,
+        longitude: -46.633308,
+        accuracyMeters: 12.5,
         source: "WEB",
         status: "ACTIVE",
         sequence: 1,
@@ -116,6 +119,11 @@ describe("time records routes", () => {
     const response = await request(app).post("/time-records/register").send({
       recordedAt: "2026-05-11T11:00:00.000Z",
       kind: "ENTRY",
+      location: {
+        latitude: -23.55052,
+        longitude: -46.633308,
+        accuracyMeters: 12.5,
+      },
       timezone: "America/Sao_Paulo",
     })
 
@@ -124,6 +132,9 @@ describe("time records routes", () => {
       entry: {
         id: 900,
         kind: "ENTRY",
+        latitude: -23.55052,
+        longitude: -46.633308,
+        accuracyMeters: 12.5,
         source: "WEB",
         status: "ACTIVE",
         sequence: 1,
@@ -145,6 +156,11 @@ describe("time records routes", () => {
     })
     expect(mocked.createTimeEntryMock).toHaveBeenCalledWith({
       companyId: 10,
+      location: {
+        latitude: -23.55052,
+        longitude: -46.633308,
+        accuracyMeters: 12.5,
+      },
       userId: 1,
       recordedAt: new Date("2026-05-11T11:00:00.000Z"),
       source: "WEB",

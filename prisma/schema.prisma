@@ -182,6 +182,9 @@ model TimeEntry {
   status           String            @default("ACTIVE")
   sequence         Int
   timezone         String            @default("America/Sao_Paulo")
+  latitude         Float?
+  longitude        Float?
+  accuracyMeters   Float?            @map("accuracy_meters")
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
   workday          Workday           @relation(fields: [workdayId], references: [id], onDelete: Cascade)

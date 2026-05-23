@@ -59,6 +59,13 @@ const registerSchema = z.object({
     recordedAt: z.string().datetime().optional(),
     kind: z.enum(TIME_ENTRY_KINDS).optional(),
     timezone: z.string().optional(),
+    location: z
+      .object({
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        accuracyMeters: z.number().nonnegative().optional(),
+      })
+      .optional(),
   }),
 })
 
@@ -158,6 +165,7 @@ timeRecordsRouter.post(
   asyncHandler(async (request, response) => {
     const result = await createTimeEntry({
       companyId: request.authUser!.companyId,
+      location: request.body.location,
       userId: request.authUser!.id,
       recordedAt: request.body.recordedAt
         ? new Date(request.body.recordedAt)
@@ -166,6 +174,8 @@ timeRecordsRouter.post(
       kind: request.body.kind,
       timezone: request.body.timezone ?? "America/Sao_Paulo",
     })
+    const serializedEntry = serializeTimeEntry(result.entry)
+    const serializedWorkday = serializeWorkday(result.workday)
 
     await recordAuditLog(prisma, {
       companyId: request.authUser!.companyId,
@@ -181,13 +191,18 @@ timeRecordsRouter.post(
           source: result.entry.source,
           recordedAt: result.entry.recordedAt,
           workdayStatus: result.workday.status,
+          ...(serializedEntry.location
+            ? {
+                location: serializedEntry.location,
+              }
+            : {}),
         },
       },
     })
 
     response.status(201).json({
-      entry: serializeTimeEntry(result.entry),
-      workday: serializeWorkday(result.workday),
+      entry: serializedEntry,
+      workday: serializedWorkday,
     })
   })
 )
