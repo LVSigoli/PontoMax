@@ -42,7 +42,10 @@ export const AnalyticsFilters: React.FC<Props> = ({
   const isCustomPeriod = selectedPeriod === "custom"
 
   return (
-    <section className="grid gap-4 rounded-2xl border border-border-subtle bg-surface-card p-5 shadow-[0_18px_50px_rgba(15,23,42,0.04)]">
+    <section
+      data-pdf-exclude="true"
+      className="grid gap-4 rounded-2xl border border-border-subtle bg-surface-card p-5 shadow-[0_18px_50px_rgba(15,23,42,0.04)]"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="grid gap-1">
           <Typography

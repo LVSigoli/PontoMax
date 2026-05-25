@@ -20,6 +20,7 @@ import {
   buildBalances,
   buildCompanyOptions,
   exportAnalyticsDashboardToExcel,
+  exportAnalyticsDashboardToPdf,
   resolveAnalyticsDateRange,
 } from "./utils"
 
@@ -45,6 +46,7 @@ export function useAnalytics() {
   const [customFrom, setCustomFrom] = useState(defaultRange.from)
   const [customTo, setCustomTo] = useState(defaultRange.to)
   const [isExportingExcel, setIsExportingExcel] = useState(false)
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
 
   // Hooks
   const { user } = useAuth()
@@ -153,7 +155,14 @@ export function useAnalytics() {
     Boolean(dashboard) &&
     !isDashboardLoading &&
     !isDashboardValidating &&
-    !isExportingExcel
+    !isExportingExcel &&
+    !isExportingPdf
+  const canExportPdf =
+    Boolean(dashboard) &&
+    !isDashboardLoading &&
+    !isDashboardValidating &&
+    !isExportingExcel &&
+    !isExportingPdf
   const balancesTitle = isSingleDayRange
     ? "Saldo de horas do dia"
     : "Saldo de horas no periodo"
@@ -245,9 +254,42 @@ export function useAnalytics() {
     }
   }
 
+  async function handleExportPdf() {
+    if (!canExportPdf || !dashboard) {
+      return
+    }
+
+    setIsExportingPdf(true)
+
+    try {
+      await exportAnalyticsDashboardToPdf({
+        balances,
+        balancesTitle,
+        companyLabel: selectedCompanyLabel,
+        metrics,
+        periodSummary,
+        solicitationChart,
+        solicitationChartTitle,
+        workedHours,
+        workedHoursTitle,
+      })
+    } catch (error) {
+      showToast({
+        variant: "error",
+        message: getErrorMessage(
+          error,
+          "Nao foi possivel exportar o PDF do painel."
+        ),
+      })
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }
+
   return {
     balancesTitle,
     canExportExcel,
+    canExportPdf,
     metrics,
     balances,
     customFrom,
@@ -257,16 +299,19 @@ export function useAnalytics() {
     isDashboardValidating,
     isCompaniesLoading,
     isExportingExcel,
+    isExportingPdf,
     companyOptions,
     periodOptions,
     periodSummary,
     isPlatformAdmin,
     solicitationChart,
     solicitationChartTitle,
+    selectedCompanyLabel,
     selectedCompanyOption,
     selectedPeriod: selectedPeriodValue,
     selectedPeriodOption,
     handleExportExcel,
+    handleExportPdf,
     handleCompanyFilterChange,
     handleCustomFromChange,
     handleCustomToChange,

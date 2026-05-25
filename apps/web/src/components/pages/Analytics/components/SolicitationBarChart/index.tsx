@@ -16,10 +16,12 @@ import type { SolicitationChartItem } from "../../types"
 interface Props {
   items: SolicitationChartItem[]
   title?: string
+  disableAnimations?: boolean
 }
 
 export const SolicitationBarChart: React.FC<Props> = ({
   items,
+  disableAnimations = false,
   title = "Solicitacoes de ajuste de ponto",
 }) => {
   const safeItems =
@@ -48,6 +50,9 @@ export const SolicitationBarChart: React.FC<Props> = ({
     ...BASE_CHART_OPTIONS,
     chart: {
       ...BASE_CHART_OPTIONS.chart,
+      animations: {
+        enabled: !disableAnimations,
+      },
       stacked: false,
       type: "bar",
     },

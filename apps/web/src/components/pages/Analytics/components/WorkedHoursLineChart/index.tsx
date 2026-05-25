@@ -14,10 +14,12 @@ import type { WorkedHoursItem } from "../../types"
 interface Props {
   items: WorkedHoursItem[]
   title?: string
+  disableAnimations?: boolean
 }
 
 export const WorkedHoursLineChart: React.FC<Props> = ({
   items,
+  disableAnimations = false,
   title = "Horas Trabalhadas por Dia",
 }) => {
   const safeItems = items.length > 0 ? items : [{ label: "-", hours: 0 }]
@@ -29,6 +31,9 @@ export const WorkedHoursLineChart: React.FC<Props> = ({
     ...BASE_CHART_OPTIONS,
     chart: {
       ...BASE_CHART_OPTIONS.chart,
+      animations: {
+        enabled: !disableAnimations,
+      },
       type: "area",
     },
     colors: [CHART_PALETTE.brand600],

@@ -3,13 +3,17 @@ import React, { useEffect, useRef, useState } from "react"
 interface Props {
   excelDisabled?: boolean
   excelLoading?: boolean
+  pdfDisabled?: boolean
+  pdfLoading?: boolean
   onExportExcel: () => void | Promise<void>
-  onExportPdf: () => void
+  onExportPdf: () => void | Promise<void>
 }
 
 export const AnalyticsExportMenu: React.FC<Props> = ({
   excelDisabled = false,
   excelLoading = false,
+  pdfDisabled = false,
+  pdfLoading = false,
   onExportExcel,
   onExportPdf,
 }) => {
@@ -49,11 +53,15 @@ export const AnalyticsExportMenu: React.FC<Props> = ({
 
   function handleExportPdfClick() {
     setIsOpen(false)
-    onExportPdf()
+    void onExportPdf()
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div
+      ref={containerRef}
+      data-pdf-exclude="true"
+      className="relative"
+    >
       <button
         type="button"
         aria-expanded={isOpen}
@@ -88,10 +96,11 @@ export const AnalyticsExportMenu: React.FC<Props> = ({
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-content-primary transition hover:bg-surface-muted"
+            disabled={pdfDisabled}
+            className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-content-primary transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
             onClick={handleExportPdfClick}
           >
-            PDF
+            {pdfLoading ? "Exportando..." : "PDF"}
           </button>
         </div>
       )}
