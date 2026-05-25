@@ -21,15 +21,18 @@ export const Analytics: React.FC = () => {
   const {
     balances,
     balancesTitle,
+    canExportExcel,
     companyOptions,
     customFrom,
     customTo,
+    handleExportExcel,
     handleCompanyFilterChange,
     handleCustomFromChange,
     handleCustomToChange,
     handlePeriodChange,
     isLoading,
     isCompaniesLoading,
+    isExportingExcel,
     isPlatformAdmin,
     metrics,
     periodOptions,
@@ -43,14 +46,7 @@ export const Analytics: React.FC = () => {
     workedHoursTitle,
   } = useAnalytics()
   const showAnalyticsSkeleton = isLoading
-
-  function handleExportPdf() {
-    console.log("export pdf")
-  }
-
-  function handleExportExcel() {
-    console.log("export excel")
-  }
+  const isExportExcelDisabled = !canExportExcel
 
   return (
     <main className="h-screen overflow-hidden bg-surface-page text-content-primary">
@@ -67,8 +63,12 @@ export const Analytics: React.FC = () => {
 
               <div className="w-full flex items-center justify-end sm:w-auto">
                 <AnalyticsExportMenu
+                  excelDisabled={isExportExcelDisabled}
+                  excelLoading={isExportingExcel}
                   onExportExcel={handleExportExcel}
-                  onExportPdf={handleExportPdf}
+                  onExportPdf={() => {
+                    console.log("export pdf")
+                  }}
                 />
               </div>
             </div>

@@ -1,11 +1,15 @@
 import React, { useEffect, useRef, useState } from "react"
 
 interface Props {
-  onExportExcel: () => void
+  excelDisabled?: boolean
+  excelLoading?: boolean
+  onExportExcel: () => void | Promise<void>
   onExportPdf: () => void
 }
 
 export const AnalyticsExportMenu: React.FC<Props> = ({
+  excelDisabled = false,
+  excelLoading = false,
   onExportExcel,
   onExportPdf,
 }) => {
@@ -40,7 +44,7 @@ export const AnalyticsExportMenu: React.FC<Props> = ({
 
   function handleExportExcelClick() {
     setIsOpen(false)
-    onExportExcel()
+    void onExportExcel()
   }
 
   function handleExportPdfClick() {
@@ -74,10 +78,11 @@ export const AnalyticsExportMenu: React.FC<Props> = ({
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-content-primary transition hover:bg-surface-muted"
+            disabled={excelDisabled}
+            className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-medium text-content-primary transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
             onClick={handleExportExcelClick}
           >
-            Excel
+            {excelLoading ? "Exportando..." : "Excel"}
           </button>
 
           <button

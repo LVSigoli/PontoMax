@@ -19,6 +19,7 @@ import {
   buildAnalyticsPeriodSummary,
   buildBalances,
   buildCompanyOptions,
+  exportAnalyticsDashboardToExcel,
   resolveAnalyticsDateRange,
 } from "./utils"
 
@@ -43,6 +44,7 @@ export function useAnalytics() {
     useState<AnalyticsPeriod>(DEFAULT_ANALYTICS_PERIOD)
   const [customFrom, setCustomFrom] = useState(defaultRange.from)
   const [customTo, setCustomTo] = useState(defaultRange.to)
+  const [isExportingExcel, setIsExportingExcel] = useState(false)
 
   // Hooks
   const { user } = useAuth()
@@ -94,6 +96,7 @@ export function useAnalytics() {
     data: dashboard,
     error,
     isLoading: isDashboardLoading,
+    isValidating: isDashboardValidating,
   } = useAnalyticsDashboardSWR(analyticsParams, { enabled: Boolean(user) })
 
   // Constants
@@ -139,10 +142,18 @@ export function useAnalytics() {
   const selectedPeriodOption = useMemo(() => {
     return periodOptions.filter((option) => option.value === selectedPeriodValue)
   }, [periodOptions, selectedPeriodValue])
+  const selectedCompanyLabel = isPlatformAdmin
+    ? selectedCompanyOption[0]?.label ?? "Todas as empresas"
+    : user?.companyName?.trim() || "Empresa"
   const periodSummary = useMemo(
     () => buildAnalyticsPeriodSummary(selectedPeriodValue, activeRange),
     [activeRange, selectedPeriodValue]
   )
+  const canExportExcel =
+    Boolean(dashboard) &&
+    !isDashboardLoading &&
+    !isDashboardValidating &&
+    !isExportingExcel
   const balancesTitle = isSingleDayRange
     ? "Saldo de horas do dia"
     : "Saldo de horas no periodo"
@@ -205,15 +216,47 @@ export function useAnalytics() {
     }
   }
 
+  async function handleExportExcel() {
+    if (!canExportExcel || !dashboard) {
+      return
+    }
+
+    setIsExportingExcel(true)
+
+    try {
+      await exportAnalyticsDashboardToExcel({
+        balances,
+        companyLabel: selectedCompanyLabel,
+        metrics,
+        periodSummary,
+        solicitationChart,
+        workedHours,
+      })
+    } catch (error) {
+      showToast({
+        variant: "error",
+        message: getErrorMessage(
+          error,
+          "Nao foi possivel exportar a planilha do painel."
+        ),
+      })
+    } finally {
+      setIsExportingExcel(false)
+    }
+  }
+
   return {
     balancesTitle,
+    canExportExcel,
     metrics,
     balances,
     customFrom,
     customTo,
     workedHours,
     isLoading: isDashboardLoading,
+    isDashboardValidating,
     isCompaniesLoading,
+    isExportingExcel,
     companyOptions,
     periodOptions,
     periodSummary,
@@ -223,6 +266,7 @@ export function useAnalytics() {
     selectedCompanyOption,
     selectedPeriod: selectedPeriodValue,
     selectedPeriodOption,
+    handleExportExcel,
     handleCompanyFilterChange,
     handleCustomFromChange,
     handleCustomToChange,
