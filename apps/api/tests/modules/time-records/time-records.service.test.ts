@@ -7,6 +7,7 @@ const mocked = vi.hoisted(() => {
         findUniqueOrThrow: vi.fn(),
         findUnique: vi.fn(),
         findMany: vi.fn(),
+        upsert: vi.fn(),
         update: vi.fn(),
       },
       userJourneyAssignment: {
@@ -34,6 +35,7 @@ vi.mock("../../../src/lib/prisma.js", () => ({
 }))
 
 const {
+  createTimeEntry,
   getUserWorkdaySummary,
   getWorkdayOverview,
   recalculateWorkday,
@@ -45,6 +47,7 @@ beforeEach(() => {
   mocked.prisma.workday.findUniqueOrThrow.mockReset()
   mocked.prisma.workday.findUnique.mockReset()
   mocked.prisma.workday.findMany.mockReset()
+  mocked.prisma.workday.upsert.mockReset()
   mocked.prisma.workday.update.mockReset()
   mocked.prisma.userJourneyAssignment.findFirst.mockReset()
   mocked.prisma.userJourneyAssignment.findMany.mockReset()
@@ -144,6 +147,7 @@ describe("time records service", () => {
       workedMinutes: 480,
       overtimeMinutes: 0,
       missingMinutes: 0,
+      nightMinutes: 0,
       isHoliday: false,
     })
     expect(mocked.prisma.workday.update).toHaveBeenCalledWith({
@@ -155,6 +159,7 @@ describe("time records service", () => {
         workedMinutes: 480,
         overtimeMinutes: 0,
         missingMinutes: 0,
+        nightMinutes: 0,
         status: "CLOSED",
       },
       include: {
@@ -167,6 +172,295 @@ describe("time records service", () => {
           },
         },
       },
+    })
+  })
+
+  it("counts night minutes for overnight workdays", async () => {
+    const workdayDate = new Date("2026-05-10T00:00:00.000Z")
+    const entry1 = {
+      kind: "ENTRY",
+      recordedAt: new Date("2026-05-11T01:00:00.000Z"),
+      status: "ACTIVE",
+      timezone: "America/Sao_Paulo",
+      sequence: 1,
+      source: "WEB",
+    }
+    const exit1 = {
+      kind: "EXIT",
+      recordedAt: new Date("2026-05-11T09:00:00.000Z"),
+      status: "ACTIVE",
+      timezone: "America/Sao_Paulo",
+      sequence: 2,
+      source: "WEB",
+    }
+
+    mocked.prisma.workday.findUniqueOrThrow.mockResolvedValue({
+      id: 43,
+      userId: 7,
+      companyId: 10,
+      date: workdayDate,
+      status: "OPEN",
+      scheduledMinutes: 0,
+      workedMinutes: 0,
+      overtimeMinutes: 0,
+      missingMinutes: 0,
+      nightMinutes: 0,
+      isHoliday: false,
+      timeEntries: [entry1, exit1],
+    })
+    mocked.prisma.userJourneyAssignment.findFirst.mockResolvedValue({
+      id: 100,
+      userId: 7,
+      validFrom: new Date("2026-05-10T00:00:00.000Z"),
+      validTo: null,
+      journey: {
+        scaleCode: "12X36",
+        dailyWorkMinutes: 480,
+        expectedEntryTime: new Date("1970-01-01T22:00:00.000Z"),
+        expectedExitTime: new Date("1970-01-01T06:00:00.000Z"),
+        flexibleSchedule: false,
+        toleranceMinutes: 10,
+        nightShift: true,
+      },
+    })
+    mocked.prisma.holiday.findFirst.mockResolvedValue(null)
+    mocked.prisma.workday.update.mockResolvedValue({
+      id: 43,
+      date: workdayDate,
+      status: "CLOSED",
+      scheduledMinutes: 480,
+      workedMinutes: 480,
+      overtimeMinutes: 0,
+      missingMinutes: 0,
+      nightMinutes: 420,
+      isHoliday: false,
+      timeEntries: [entry1, exit1],
+    })
+
+    const result = await recalculateWorkday(43)
+
+    expect(result).toMatchObject({
+      id: 43,
+      status: "CLOSED",
+      workedMinutes: 480,
+      nightMinutes: 420,
+    })
+    expect(mocked.prisma.workday.update).toHaveBeenCalledWith({
+      where: { id: 43 },
+      data: {
+        holidayId: null,
+        isHoliday: false,
+        scheduledMinutes: 480,
+        workedMinutes: 480,
+        overtimeMinutes: 0,
+        missingMinutes: 0,
+        nightMinutes: 420,
+        status: "CLOSED",
+      },
+      include: {
+        timeEntries: {
+          where: {
+            status: "ACTIVE",
+          },
+          orderBy: {
+            recordedAt: "asc",
+          },
+        },
+      },
+    })
+  })
+
+  it("registers the next expected kind and recalculates the workday", async () => {
+    const workdayDate = new Date("2026-05-11T00:00:00.000Z")
+    const existingEntry = {
+      id: 1,
+      kind: "ENTRY",
+      recordedAt: new Date("2026-05-11T11:00:00.000Z"),
+      status: "ACTIVE",
+      timezone: "America/Sao_Paulo",
+      sequence: 1,
+      source: "WEB",
+    }
+    const createdEntry = {
+      id: 2,
+      kind: "EXIT",
+      recordedAt: new Date("2026-05-11T17:00:00.000Z"),
+      status: "ACTIVE",
+      timezone: "America/Sao_Paulo",
+      sequence: 2,
+      source: "WEB",
+    }
+
+    mocked.prisma.userJourneyAssignment.findMany.mockResolvedValue([
+      {
+        id: 100,
+        userId: 7,
+        validFrom: new Date("2026-05-01T00:00:00.000Z"),
+        validTo: null,
+        journey: {
+          scaleCode: "5X2",
+          dailyWorkMinutes: 360,
+          expectedEntryTime: new Date("1970-01-01T08:00:00.000Z"),
+          expectedExitTime: new Date("1970-01-01T14:00:00.000Z"),
+          flexibleSchedule: false,
+          toleranceMinutes: 10,
+          nightShift: false,
+        },
+      },
+    ])
+    mocked.prisma.userJourneyAssignment.findFirst.mockResolvedValue({
+      id: 100,
+      userId: 7,
+      validFrom: new Date("2026-05-01T00:00:00.000Z"),
+      validTo: null,
+      journey: {
+        scaleCode: "5X2",
+        dailyWorkMinutes: 360,
+        expectedEntryTime: new Date("1970-01-01T08:00:00.000Z"),
+        expectedExitTime: new Date("1970-01-01T14:00:00.000Z"),
+        flexibleSchedule: false,
+        toleranceMinutes: 10,
+        nightShift: false,
+      },
+    })
+    mocked.prisma.holiday.findFirst.mockResolvedValue(null)
+    mocked.prisma.workday.upsert.mockResolvedValue({
+      id: 42,
+      companyId: 10,
+      userId: 7,
+      date: workdayDate,
+    })
+    mocked.prisma.timeEntry.findMany.mockResolvedValue([existingEntry])
+    mocked.prisma.timeEntry.aggregate.mockResolvedValue({
+      _max: {
+        sequence: 1,
+      },
+    })
+    mocked.prisma.timeEntry.create.mockResolvedValue(createdEntry)
+    mocked.prisma.workday.findUniqueOrThrow.mockResolvedValue({
+      id: 42,
+      userId: 7,
+      companyId: 10,
+      date: workdayDate,
+      status: "OPEN",
+      scheduledMinutes: 0,
+      workedMinutes: 0,
+      overtimeMinutes: 0,
+      missingMinutes: 0,
+      nightMinutes: 0,
+      isHoliday: false,
+      timeEntries: [existingEntry, createdEntry],
+    })
+    mocked.prisma.workday.update.mockResolvedValue({
+      id: 42,
+      date: workdayDate,
+      status: "CLOSED",
+      scheduledMinutes: 360,
+      workedMinutes: 360,
+      overtimeMinutes: 0,
+      missingMinutes: 0,
+      nightMinutes: 0,
+      isHoliday: false,
+      timeEntries: [existingEntry, createdEntry],
+    })
+
+    const result = await createTimeEntry({
+      companyId: 10,
+      userId: 7,
+      recordedAt: new Date("2026-05-11T17:00:00.000Z"),
+      source: "WEB",
+      timezone: "America/Sao_Paulo",
+    })
+
+    expect(result.entry.kind).toBe("EXIT")
+    expect(mocked.prisma.timeEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          kind: "EXIT",
+          sequence: 2,
+        }),
+      })
+    )
+    expect(result.workday).toMatchObject({
+      status: "CLOSED",
+      workedMinutes: 360,
+      nightMinutes: 0,
+    })
+  })
+
+  it("rejects a new time entry when it overlaps the latest point", async () => {
+    mocked.prisma.userJourneyAssignment.findMany.mockResolvedValue([
+      {
+        id: 100,
+        userId: 7,
+        validFrom: new Date("2026-05-01T00:00:00.000Z"),
+        validTo: null,
+        journey: {
+          scaleCode: "5X2",
+          dailyWorkMinutes: 480,
+          expectedEntryTime: new Date("1970-01-01T08:00:00.000Z"),
+          expectedExitTime: new Date("1970-01-01T17:00:00.000Z"),
+          flexibleSchedule: false,
+          toleranceMinutes: 10,
+          nightShift: false,
+        },
+      },
+    ])
+    mocked.prisma.userJourneyAssignment.findFirst.mockResolvedValue({
+      id: 100,
+      userId: 7,
+      validFrom: new Date("2026-05-01T00:00:00.000Z"),
+      validTo: null,
+      journey: {
+        scaleCode: "5X2",
+        dailyWorkMinutes: 480,
+        expectedEntryTime: new Date("1970-01-01T08:00:00.000Z"),
+        expectedExitTime: new Date("1970-01-01T17:00:00.000Z"),
+        flexibleSchedule: false,
+        toleranceMinutes: 10,
+        nightShift: false,
+      },
+    })
+    mocked.prisma.holiday.findFirst.mockResolvedValue(null)
+    mocked.prisma.workday.upsert.mockResolvedValue({
+      id: 42,
+      companyId: 10,
+      userId: 7,
+      date: new Date("2026-05-11T00:00:00.000Z"),
+    })
+    mocked.prisma.timeEntry.findMany.mockResolvedValue([
+      {
+        id: 1,
+        kind: "ENTRY",
+        recordedAt: new Date("2026-05-11T11:00:00.000Z"),
+        status: "ACTIVE",
+        timezone: "America/Sao_Paulo",
+        sequence: 1,
+        source: "WEB",
+      },
+      {
+        id: 2,
+        kind: "EXIT",
+        recordedAt: new Date("2026-05-11T18:00:00.000Z"),
+        status: "ACTIVE",
+        timezone: "America/Sao_Paulo",
+        sequence: 2,
+        source: "WEB",
+      },
+    ])
+
+    await expect(
+      createTimeEntry({
+        companyId: 10,
+        userId: 7,
+        recordedAt: new Date("2026-05-11T17:00:00.000Z"),
+        source: "WEB",
+        timezone: "America/Sao_Paulo",
+      })
+    ).rejects.toMatchObject({
+      name: "AppError",
+      statusCode: 400,
+      message: "The new time entry must be later than the latest registered point.",
     })
   })
 

@@ -10,12 +10,16 @@ import {
   type TimeEntryKind,
   type TimeEntrySource,
 } from "../../common/constants/domain-enums.js"
+import { AppError } from "../../common/errors/app-error.js"
 import {
   endOfDay,
   getDateOnly,
   startOfDay,
 } from "../../common/utils/date.js"
-import { calculateWorkedMinutes } from "../../common/utils/time-records.js"
+import {
+  calculateWorkedMinutes,
+  isAlternatingTimeEntrySequence,
+} from "../../common/utils/time-records.js"
 import { prisma } from "../../lib/prisma.js"
 
 type JourneyAssignmentWithJourney = UserJourneyAssignment & {
@@ -65,15 +69,16 @@ const NIGHT_SHIFT_CARRYOVER_MINUTES = 12 * 60
 function mapWorkedStatus(params: {
   totalEntries: number
   isLate: boolean
+  isSequenceValid: boolean
 }) {
-  const { totalEntries, isLate } = params
+  const { totalEntries, isLate, isSequenceValid } = params
+
+  if (totalEntries === 0 || !isSequenceValid || totalEntries % 2 !== 0) {
+    return "INCONSISTENT" as const
+  }
 
   if (isLate) {
     return "LATE" as const
-  }
-
-  if (totalEntries === 0 || totalEntries % 2 !== 0) {
-    return "INCONSISTENT" as const
   }
 
   return "CLOSED" as const
@@ -102,6 +107,120 @@ function getWorkdayEntryBoundaries(
       .reverse()
       .find((entry) => toTimeEntryKind(entry.kind) === "EXIT"),
   }
+}
+
+function getChronologicalEntries(
+  entries: Array<Pick<TimeEntry, "kind" | "recordedAt" | "sequence">>
+) {
+  return [...entries].sort(
+    (left, right) =>
+      left.recordedAt.getTime() - right.recordedAt.getTime() ||
+      left.sequence - right.sequence
+  )
+}
+
+function getLastChronologicalEntry(
+  entries: Array<Pick<TimeEntry, "kind" | "recordedAt" | "sequence">>
+) {
+  const sortedEntries = getChronologicalEntries(entries)
+
+  return sortedEntries.at(-1) ?? null
+}
+
+function getNextExpectedTimeEntryKind(
+  entries: Array<Pick<TimeEntry, "kind" | "recordedAt" | "sequence">>
+) {
+  const lastEntry = getLastChronologicalEntry(entries)
+
+  if (!lastEntry) {
+    return "ENTRY" as const
+  }
+
+  return toTimeEntryKind(lastEntry.kind) === "ENTRY"
+    ? ("EXIT" as const)
+    : ("ENTRY" as const)
+}
+
+function buildComparableTimeEntries(params: {
+  workdayDate: Date
+  entries: Array<Pick<TimeEntry, "kind" | "recordedAt" | "sequence">>
+  isNightShift: boolean
+  timeZone?: string
+}) {
+  return getChronologicalEntries(params.entries).map((entry) => ({
+    kind: toTimeEntryKind(entry.kind),
+    recordedAt: getComparableRecordedAtForWorkday(
+      params.workdayDate,
+      entry.recordedAt,
+      params.isNightShift,
+      params.timeZone
+    ),
+    sequence: entry.sequence,
+  }))
+}
+
+function calculateNightMinutes(
+  entries: Array<Pick<TimeEntry, "kind" | "recordedAt" | "sequence">>
+) {
+  let total = 0
+  let openEntry: Date | null = null
+
+  for (const entry of entries) {
+    if (entry.kind === "ENTRY") {
+      openEntry = entry.recordedAt
+      continue
+    }
+
+    if (!openEntry) {
+      continue
+    }
+
+    total += getNightOverlapMinutes(openEntry, entry.recordedAt)
+    openEntry = null
+  }
+
+  return total
+}
+
+function getNightOverlapMinutes(start: Date, end: Date) {
+  let total = 0
+  let cursor = addUtcDays(getStoredDateOnly(start), -1)
+  const finalDay = getStoredDateOnly(end)
+
+  while (cursor.getTime() <= finalDay.getTime()) {
+    const nightStart = new Date(
+      Date.UTC(
+        cursor.getUTCFullYear(),
+        cursor.getUTCMonth(),
+        cursor.getUTCDate(),
+        22,
+        0,
+        0,
+        0
+      )
+    )
+    const nightEnd = new Date(
+      Date.UTC(
+        cursor.getUTCFullYear(),
+        cursor.getUTCMonth(),
+        cursor.getUTCDate() + 1,
+        5,
+        0,
+        0,
+        0
+      )
+    )
+    const overlapStart = Math.max(start.getTime(), nightStart.getTime())
+    const overlapEnd = Math.min(end.getTime(), nightEnd.getTime())
+
+    if (overlapEnd > overlapStart) {
+      total += Math.round((overlapEnd - overlapStart) / 60000)
+    }
+
+    cursor = addUtcDays(cursor, 1)
+  }
+
+  return total
 }
 
 function isLateWorkday(params: {
@@ -477,13 +596,6 @@ export async function recalculateWorkday(workdayId: number) {
     },
   })
   const timeZone = workday.timeEntries[0]?.timezone ?? "America/Sao_Paulo"
-
-  const workedMinutes = calculateWorkedMinutes(
-    workday.timeEntries.map((entry) => ({
-      kind: toTimeEntryKind(entry.kind),
-      recordedAt: entry.recordedAt,
-    }))
-  )
   const assignment = await prisma.userJourneyAssignment.findFirst({
     where: {
       userId: workday.userId,
@@ -507,17 +619,29 @@ export async function recalculateWorkday(workdayId: number) {
     getStoredDateOnly(workday.date),
     isHoliday
   )
+  const treatAsNightShift =
+    Boolean(assignment?.journey.nightShift) ||
+    shouldTreatEntriesAsOvernight(workday.timeEntries, timeZone)
+  const comparableTimeEntries = buildComparableTimeEntries({
+    workdayDate: workday.date,
+    entries: workday.timeEntries,
+    isNightShift: treatAsNightShift,
+    timeZone,
+  })
   const isLate = isLateWorkday({
     assignment,
     entries: workday.timeEntries,
     scheduledMinutes,
     timeZone,
   })
+  const workedMinutes = calculateWorkedMinutes(comparableTimeEntries)
+  const nightMinutes = calculateNightMinutes(comparableTimeEntries)
   const overtimeMinutes = Math.max(0, workedMinutes - scheduledMinutes)
   const missingMinutes = Math.max(0, scheduledMinutes - workedMinutes)
   const status = mapWorkedStatus({
     totalEntries: workday.timeEntries.length,
     isLate,
+    isSequenceValid: isAlternatingTimeEntrySequence(comparableTimeEntries),
   })
 
   return prisma.workday.update({
@@ -529,6 +653,7 @@ export async function recalculateWorkday(workdayId: number) {
       workedMinutes,
       overtimeMinutes,
       missingMinutes,
+      nightMinutes,
       status,
     },
     include: {
@@ -578,15 +703,30 @@ export async function createTimeEntry(params: {
       status: "ACTIVE",
     },
     orderBy: {
-      sequence: "asc",
+      recordedAt: "asc",
     },
   })
 
-  const kind =
-    params.kind ??
-    (existingActiveEntries.length % 2 === 0
-      ? ("ENTRY" as const)
-      : ("EXIT" as const))
+  const lastActiveEntry = getLastChronologicalEntry(existingActiveEntries)
+  const expectedKind = getNextExpectedTimeEntryKind(existingActiveEntries)
+  const kind = params.kind ?? expectedKind
+
+  if (params.kind && params.kind !== expectedKind) {
+    throw new AppError(
+      `The next time entry kind must be ${expectedKind}.`,
+      400
+    )
+  }
+
+  if (
+    lastActiveEntry &&
+    params.recordedAt.getTime() <= lastActiveEntry.recordedAt.getTime()
+  ) {
+    throw new AppError(
+      "The new time entry must be later than the latest registered point.",
+      400
+    )
+  }
 
   const nextSequenceResult = await prisma.timeEntry.aggregate({
     where: {
@@ -762,17 +902,14 @@ function normalizeWorkdayForTimezone<T extends WorkdayLike>(
 
     return leftRecordedAt.getTime() - rightRecordedAt.getTime()
   })
-  const workedMinutes = calculateWorkedMinutes(
-    sortedTimeEntries.map((entry) => ({
-      kind: toTimeEntryKind(entry.kind),
-      recordedAt: getComparableRecordedAtForWorkday(
-        workday.date,
-        entry.recordedAt,
-        treatAsNightShift,
-        timeZone
-      ),
-    }))
-  )
+  const comparableTimeEntries = buildComparableTimeEntries({
+    workdayDate: workday.date,
+    entries: sortedTimeEntries,
+    isNightShift: treatAsNightShift,
+    timeZone,
+  })
+  const workedMinutes = calculateWorkedMinutes(comparableTimeEntries)
+  const nightMinutes = calculateNightMinutes(comparableTimeEntries)
   const scheduledMinutes = getScheduledMinutesForDate(
     workdayAssignment,
     getStoredDateOnly(workday.date),
@@ -791,6 +928,9 @@ function normalizeWorkdayForTimezone<T extends WorkdayLike>(
             scheduledMinutes,
             timeZone,
           }),
+          isSequenceValid: isAlternatingTimeEntrySequence(
+            comparableTimeEntries
+          ),
         })
 
   return {
@@ -799,6 +939,7 @@ function normalizeWorkdayForTimezone<T extends WorkdayLike>(
     workedMinutes,
     overtimeMinutes,
     missingMinutes,
+    nightMinutes,
     status,
     timeEntries: sortedTimeEntries,
   }
@@ -1032,7 +1173,10 @@ async function findOpenPreviousWorkdayDateForUser(params: {
     },
   })
 
-  if (!previousWorkday || previousWorkday.timeEntries.length % 2 === 0) {
+  if (
+    !previousWorkday ||
+    getLastChronologicalEntry(previousWorkday.timeEntries)?.kind !== "ENTRY"
+  ) {
     return null
   }
 
