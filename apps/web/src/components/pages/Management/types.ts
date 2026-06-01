@@ -28,6 +28,7 @@ export interface Employee {
   role: string
   companyId: number
   journeyId: number
+  isActive: boolean
   managerAccess: boolean
 }
 

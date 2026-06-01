@@ -10,6 +10,7 @@ export const INITIAL_HOLIDAYS: Holiday[] = [
     name: "FERIADO",
     date: "2026-01-01",
     type: "Nacional",
+    isActive: true,
     status: "Ativo",
   },
   {
@@ -19,6 +20,7 @@ export const INITIAL_HOLIDAYS: Holiday[] = [
     name: "FERIADO",
     date: "2026-01-01",
     type: "Municipal",
+    isActive: true,
     status: "Ativo",
   },
   {
@@ -28,6 +30,7 @@ export const INITIAL_HOLIDAYS: Holiday[] = [
     name: "FERIADO",
     date: "2026-01-01",
     type: "Estadual",
+    isActive: false,
     status: "Inativo",
   },
   {
@@ -37,6 +40,7 @@ export const INITIAL_HOLIDAYS: Holiday[] = [
     name: "ANIVERSARIO DA EMPRESA",
     date: "2026-01-01",
     type: "Empresa",
+    isActive: true,
     status: "Ativo",
   },
 ]

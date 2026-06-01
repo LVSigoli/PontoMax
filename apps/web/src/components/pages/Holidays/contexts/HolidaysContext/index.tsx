@@ -85,6 +85,7 @@ export const HolidaysProvider: React.FC<HolidaysProviderProps> = ({
         date: form.date,
         type: mapHolidayTypeToApi(form.type),
         companyIds: form.type === "Nacional" ? [] : form.companyIds,
+        isActive: form.isActive,
       }
 
       if (holiday) {

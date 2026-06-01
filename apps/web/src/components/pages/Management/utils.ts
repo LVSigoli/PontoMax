@@ -39,6 +39,7 @@ export function makeEmployeeForm(
     role: employee?.role ?? "",
     companyId: employee?.companyId ?? companies[0]?.id ?? 0,
     journeyId: employee?.journeyId ?? journeys[0]?.id ?? 0,
+    isActive: employee?.isActive ?? true,
     managerAccess: employee?.userRole === "COMPANY_ADMIN",
   }
 }
@@ -121,6 +122,7 @@ export function mapUserApiToEmployee(user: UserApiItem): Employee {
     role: user.position ?? user.role,
     companyId: user.companyId,
     journeyId: user.journeyId ?? 0,
+    isActive: user.isActive,
     managerAccess:
       user.role === "COMPANY_ADMIN",
   }
@@ -178,6 +180,7 @@ export function buildEmployeePayload(form: EmployeeForm) {
     cpf: form.cpf,
     position: form.role.trim() || undefined,
     role: form.managerAccess ? "COMPANY_ADMIN" : "EMPLOYEE",
+    isActive: form.isActive,
     journeyId,
     journeyValidFrom: journeyId ? formatLocalDateForApi(new Date()) : undefined,
   }

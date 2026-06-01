@@ -154,6 +154,12 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
               placeholder="00.000.000/0000-00"
               onChange={(value) => handleChange("cnpj", value)}
             />
+
+            <Toggle
+              label="Empresa ativa?"
+              active={companyForm.isActive ?? true}
+              onChange={(value) => handleChange("isActive", value)}
+            />
           </>
         )
       }
@@ -215,6 +221,12 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
               label="Acesso ao painel gerencial?"
               active={employeeForm.managerAccess}
               onChange={(value) => handleChange("managerAccess", value)}
+            />
+
+            <Toggle
+              label="Funcionario ativo?"
+              active={employeeForm.isActive}
+              onChange={(value) => handleChange("isActive", value)}
             />
           </>
         )
@@ -288,6 +300,12 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
             value: journeyForm.scale,
             onChange: (value) => handleChange("scale", value),
           })}
+
+          <Toggle
+            label="Jornada ativa?"
+            active={journeyForm.isActive ?? true}
+            onChange={(value) => handleChange("isActive", value)}
+          />
         </>
       )
     }

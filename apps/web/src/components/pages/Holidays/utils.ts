@@ -22,6 +22,7 @@ export function makeHolidayForm(holiday?: Holiday | null): HolidayForm {
     date: holiday?.date ?? "",
     type: holiday?.type ?? "Nacional",
     companyIds: holiday?.companyIds ?? [],
+    isActive: holiday?.isActive ?? true,
   }
 }
 
@@ -33,6 +34,7 @@ export function mapHolidayApiToHoliday(holiday: HolidayApiItem): Holiday {
     name: holiday.name,
     date: holiday.date.slice(0, 10),
     type: mapHolidayTypeFromApi(holiday.type),
+    isActive: holiday.isActive,
     status: holiday.isActive ? "Ativo" : "Inativo",
   }
 }

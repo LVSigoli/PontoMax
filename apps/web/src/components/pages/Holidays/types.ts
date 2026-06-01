@@ -13,6 +13,7 @@ export interface Holiday {
   name: string
   date: string
   type: HolidayType
+  isActive: boolean
   status: HolidayStatus
 }
 
@@ -21,4 +22,5 @@ export interface HolidayForm {
   date: string
   type: HolidayType
   companyIds: number[]
+  isActive: boolean
 }

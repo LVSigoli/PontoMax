@@ -15,6 +15,7 @@ import { Picker } from "@/components/structure/Picker"
 import { Select } from "@/components/structure/Select"
 import { Skeleton } from "@/components/structure/Skeleton"
 import { SidePanel } from "@/components/structure/SidePanel"
+import { Toggle } from "@/components/structure/Toggle"
 import { Typography } from "@/components/structure/Typography"
 
 // Constants
@@ -195,6 +196,12 @@ export const HolidayDrawer = forwardRef<HolidayDrawerMethods, Props>(
                 label="Informe a data do feriado"
                 value={form.date}
                 onChange={(value) => handleChange("date", value)}
+              />
+
+              <Toggle
+                label="Feriado ativo?"
+                active={form.isActive}
+                onChange={(value) => handleChange("isActive", value)}
               />
 
               {renderSingleSelect({

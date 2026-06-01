@@ -79,6 +79,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     role: "Desenvolvedor",
     companyId: 1,
     journeyId: 1,
+    isActive: true,
     managerAccess: true,
   },
   {
@@ -89,6 +90,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     role: "Designer",
     companyId: 2,
     journeyId: 1,
+    isActive: true,
     managerAccess: false,
   },
   {
@@ -99,6 +101,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     role: "Aux. Administrativo",
     companyId: 3,
     journeyId: 3,
+    isActive: true,
     managerAccess: false,
   },
   {
@@ -109,6 +112,7 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     role: "Qa tester",
     companyId: 4,
     journeyId: 4,
+    isActive: true,
     managerAccess: false,
   },
 ]
