@@ -7,11 +7,13 @@ import { requireRole } from '../../common/auth/require-role.middleware.js';
 import {
   ADJUSTMENT_ACTION_TYPES,
   ADJUSTMENT_REQUEST_STATUSES,
+  toTimeEntryKind,
   type AdjustmentRequestStatus,
   TIME_ENTRY_KINDS,
 } from '../../common/constants/domain-enums.js';
 import { AppError } from '../../common/errors/app-error.js';
 import { asyncHandler } from '../../common/utils/async-handler.js';
+import { isAlternatingTimeEntrySequence } from '../../common/utils/time-records.js';
 import { endOfDay, startOfDay } from '../../common/utils/date.js';
 import { getOptionalRequestCompanyId } from '../../common/utils/company-scope.js';
 import { validateRequest } from '../../common/validation/validate-request.js';
@@ -287,6 +289,34 @@ adjustmentRequestsRouter.patch(
             },
           });
         }
+      }
+
+      const activeTimeEntries = await transaction.timeEntry.findMany({
+        where: {
+          workdayId: adjustmentRequest.workdayId,
+          status: 'ACTIVE',
+        },
+        orderBy: [
+          {
+            recordedAt: 'asc',
+          },
+          {
+            sequence: 'asc',
+          },
+        ],
+      });
+
+      const normalizedActiveTimeEntries = activeTimeEntries.map((entry) => ({
+        kind: toTimeEntryKind(entry.kind),
+        recordedAt: entry.recordedAt,
+        sequence: entry.sequence,
+      }));
+
+      if (!isAlternatingTimeEntrySequence(normalizedActiveTimeEntries)) {
+        throw new AppError(
+          'The approved adjustment would create an invalid time entry sequence.',
+          400,
+        );
       }
     });
 

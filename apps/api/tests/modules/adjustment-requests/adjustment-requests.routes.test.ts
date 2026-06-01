@@ -25,6 +25,7 @@ const mocked = vi.hoisted(() => {
         findUniqueOrThrow: vi.fn(),
         aggregate: vi.fn(),
         create: vi.fn(),
+        findMany: vi.fn(),
       },
       $transaction: vi.fn(),
       auditLog: {
@@ -86,6 +87,7 @@ beforeEach(() => {
   mocked.prisma.timeEntry.findUniqueOrThrow.mockReset()
   mocked.prisma.timeEntry.aggregate.mockReset()
   mocked.prisma.timeEntry.create.mockReset()
+  mocked.prisma.timeEntry.findMany.mockReset()
   mocked.prisma.$transaction.mockReset()
   mocked.prisma.auditLog.create.mockReset()
 })
@@ -202,6 +204,207 @@ describe("adjustment requests routes", () => {
         status: "PENDING_ADJUSTMENT",
       },
     })
+  })
+
+  it("approves an adjustment request only when the final sequence stays valid", async () => {
+    mocked.prisma.adjustmentRequest.findUniqueOrThrow.mockResolvedValue({
+      id: 601,
+      companyId: 10,
+      userId: 1,
+      workdayId: 501,
+      pointAdjustments: [
+        {
+          id: 701,
+          actionType: "CREATE",
+          targetKind: "ENTRY",
+          timeEntryId: null,
+          originalRecordedAt: null,
+          newRecordedAt: "2026-05-11T16:00:00.000Z",
+          reason: "Nova entrada",
+        },
+        {
+          id: 702,
+          actionType: "CREATE",
+          targetKind: "EXIT",
+          timeEntryId: null,
+          originalRecordedAt: null,
+          newRecordedAt: "2026-05-11T20:00:00.000Z",
+          reason: "Nova saida",
+        },
+      ],
+      workday: {
+        id: 501,
+      },
+    })
+
+    const transaction = {
+      adjustmentRequest: {
+        update: vi.fn().mockResolvedValue({ id: 601 }),
+      },
+      workday: {
+        update: vi.fn(),
+      },
+      timeEntry: {
+        update: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
+        aggregate: vi
+          .fn()
+          .mockResolvedValueOnce({ _max: { sequence: 2 } })
+          .mockResolvedValueOnce({ _max: { sequence: 3 } }),
+        create: vi.fn().mockResolvedValue({ id: 702 }),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            kind: "ENTRY",
+            recordedAt: new Date("2026-05-11T11:00:00.000Z"),
+            sequence: 1,
+          },
+          {
+            kind: "EXIT",
+            recordedAt: new Date("2026-05-11T15:00:00.000Z"),
+            sequence: 2,
+          },
+          {
+            kind: "ENTRY",
+            recordedAt: new Date("2026-05-11T16:00:00.000Z"),
+            sequence: 3,
+          },
+          {
+            kind: "EXIT",
+            recordedAt: new Date("2026-05-11T20:00:00.000Z"),
+            sequence: 4,
+          },
+        ]),
+      },
+    }
+
+    mocked.prisma.$transaction.mockImplementation(async (callback) =>
+      callback(transaction as never)
+    )
+    mocked.recalculateWorkdayMock.mockResolvedValue(undefined)
+    mocked.prisma.workday.update.mockResolvedValue({
+      id: 501,
+      date: new Date("2026-05-11T00:00:00.000Z"),
+      status: "ADJUSTED",
+      timeEntries: [],
+    })
+    mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
+
+    const response = await request(app)
+      .patch("/adjustment-requests/601/review")
+      .send({
+        status: "APPROVED",
+        reviewNotes: "Tudo certo",
+      })
+
+    expect(response.status).toBe(200)
+    expect(transaction.timeEntry.findMany).toHaveBeenCalledWith({
+      where: {
+        workdayId: 501,
+        status: "ACTIVE",
+      },
+      orderBy: [
+        {
+          recordedAt: "asc",
+        },
+        {
+          sequence: "asc",
+        },
+      ],
+    })
+    expect(mocked.recalculateWorkdayMock).toHaveBeenCalledWith(501)
+    expect(mocked.prisma.workday.update).toHaveBeenCalledWith({
+      where: { id: 501 },
+      data: {
+        status: "ADJUSTED",
+      },
+      include: {
+        timeEntries: {
+          where: {
+            status: "ACTIVE",
+          },
+          orderBy: {
+            recordedAt: "asc",
+          },
+        },
+      },
+    })
+  })
+
+  it("rejects approval when the resulting sequence becomes invalid", async () => {
+    mocked.prisma.adjustmentRequest.findUniqueOrThrow.mockResolvedValue({
+      id: 601,
+      companyId: 10,
+      userId: 1,
+      workdayId: 501,
+      pointAdjustments: [
+        {
+          id: 701,
+          actionType: "CREATE",
+          targetKind: "ENTRY",
+          timeEntryId: null,
+          originalRecordedAt: null,
+          newRecordedAt: "2026-05-11T13:00:00.000Z",
+          reason: "Nova entrada",
+        },
+      ],
+      workday: {
+        id: 501,
+      },
+    })
+
+    const transaction = {
+      adjustmentRequest: {
+        update: vi.fn().mockResolvedValue({ id: 601 }),
+      },
+      workday: {
+        update: vi.fn(),
+      },
+      timeEntry: {
+        update: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
+        aggregate: vi.fn().mockResolvedValue({ _max: { sequence: 2 } }),
+        create: vi.fn().mockResolvedValue({ id: 702 }),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            kind: "ENTRY",
+            recordedAt: new Date("2026-05-11T11:00:00.000Z"),
+            sequence: 1,
+          },
+          {
+            kind: "EXIT",
+            recordedAt: new Date("2026-05-11T15:00:00.000Z"),
+            sequence: 2,
+          },
+          {
+            kind: "ENTRY",
+            recordedAt: new Date("2026-05-11T13:00:00.000Z"),
+            sequence: 3,
+          },
+        ]),
+      },
+    }
+
+    mocked.prisma.$transaction.mockImplementation(async (callback) =>
+      callback(transaction as never)
+    )
+    mocked.recalculateWorkdayMock.mockResolvedValue(undefined)
+    mocked.prisma.workday.update.mockResolvedValue({
+      id: 501,
+      date: new Date("2026-05-11T00:00:00.000Z"),
+      status: "ADJUSTED",
+      timeEntries: [],
+    })
+
+    const response = await request(app)
+      .patch("/adjustment-requests/601/review")
+      .send({
+        status: "APPROVED",
+        reviewNotes: "Precisa bater as regras",
+      })
+
+    expect(response.status).toBe(400)
+    expect(mocked.recalculateWorkdayMock).not.toHaveBeenCalled()
+    expect(mocked.prisma.workday.update).not.toHaveBeenCalled()
   })
 
   it("rejects an adjustment request and updates the workday status", async () => {
