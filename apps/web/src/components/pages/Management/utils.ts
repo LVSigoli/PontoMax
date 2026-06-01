@@ -52,7 +52,7 @@ export function makeJourneyForm(journey?: Journey): JourneyForm {
     startTime: journey?.startTime ?? "",
     endTime: journey?.endTime ?? "",
     interval: journey?.interval ?? "",
-    scale: journey?.scale ?? "5X2",
+    scale: normalizeScaleCode(journey?.scale ?? "5X2"),
     companyId: journey?.companyId,
     dailyWorkMinutes: journey?.dailyWorkMinutes ?? 0,
     weeklyWorkMinutes: journey?.weeklyWorkMinutes ?? undefined,
@@ -192,6 +192,7 @@ export function buildJourneyPayload(form: JourneyForm) {
       ? form.dailyWorkMinutes
       : calculateJourneyWorkMinutes(form.startTime, form.endTime, form.interval)
   const isFlexible = form.flexible
+  const scaleCode = normalizeScaleCode(form.scale)
 
   return {
     companyId:
@@ -200,7 +201,7 @@ export function buildJourneyPayload(form: JourneyForm) {
         : undefined,
     name: form.name,
     description: form.description || undefined,
-    scaleCode: form.scale,
+    scaleCode,
     flexibleSchedule: isFlexible,
     dailyWorkMinutes,
     weeklyWorkMinutes: form.weeklyWorkMinutes ?? undefined,
@@ -249,6 +250,10 @@ function calculateJourneyWorkMinutes(startTime: string, endTime: string, interva
   const total = end >= start ? end - start : 24 * 60 - start + end
 
   return Math.max(0, total - breakMinutes)
+}
+
+export function normalizeScaleCode(value: string) {
+  return value.trim().toUpperCase().replace(/\s+/g, "")
 }
 
 function formatLocalDateForApi(value: Date) {

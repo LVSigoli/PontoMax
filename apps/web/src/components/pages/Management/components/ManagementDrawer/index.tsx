@@ -44,6 +44,7 @@ import {
   makeJourneyForm,
   makeJourneyOptions,
   minutesToClock,
+  normalizeScaleCode,
 } from "../../utils"
 
 export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
@@ -294,12 +295,43 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
             </>
           )}
 
-          {renderSelect({
-            label: "Selecione uma Escala",
-            options: SCALE_OPTIONS,
-            value: journeyForm.scale,
-            onChange: (value) => handleChange("scale", value),
-          })}
+          <Input
+            title="Escala"
+            value={journeyForm.scale}
+            placeholder="Ex.: 5X2, 4X2 ou 12X36"
+            onChange={(value) => handleChange("scale", normalizeScaleCode(value))}
+          />
+
+          <div className="grid gap-2">
+            <Typography
+              variant="b2"
+              value="Atalhos de escala"
+              className="font-semibold"
+            />
+
+            <div className="flex flex-wrap gap-2">
+              {SCALE_OPTIONS.map((option) => (
+                <Button
+                  key={option.value}
+                  value={option.label}
+                  color="primary"
+                  variant={
+                    journeyForm.scale === option.value ? "filled" : "outlined"
+                  }
+                  className="h-9 px-3"
+                  onClick={() =>
+                    handleChange("scale", normalizeScaleCode(option.value))
+                  }
+                />
+              ))}
+            </div>
+
+            <Typography
+              variant="legal"
+              value="Você pode editar a escala manualmente no formato NxM, como 4X2."
+              className="text-content-muted"
+            />
+          </div>
 
           <Toggle
             label="Jornada ativa?"
