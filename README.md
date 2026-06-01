@@ -37,12 +37,11 @@ Legenda de prioridade:
 
 ### P0
 
-- Recuperacao de senha.
-- Exportacao de dados.
+- Nenhum item aberto no momento.
 
 ### P1
 
-- Feriados company-specific.
+- Nenhum item aberto no momento.
 
 ### P2
 
@@ -51,6 +50,9 @@ Legenda de prioridade:
 ### Concluidos recentemente
 
 - Auditoria e rastreabilidade.
+- Recuperacao de senha.
+- Exportacao de dados.
+- Feriados company-specific.
 
 ### To-do despriorizado
 
