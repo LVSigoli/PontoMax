@@ -19,12 +19,12 @@ import { useCompaniesSWR, useHolidaysSWR } from "@/hooks/swr"
 import type { SelectionOption } from "@/components/structure/Select/types"
 
 // Utils
+import type { Holiday } from "../Holidays/types"
 import {
   formatHolidayCompanies,
   formatHolidayDate,
   mapHolidayApiToHoliday,
 } from "../Holidays/utils"
-import type { Holiday } from "../Holidays/types"
 import {
   buildMonthGrid,
   formatMonthLabel,
@@ -74,7 +74,7 @@ export const HolidayCalendar: React.FC = () => {
       preferredCompanyId &&
       companyOptions.some((option) => option.value === preferredCompanyId)
         ? preferredCompanyId
-        : companyOptions[0]?.value ?? ""
+        : (companyOptions[0]?.value ?? "")
 
     if (fallbackCompanyId) {
       setSelectedCompanyId(fallbackCompanyId)
@@ -82,9 +82,7 @@ export const HolidayCalendar: React.FC = () => {
   }, [companyOptions, isPlatformAdmin, selectedCompanyId, user?.companyId])
 
   const companyIdForQuery =
-    isPlatformAdmin && selectedCompanyId
-      ? Number(selectedCompanyId)
-      : undefined
+    isPlatformAdmin && selectedCompanyId ? Number(selectedCompanyId) : undefined
   const canLoadHolidays = !isPlatformAdmin || Boolean(selectedCompanyId)
 
   const { data: holidayItems = [], isLoading: isHolidaysLoading } =
@@ -124,7 +122,10 @@ export const HolidayCalendar: React.FC = () => {
     [selectedMonth, selectedYear]
   )
   const yearOptions = useMemo<SelectionOption[]>(() => {
-    const years = Array.from({ length: 11 }, (_, index) => currentYear - 5 + index)
+    const years = Array.from(
+      { length: 11 },
+      (_, index) => currentYear - 5 + index
+    )
 
     return years.map((year) => ({
       value: String(year),
@@ -133,7 +134,8 @@ export const HolidayCalendar: React.FC = () => {
   }, [currentYear])
 
   const selectedMonthOption = useMemo(
-    () => MONTH_OPTIONS.filter((option) => option.value === String(selectedMonth)),
+    () =>
+      MONTH_OPTIONS.filter((option) => option.value === String(selectedMonth)),
     [selectedMonth]
   )
   const selectedYearOption = useMemo(
@@ -141,15 +143,13 @@ export const HolidayCalendar: React.FC = () => {
     [selectedYear, yearOptions]
   )
   const selectedCompanyOption = useMemo(
-    () =>
-      companyOptions.filter((option) => option.value === selectedCompanyId),
+    () => companyOptions.filter((option) => option.value === selectedCompanyId),
     [companyOptions, selectedCompanyId]
   )
 
-  const selectedCompanyLabel =
-    isPlatformAdmin
-      ? selectedCompanyOption[0]?.label ?? "Selecione uma empresa"
-      : user?.companyName?.trim() || "Sua empresa"
+  const selectedCompanyLabel = isPlatformAdmin
+    ? (selectedCompanyOption[0]?.label ?? "Selecione uma empresa")
+    : user?.companyName?.trim() || "Sua empresa"
 
   const isCalendarReady = !isPlatformAdmin || Boolean(selectedCompanyId)
   const showLoadingState =
@@ -358,7 +358,7 @@ export const HolidayCalendar: React.FC = () => {
               <CalendarSkeleton />
             ) : (
               <>
-                <section className="grid gap-3 sm:grid-cols-3">
+                <section className="grid gap-3 sm:grid-cols-3 h-full w-full">
                   <SummaryCard
                     label="Feriados do mês"
                     value={totalHolidayCount}
@@ -494,7 +494,7 @@ export const HolidayCalendar: React.FC = () => {
                   </article>
 
                   <article className="grid gap-4 rounded-2xl border border-border-subtle bg-surface-card p-4 shadow-[0_18px_50px_rgba(15,23,42,0.04)] sm:p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex flex-wrap items-start  gap-3">
                       <div className="grid gap-1">
                         <Typography
                           variant="h4"
