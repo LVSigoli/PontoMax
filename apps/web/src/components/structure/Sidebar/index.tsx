@@ -21,7 +21,7 @@ export const Sidebar: React.FC = () => {
   // Constants
   const sidebarItems = useMemo(() => buildNavigationItem(user), [user?.role])
   const primaryMobileItems = useMemo(
-    () => sidebarItems.slice(0, 2),
+    () => sidebarItems.slice(0, 3),
     [sidebarItems]
   )
 

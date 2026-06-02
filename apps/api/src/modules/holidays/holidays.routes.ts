@@ -75,7 +75,6 @@ holidaysRouter.use(authenticate)
 
 holidaysRouter.get(
   "/",
-  requireRole("PLATFORM_ADMIN", "COMPANY_ADMIN"),
   validateRequest(listSchema),
   asyncHandler(async (request, response) => {
     const companyId = getOptionalRequestCompanyId(

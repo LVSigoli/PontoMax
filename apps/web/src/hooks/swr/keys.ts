@@ -51,7 +51,8 @@ export const swrKeys = {
     list: (params?: { companyId?: number }) => buildSWRKey("users", params),
   },
   holidays: {
-    list: () => "holidays",
+    list: (params?: { companyId?: number; year?: number }) =>
+      buildSWRKey("holidays", params),
   },
   adjustmentRequests: {
     list: (params?: {

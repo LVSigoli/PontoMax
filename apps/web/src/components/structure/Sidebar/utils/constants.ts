@@ -13,6 +13,12 @@ export const SIDEBAR_ITEMS: NavigationItem[] = [
     icon: "history",
     href: "/history",
   },
+  {
+    id: "calendar",
+    label: "Calendário",
+    icon: "calendar",
+    href: "/calendar",
+  },
 ]
 
 export const ADMIN_ITEMS: NavigationItem[] = [

@@ -57,9 +57,14 @@ export function useUsersSWR(
 }
 
 export function useHolidaysSWR(
+  params?: Parameters<typeof getHolidays>[0],
   options?: SWROptions<Awaited<ReturnType<typeof getHolidays>>>
 ) {
-  return useCachedRequest(swrKeys.holidays.list(), getHolidays, options)
+  return useCachedRequest(
+    swrKeys.holidays.list(params),
+    () => getHolidays(params),
+    options
+  )
 }
 
 export function useAdjustmentRequestsSWR(

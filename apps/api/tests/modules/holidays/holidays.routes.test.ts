@@ -80,6 +80,102 @@ beforeEach(() => {
 })
 
 describe("holidays routes", () => {
+  it("lists holidays scoped to the authenticated company for employees", async () => {
+    authUser = {
+      id: 8,
+      companyId: 10,
+      role: "EMPLOYEE",
+      email: "employee@example.com",
+    }
+
+    mocked.prisma.holiday.findMany.mockResolvedValue([
+      {
+        id: 21,
+        name: "Ano Novo",
+        date: new Date("2026-01-01T00:00:00.000Z"),
+        type: "NATIONAL",
+        isActive: true,
+        companyAssignments: [
+          {
+            company: {
+              id: 99,
+              name: "Brasil",
+              tradeName: null,
+            },
+          },
+        ],
+      },
+    ])
+
+    const response = await request(app).get("/holidays?companyId=42&year=2026")
+
+    expect(response.status).toBe(200)
+    expect(mocked.prisma.holiday.findMany).toHaveBeenCalledWith({
+      where: {
+        date: {
+          gte: new Date("2026-01-01T00:00:00.000Z"),
+          lte: new Date("2026-12-31T00:00:00.000Z"),
+        },
+        OR: [
+          {
+            type: "NATIONAL",
+          },
+          {
+            companyAssignments: {
+              some: {
+                companyId: 10,
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        companyAssignments: {
+          include: {
+            company: {
+              select: {
+                id: true,
+                name: true,
+                tradeName: true,
+              },
+            },
+          },
+          orderBy: {
+            company: {
+              name: "asc",
+            },
+          },
+        },
+      },
+      orderBy: [
+        {
+          date: "asc",
+        },
+        {
+          name: "asc",
+        },
+      ],
+    })
+    expect(response.body).toEqual({
+      items: [
+        {
+          id: 21,
+          name: "Ano Novo",
+          date: "2026-01-01T00:00:00.000Z",
+          type: "NATIONAL",
+          isActive: true,
+          companyIds: [99],
+          companies: [
+            {
+              id: 99,
+              name: "Brasil",
+            },
+          ],
+        },
+      ],
+    })
+  })
+
   it("creates a company holiday and refreshes matching workdays", async () => {
     mocked.prisma.holiday.create.mockResolvedValue({
       id: 33,

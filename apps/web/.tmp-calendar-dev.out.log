@@ -12,10 +12,10 @@ Generated 26 icon components at src\components\structure\Icon\generated.tsx.
 > node scripts/dev.mjs
 
 ▲ Next.js 16.2.4 (webpack)
-- Local:         http://localhost:3000
-- Network:       http://192.168.1.159:3000
+- Local:         http://localhost:3001
+- Network:       http://192.168.1.159:3001
 - Environments: .env
-✓ Ready in 374ms
-
-○ Compiling / ...
- GET / 200 in 4.5s (next.js: 4.4s, application-code: 44ms)
+✓ Ready in 464ms
+C:\Users\Lucas Sigoli\Documents\Projects\ponto-max-web\apps\web:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  ponto-max-web@0.1.0 dev: `node scripts/dev.mjs`
+Exit status 1
