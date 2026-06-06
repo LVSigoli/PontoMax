@@ -5,6 +5,8 @@ export interface CurrentLocation {
 }
 
 const LOCATION_TIMEOUT_MS = 10000
+const REGISTER_LOCATION_TIMEOUT_MS = 4000
+const REGISTER_LOCATION_MAXIMUM_AGE_MS = 5 * 60 * 1000
 
 export async function ensureLocationPermission() {
   const permissionState = await getLocationPermissionState()
@@ -21,6 +23,38 @@ export async function ensureLocationPermission() {
 }
 
 export async function requestCurrentLocation(): Promise<CurrentLocation> {
+  return requestCurrentLocationWithOptions({
+    enableHighAccuracy: true,
+    timeout: LOCATION_TIMEOUT_MS,
+    maximumAge: 0,
+  })
+}
+
+export async function requestCurrentLocationForRegister(): Promise<CurrentLocation | null> {
+  const permissionState = await getLocationPermissionState()
+
+  if (permissionState !== "granted") {
+    return null
+  }
+
+  const locationPromise = requestCurrentLocationWithOptions({
+    enableHighAccuracy: false,
+    timeout: REGISTER_LOCATION_TIMEOUT_MS,
+    maximumAge: REGISTER_LOCATION_MAXIMUM_AGE_MS,
+  }).catch(() => null)
+
+  const timeoutPromise = new Promise<null>((resolve) => {
+    window.setTimeout(() => resolve(null), REGISTER_LOCATION_TIMEOUT_MS)
+  })
+
+  return Promise.race([locationPromise, timeoutPromise])
+}
+
+async function requestCurrentLocationWithOptions(options: {
+  enableHighAccuracy: boolean
+  timeout: number
+  maximumAge: number
+}): Promise<CurrentLocation> {
   if (typeof window === "undefined" || !("navigator" in window)) {
     throw new Error("Nao foi possivel acessar a localizacao neste dispositivo.")
   }
@@ -44,9 +78,9 @@ export async function requestCurrentLocation(): Promise<CurrentLocation> {
         reject(new Error(getGeolocationErrorMessage(error)))
       },
       {
-        enableHighAccuracy: true,
-        timeout: LOCATION_TIMEOUT_MS,
-        maximumAge: 0,
+        enableHighAccuracy: options.enableHighAccuracy,
+        timeout: options.timeout,
+        maximumAge: options.maximumAge,
       }
     )
   })

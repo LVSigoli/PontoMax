@@ -22,7 +22,7 @@ import type { DayHistorySidePanelMethods } from "../../components/modals/DayHist
 
 // Utils
 import { getErrorMessage } from "@/utils/getErrorMessage"
-import { requestCurrentLocation } from "@/utils/location"
+import { requestCurrentLocationForRegister } from "@/utils/location"
 import {
   formatPointDate,
   formatPointTime,
@@ -162,16 +162,23 @@ export function usePointRegister() {
 
   async function handleRegisterPoint() {
     try {
-      const location = await requestCurrentLocation()
+      // Captura a localizacao se der tempo, mas nunca bloqueia o registro.
+      const location = await requestCurrentLocationForRegister()
 
-      await registerTimeRecord({
-        location: {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          accuracyMeters: location.accuracyMeters ?? undefined,
-        },
-        timezone: WORKDAY_TIMEZONE,
-      })
+      await registerTimeRecord(
+        location
+          ? {
+              location: {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                accuracyMeters: location.accuracyMeters ?? undefined,
+              },
+              timezone: WORKDAY_TIMEZONE,
+            }
+          : {
+              timezone: WORKDAY_TIMEZONE,
+            }
+      )
 
       await Promise.all([
         mutateCurrentWorkday(),
@@ -180,8 +187,10 @@ export function usePointRegister() {
       ])
 
       showToast({
-        variant: "success",
-        message: "Ponto registrado com sucesso.",
+        variant: location ? "success" : "warning",
+        message: location
+          ? "Ponto registrado com sucesso."
+          : "Ponto registrado sem localizacao. Nao foi possivel capturar sua posicao a tempo.",
       })
     } catch (error) {
       showToast({
