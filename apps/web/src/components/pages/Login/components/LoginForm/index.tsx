@@ -46,6 +46,11 @@ export const LoginForm: React.FC<Props> = ({ onForgotPasswordClick }) => {
           variant="b2"
           value="Sistema de Gestao de Ponto Eletronico"
         />
+
+        <Typography variant="b2" value="credenciais de acesso" />
+
+        <Typography variant="b2" value="demo@pontomax.com.br" />
+        <Typography variant="b2" value="123456" />
       </div>
 
       <div className="space-y-4">
