@@ -15,10 +15,10 @@ import {
 import { formatHoursWithMinutes } from "@/services/utils"
 
 // Types
-import type { PointRecord, WorkdaySummary } from "../../types"
 import type { AdjustmentRequestSidePanelMethods } from "../../components/modals/AdjustmentRequestSidePanel/types"
 import { ConfirmationModalMethods } from "../../components/modals/ConfirmationModal/types"
 import type { DayHistorySidePanelMethods } from "../../components/modals/DayHistorySidePanel/types"
+import type { PointRecord, WorkdaySummary } from "../../types"
 
 // Utils
 import { getErrorMessage } from "@/utils/getErrorMessage"
@@ -187,10 +187,8 @@ export function usePointRegister() {
       ])
 
       showToast({
-        variant: location ? "success" : "warning",
-        message: location
-          ? "Ponto registrado com sucesso."
-          : "Ponto registrado sem localizacao. Nao foi possivel capturar sua posicao a tempo.",
+        variant: "success",
+        message: "Ponto registrado com sucesso.",
       })
     } catch (error) {
       showToast({
