@@ -1,12 +1,14 @@
 // External Libraries
 import React from "react"
 
+// Hooks
+import { useLoginPage } from "./hooks/useLoginPage"
+
 // Components
 import { Banner } from "./components/Banner"
 import { LoginForm } from "./components/LoginForm"
 import { RecoverPasswordForm } from "./components/RecoverPasswordForm"
 import { ReplacePasswordForm } from "./components/ReplacePasswordForm"
-import { useLoginPage } from "./hooks/useLoginPage"
 
 export const Login: React.FC = () => {
   // Hooks
