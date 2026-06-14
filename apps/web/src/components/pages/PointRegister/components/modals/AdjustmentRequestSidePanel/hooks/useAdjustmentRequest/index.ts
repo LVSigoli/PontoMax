@@ -126,7 +126,7 @@ export function useAdjustmentRequest({
         variant: "error",
         message: getErrorMessage(
           error,
-          "Nao foi possivel enviar a solicitacao de ajuste."
+          "Nao foi possivel enviar a solicitacao de ajuste. Tente novamente em instantes."
         ),
       })
     } finally {

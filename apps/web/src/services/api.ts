@@ -57,6 +57,8 @@ PONTO_MAX_API.interceptors.response.use(
       clearAuthSession()
       window.location.href = "/login"
     }
+
+    return Promise.reject(error)
   }
 )
 

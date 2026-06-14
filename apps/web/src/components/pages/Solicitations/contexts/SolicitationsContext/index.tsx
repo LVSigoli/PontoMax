@@ -53,7 +53,7 @@ export const SolicitationsProvider: React.FC<SolicitationsProviderProps> = ({
       variant: "error",
       message: getErrorMessage(
         error,
-        "Nao foi possivel carregar as solicitacoes de ajuste."
+        "Nao foi possivel carregar as solicitacoes de ajuste. Tente novamente em instantes."
       ),
     })
   }, [error, showToast])
@@ -82,7 +82,7 @@ export const SolicitationsProvider: React.FC<SolicitationsProviderProps> = ({
         variant: "error",
         message: getErrorMessage(
           error,
-          "Nao foi possivel atualizar o status da solicitacao."
+          "Nao foi possivel revisar a solicitacao de ajuste. Tente novamente em instantes."
         ),
       })
 
