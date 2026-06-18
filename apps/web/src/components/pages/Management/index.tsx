@@ -4,10 +4,12 @@ import React from "react"
 // Components
 import { Button } from "@/components/structure/Button"
 import { Header } from "@/components/structure/Header"
+import { Select } from "@/components/structure/Select"
 import { SkeletonTable } from "@/components/structure/Skeleton"
 import { Sidebar } from "@/components/structure/Sidebar"
 import { Table } from "@/components/structure/Table"
 import { TextSwitch } from "@/components/structure/TextSwitch"
+import type { SelectionOption } from "@/components/structure/Select/types"
 import { ManagementFilters } from "./components/ManagementFilters"
 import { ManagementDrawer } from "./components/ManagementDrawer"
 
@@ -58,6 +60,14 @@ const ManagementContent: React.FC = () => {
     handleSearchChange,
     handleTabChange,
   } = useManagement()
+  const responsiveTabOptions: SelectionOption[] = availableTabs.map((tab) => ({
+    value: tab.id,
+    label: tab.label,
+    icon: tab.icon,
+  }))
+  const selectedResponsiveTab = responsiveTabOptions.find(
+    (option) => option.value === activeTab.id
+  )
 
   return (
     <main className="h-screen overflow-hidden bg-surface-page text-content-primary">
@@ -71,18 +81,37 @@ const ManagementContent: React.FC = () => {
               subtitle="Gerencie empresas, funcionarios e configuracoes de jornada"
             />
 
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <TextSwitch
-                options={availableTabs}
-                value={activeTab}
-                onChange={handleTabChange}
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <Select
+                label="Selecione a visao"
+                options={responsiveTabOptions}
+                selectedItem={selectedResponsiveTab ? [selectedResponsiveTab] : []}
+                onSelectionChange={(selection) => {
+                  const nextTab = availableTabs.find(
+                    (tab) => tab.id === selection[0]?.value
+                  )
+
+                  if (nextTab) {
+                    handleTabChange(nextTab)
+                  }
+                }}
+                className="w-full md:hidden"
+                buttonClassName="shadow-[0_10px_30px_rgba(15,23,42,0.04)]"
               />
+
+              <div className="hidden md:inline-flex">
+                <TextSwitch
+                  options={availableTabs}
+                  value={activeTab}
+                  onChange={handleTabChange}
+                />
+              </div>
 
               <Button
                 value="Adicionar Novo"
                 icon="plus"
                 iconPlacement="start"
-                className="min-w-68"
+                className="w-full md:w-fit md:min-w-68"
                 onClick={handleAddClick}
               />
             </div>

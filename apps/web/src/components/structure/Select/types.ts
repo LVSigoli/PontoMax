@@ -16,6 +16,7 @@ export interface Props {
 export interface SelectionOption {
   value: string
   label: string
+  icon?: IconName
 }
 
 export interface OptionsPosition {

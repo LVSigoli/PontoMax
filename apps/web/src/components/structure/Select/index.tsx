@@ -40,6 +40,11 @@ export const Select: React.FC<Props> = ({
     multi,
     onSelectionChange,
   })
+  const selectedIcon = multi ? undefined : selectedItem[0]?.icon
+  const startIcon = selectedIcon ?? (placement === "start" ? icon : undefined)
+  const endIcon = placement === "end" ? icon : undefined
+  const startIconClassName = selectedIcon ? undefined : "text-content-muted"
+  const endIconClassName = "text-content-muted"
 
   function renderOptionsList() {
     if (!isOpen || typeof document === "undefined") return null
@@ -57,34 +62,36 @@ export const Select: React.FC<Props> = ({
   }
 
   function getButtonPadding() {
-    if (!icon) return "pl-3 pr-10"
+    if (startIcon && endIcon) return "pl-10 pr-16"
+    if (startIcon) return "pl-10 pr-10"
+    if (endIcon) return "pl-3 pr-16"
 
-    return placement === "end" ? "pl-3 pr-16" : "pl-10 pr-10"
+    return "pl-3 pr-10"
   }
 
   function renderStartIcon() {
-    if (!icon || placement !== "start") return null
+    if (!startIcon) return null
 
     return (
       <Icon
         size="1rem"
-        name={icon}
+        name={startIcon}
         placement="start"
-        className="text-content-muted"
+        className={startIconClassName}
       />
     )
   }
 
   function renderEndIcon() {
-    if (!icon || placement !== "end") return null
+    if (!endIcon) return null
 
     return (
       <Icon
         size="1rem"
-        name={icon}
+        name={endIcon}
         placement="end"
         positionClassName="right-9"
-        className="text-content-muted"
+        className={endIconClassName}
       />
     )
   }

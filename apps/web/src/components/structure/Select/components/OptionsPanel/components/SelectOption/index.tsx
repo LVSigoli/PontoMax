@@ -1,5 +1,7 @@
 import React from "react"
 
+import { Icon } from "@/components/structure/Icon"
+
 import type { Props } from "./types"
 
 export const SelectOption: React.FC<Props> = ({
@@ -22,7 +24,15 @@ export const SelectOption: React.FC<Props> = ({
       }`}
       onClick={handleClick}
     >
-      <span className="truncate">{option.label}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        {option.icon ? (
+          <span className="flex size-4 shrink-0 items-center justify-center">
+            <Icon name={option.icon} layout="inline" />
+          </span>
+        ) : null}
+
+        <span className="truncate">{option.label}</span>
+      </span>
 
       {selected ? (
         <span
