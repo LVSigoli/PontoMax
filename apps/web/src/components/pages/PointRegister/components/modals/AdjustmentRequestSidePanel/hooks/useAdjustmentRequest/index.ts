@@ -138,7 +138,7 @@ export function useAdjustmentRequest({
               ...current.filter((item) => item.id !== createdRequest.id),
             ]
           },
-          { revalidate: true }
+          { revalidate: false }
         ),
         mutateSWRCache(swrKeyStartsWith(swrKeys.analytics.dashboard())),
         mutateSWRCache(swrKeyStartsWith(swrKeys.timeRecords.summary())),

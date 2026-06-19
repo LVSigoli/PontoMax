@@ -14,7 +14,7 @@ import {
 import { AppError } from "../../common/errors/app-error.js"
 import { asyncHandler } from "../../common/utils/async-handler.js"
 import { isAlternatingTimeEntrySequence } from "../../common/utils/time-records.js"
-import { endOfDay, startOfDay } from "../../common/utils/date.js"
+import { getDateOnly } from "../../common/utils/date.js"
 import { getOptionalRequestCompanyId } from "../../common/utils/company-scope.js"
 import { validateRequest } from "../../common/validation/validate-request.js"
 import { prisma } from "../../lib/prisma.js"
@@ -94,13 +94,15 @@ adjustmentRequestsRouter.get(
       where: {
         ...where,
         status: request.query.status as AdjustmentRequestStatus | undefined,
-        requestedAt: {
-          gte: request.query.from
-            ? startOfDay(request.query.from as string)
-            : undefined,
-          lte: request.query.to
-            ? endOfDay(request.query.to as string)
-            : undefined,
+        workday: {
+          date: {
+            gte: request.query.from
+              ? getDateOnly(request.query.from as string)
+              : undefined,
+            lte: request.query.to
+              ? getDateOnly(request.query.to as string)
+              : undefined,
+          },
         },
       },
       include: {

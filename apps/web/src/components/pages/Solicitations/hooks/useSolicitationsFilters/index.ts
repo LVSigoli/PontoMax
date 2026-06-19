@@ -31,15 +31,13 @@ export function useSolicitationsFilters() {
 
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] =
-    useState<SolicitationStatusFilter>("all")
+    useState<SolicitationStatusFilter>("Pendente")
   const [selectedCompanyValue, setSelectedCompanyValue] =
     useState(ALL_OPTION_VALUE)
 
   const isPlatformAdmin = user?.role === "PLATFORM_ADMIN"
-  const {
-    data: companies = [],
-    isLoading: isCompaniesLoading,
-  } = useCompaniesSWR({ enabled: isPlatformAdmin })
+  const { data: companies = [], isLoading: isCompaniesLoading } =
+    useCompaniesSWR({ enabled: isPlatformAdmin })
 
   const companyOptions = useMemo<SelectionOption[]>(() => {
     if (!isPlatformAdmin) return []
@@ -72,7 +70,13 @@ export function useSolicitationsFilters() {
     }
 
     return params
-  }, [activeRange.from, activeRange.to, isPlatformAdmin, selectedCompanyValue, statusFilter])
+  }, [
+    activeRange.from,
+    activeRange.to,
+    isPlatformAdmin,
+    selectedCompanyValue,
+    statusFilter,
+  ])
 
   const selectedCompanyOption = useMemo(() => {
     return companyOptions.filter(

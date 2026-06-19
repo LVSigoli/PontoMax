@@ -116,9 +116,11 @@ describe("adjustment requests routes", () => {
         companyId: 42,
         userId: undefined,
         status: "PENDING",
-        requestedAt: {
-          gte: expect.any(Date),
-          lte: expect.any(Date),
+        workday: {
+          date: {
+            gte: expect.any(Date),
+            lte: expect.any(Date),
+          },
         },
       },
       include: {
@@ -130,6 +132,54 @@ describe("adjustment requests routes", () => {
         requestedAt: "desc",
       },
     })
+  })
+
+  it("lists the platform administrator own pending requests for approval", async () => {
+    authUser = {
+      id: 99,
+      companyId: 10,
+      role: "PLATFORM_ADMIN",
+      email: "platform@example.com",
+    }
+
+    mocked.prisma.adjustmentRequest.findMany.mockResolvedValue([
+      {
+        id: 601,
+        companyId: 10,
+        userId: 99,
+        status: "PENDING",
+        requestedAt: new Date("2026-05-11T12:00:00.000Z"),
+        requestedBy: {
+          fullName: "Platform Admin",
+        },
+        pointAdjustments: [],
+        workday: {
+          date: new Date("2026-05-11T00:00:00.000Z"),
+        },
+      },
+    ])
+
+    const response = await request(app).get(
+      "/adjustment-requests?status=PENDING&from=2026-05-01&to=2026-05-31"
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.body.items).toEqual([
+      expect.objectContaining({
+        id: 601,
+        userId: 99,
+        status: "PENDING",
+      }),
+    ])
+    expect(mocked.prisma.adjustmentRequest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          companyId: undefined,
+          userId: undefined,
+          status: "PENDING",
+        }),
+      })
+    )
   })
 
   it("creates a new adjustment request", async () => {

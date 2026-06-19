@@ -232,7 +232,6 @@ export function usePointRegister() {
             : workday
         )
       )
-      await syncOverviewWorkdays()
       setAdjustmentRequestWorkdayDate(undefined)
       setAdjustmentRequestRecords([])
     } catch (error) {

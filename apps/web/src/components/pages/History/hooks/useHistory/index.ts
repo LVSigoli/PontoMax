@@ -165,7 +165,6 @@ export function useHistory() {
     getRowKey,
     getHistoryRecordByRow,
     markWorkdayPending,
-    refreshLoadedHistory,
   } = useHistoryTable(selectedUserId, activeRange)
 
   useEffect(() => {
@@ -256,7 +255,6 @@ export function useHistory() {
     request: AdjustmentRequestApiItem
   ) {
     markWorkdayPending(request.workdayId)
-    await refreshLoadedHistory()
     setAdjustmentWorkdayDate("")
     setAdjustmentRequestRecords([])
   }
