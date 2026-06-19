@@ -1,8 +1,10 @@
 // External Libraries
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useSWRConfig } from "swr"
 
 // Contexts
 import { useToastContext } from "@/contexts/ToastContext"
+import { swrKeyStartsWith, swrKeys } from "@/hooks/swr"
 
 // Services
 import { createAdjustmentRequest } from "@/services/domain"
@@ -39,6 +41,7 @@ export function useAdjustmentRequest({
 
   // Contexts
   const { showToast } = useToastContext()
+  const { mutate: mutateSWRCache } = useSWRConfig()
 
   // Effects
   useEffect(() => {
@@ -48,7 +51,10 @@ export function useAdjustmentRequest({
   }, [records])
 
   // Constans
-  const pointTypeOptions = useMemo<SelectionOption[]>(createPointTypeOptions, [])
+  const pointTypeOptions = useMemo<SelectionOption[]>(
+    createPointTypeOptions,
+    []
+  )
   const tableRows = useMemo<TableRowData[]>(
     () => buildTableRows(form.records, pointTypeOptions),
     [form.records, pointTypeOptions]
@@ -57,7 +63,10 @@ export function useAdjustmentRequest({
   function handleAddRecord() {
     setForm((currentForm) => ({
       ...currentForm,
-      records: [...currentForm.records, buildNewRecord(currentForm.records, workdayDate, records)],
+      records: [
+        ...currentForm.records,
+        buildNewRecord(currentForm.records, workdayDate, records),
+      ],
     }))
   }
 
@@ -113,6 +122,12 @@ export function useAdjustmentRequest({
         records: adjustmentRecords,
       })
 
+      await Promise.all([
+        mutateSWRCache(swrKeyStartsWith(swrKeys.adjustmentRequests.list())),
+        mutateSWRCache(swrKeyStartsWith(swrKeys.analytics.dashboard())),
+        mutateSWRCache(swrKeyStartsWith(swrKeys.timeRecords.summary())),
+        mutateSWRCache(swrKeys.timeRecords.today()),
+      ])
       await onSubmitted?.()
 
       showToast({

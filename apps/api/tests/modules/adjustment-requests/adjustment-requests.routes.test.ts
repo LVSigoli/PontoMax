@@ -52,9 +52,8 @@ vi.mock("../../../src/lib/prisma.js", () => ({
   prisma: mocked.prisma,
 }))
 
-const { adjustmentRequestsRouter } = await import(
-  "../../../src/modules/adjustment-requests/adjustment-requests.routes.js"
-)
+const { adjustmentRequestsRouter } =
+  await import("../../../src/modules/adjustment-requests/adjustment-requests.routes.js")
 
 const app = createRouterApp(adjustmentRequestsRouter, "/adjustment-requests")
 
@@ -156,20 +155,22 @@ describe("adjustment requests routes", () => {
     mocked.prisma.workday.update.mockResolvedValue({ id: 501 })
     mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
 
-    const response = await request(app).post("/adjustment-requests").send({
-      workdayDate: "2026-05-11",
-      justification: "Precisei corrigir um registro",
-      records: [
-        {
-          timeEntryId: 900,
-          actionType: "UPDATE",
-          targetKind: "ENTRY",
-          originalRecordedAt: "2026-05-11T11:00:00.000Z",
-          newRecordedAt: "2026-05-11T11:15:00.000Z",
-          reason: "Entrada atrasada",
-        },
-      ],
-    })
+    const response = await request(app)
+      .post("/adjustment-requests")
+      .send({
+        workdayDate: "2026-05-11",
+        justification: "Precisei corrigir um registro",
+        records: [
+          {
+            timeEntryId: 900,
+            actionType: "UPDATE",
+            targetKind: "ENTRY",
+            originalRecordedAt: "2026-05-11T11:00:00.000Z",
+            newRecordedAt: "2026-05-11T11:15:00.000Z",
+            reason: "Entrada atrasada",
+          },
+        ],
+      })
 
     expect(response.status).toBe(201)
     expect(response.body).toEqual({
@@ -407,6 +408,60 @@ describe("adjustment requests routes", () => {
     expect(mocked.prisma.workday.update).not.toHaveBeenCalled()
   })
 
+  it("allows a platform administrator to review requests from another company", async () => {
+    authUser = {
+      id: 99,
+      companyId: 10,
+      role: "PLATFORM_ADMIN",
+      email: "platform@example.com",
+    }
+
+    mocked.prisma.adjustmentRequest.findUniqueOrThrow.mockResolvedValue({
+      id: 601,
+      companyId: 42,
+      userId: 1,
+      workdayId: 501,
+      pointAdjustments: [],
+      workday: {
+        id: 501,
+      },
+    })
+
+    const transaction = {
+      adjustmentRequest: {
+        update: vi.fn().mockResolvedValue({ id: 601 }),
+      },
+      workday: {
+        update: vi.fn().mockResolvedValue({ id: 501 }),
+      },
+      timeEntry: {
+        update: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
+        aggregate: vi.fn(),
+        create: vi.fn(),
+      },
+    }
+
+    mocked.prisma.$transaction.mockImplementation(async (callback) =>
+      callback(transaction as never)
+    )
+    mocked.prisma.workday.update.mockResolvedValue({
+      id: 501,
+      date: new Date("2026-05-11T00:00:00.000Z"),
+      status: "INCONSISTENT",
+      timeEntries: [],
+    })
+    mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
+
+    const response = await request(app)
+      .patch("/adjustment-requests/601/review")
+      .send({
+        status: "REJECTED",
+      })
+
+    expect(response.status).toBe(200)
+  })
+
   it("rejects an adjustment request and updates the workday status", async () => {
     authUser = {
       id: 7,
@@ -444,11 +499,10 @@ describe("adjustment requests routes", () => {
     mocked.prisma.$transaction.mockImplementation(async (callback) =>
       callback(transaction as never)
     )
-    mocked.recalculateWorkdayMock.mockResolvedValue(undefined)
     mocked.prisma.workday.update.mockResolvedValue({
       id: 501,
       date: new Date("2026-05-11T00:00:00.000Z"),
-      status: "ADJUSTED",
+      status: "INCONSISTENT",
       timeEntries: [],
     })
     mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
@@ -468,7 +522,7 @@ describe("adjustment requests routes", () => {
         workday: {
           id: 501,
           date: "2026-05-11",
-          status: "ADJUSTED",
+          status: "INCONSISTENT",
           timeEntries: [],
         },
       },
@@ -488,6 +542,22 @@ describe("adjustment requests routes", () => {
         status: "INCONSISTENT",
       },
     })
-    expect(mocked.recalculateWorkdayMock).toHaveBeenCalledWith(501)
+    expect(mocked.prisma.workday.update).toHaveBeenCalledWith({
+      where: { id: 501 },
+      data: {
+        status: "INCONSISTENT",
+      },
+      include: {
+        timeEntries: {
+          where: {
+            status: "ACTIVE",
+          },
+          orderBy: {
+            recordedAt: "asc",
+          },
+        },
+      },
+    })
+    expect(mocked.recalculateWorkdayMock).not.toHaveBeenCalled()
   })
 })

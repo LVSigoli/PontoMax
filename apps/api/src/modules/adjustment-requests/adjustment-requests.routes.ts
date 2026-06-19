@@ -1,26 +1,29 @@
-import { Router } from 'express';
-import { z } from 'zod';
+import { Router } from "express"
+import { z } from "zod"
 
-import { authenticate } from '../../common/auth/auth.middleware.js';
-import { recordAuditLog } from '../../common/audit/index.js';
-import { requireRole } from '../../common/auth/require-role.middleware.js';
+import { authenticate } from "../../common/auth/auth.middleware.js"
+import { recordAuditLog } from "../../common/audit/index.js"
+import { requireRole } from "../../common/auth/require-role.middleware.js"
 import {
   ADJUSTMENT_ACTION_TYPES,
   ADJUSTMENT_REQUEST_STATUSES,
   toTimeEntryKind,
   type AdjustmentRequestStatus,
   TIME_ENTRY_KINDS,
-} from '../../common/constants/domain-enums.js';
-import { AppError } from '../../common/errors/app-error.js';
-import { asyncHandler } from '../../common/utils/async-handler.js';
-import { isAlternatingTimeEntrySequence } from '../../common/utils/time-records.js';
-import { endOfDay, startOfDay } from '../../common/utils/date.js';
-import { getOptionalRequestCompanyId } from '../../common/utils/company-scope.js';
-import { validateRequest } from '../../common/validation/validate-request.js';
-import { prisma } from '../../lib/prisma.js';
-import { ensureWorkday, recalculateWorkday } from '../time-records/time-records.service.js';
+} from "../../common/constants/domain-enums.js"
+import { AppError } from "../../common/errors/app-error.js"
+import { asyncHandler } from "../../common/utils/async-handler.js"
+import { isAlternatingTimeEntrySequence } from "../../common/utils/time-records.js"
+import { endOfDay, startOfDay } from "../../common/utils/date.js"
+import { getOptionalRequestCompanyId } from "../../common/utils/company-scope.js"
+import { validateRequest } from "../../common/validation/validate-request.js"
+import { prisma } from "../../lib/prisma.js"
+import {
+  ensureWorkday,
+  recalculateWorkday,
+} from "../time-records/time-records.service.js"
 
-export const adjustmentRequestsRouter = Router();
+export const adjustmentRequestsRouter = Router()
 
 const requestSchema = z.object({
   body: z.object({
@@ -35,13 +38,13 @@ const requestSchema = z.object({
           originalRecordedAt: z.string().datetime().optional(),
           newRecordedAt: z.string().datetime().optional(),
           reason: z.string().optional(),
-        }),
+        })
       )
       .min(1),
   }),
-});
+})
 
-type CreateAdjustmentRequestBody = z.infer<typeof requestSchema>['body'];
+type CreateAdjustmentRequestBody = z.infer<typeof requestSchema>["body"]
 
 const listSchema = z.object({
   query: z.object({
@@ -51,46 +54,52 @@ const listSchema = z.object({
     from: z.string().date().optional(),
     to: z.string().date().optional(),
   }),
-});
+})
 
 const reviewSchema = z.object({
   params: z.object({
     requestId: z.coerce.number().int().positive(),
   }),
   body: z.object({
-    status: z.enum(['APPROVED', 'REJECTED']),
+    status: z.enum(["APPROVED", "REJECTED"]),
     reviewNotes: z.string().optional(),
   }),
-});
+})
 
-adjustmentRequestsRouter.use(authenticate);
+adjustmentRequestsRouter.use(authenticate)
 
 adjustmentRequestsRouter.get(
-  '/',
+  "/",
   validateRequest(listSchema),
   asyncHandler(async (request, response) => {
     const companyId = getOptionalRequestCompanyId(
       request,
-      request.query.companyId ? Number(request.query.companyId) : undefined,
-    );
+      request.query.companyId ? Number(request.query.companyId) : undefined
+    )
     const where =
-      request.authUser!.role === 'EMPLOYEE'
+      request.authUser!.role === "EMPLOYEE"
         ? {
             companyId: request.authUser!.companyId,
             userId: request.authUser!.id,
           }
         : {
             companyId: companyId ?? undefined,
-            userId: request.query.userId ? Number(request.query.userId) : undefined,
-          };
+            userId: request.query.userId
+              ? Number(request.query.userId)
+              : undefined,
+          }
 
     const items = await prisma.adjustmentRequest.findMany({
       where: {
         ...where,
         status: request.query.status as AdjustmentRequestStatus | undefined,
         requestedAt: {
-          gte: request.query.from ? startOfDay(request.query.from as string) : undefined,
-          lte: request.query.to ? endOfDay(request.query.to as string) : undefined,
+          gte: request.query.from
+            ? startOfDay(request.query.from as string)
+            : undefined,
+          lte: request.query.to
+            ? endOfDay(request.query.to as string)
+            : undefined,
         },
       },
       include: {
@@ -99,9 +108,9 @@ adjustmentRequestsRouter.get(
         workday: true,
       },
       orderBy: {
-        requestedAt: 'desc',
+        requestedAt: "desc",
       },
-    });
+    })
 
     response.json({
       items: items.map((item) => ({
@@ -113,19 +122,19 @@ adjustmentRequestsRouter.get(
             }
           : item.workday,
       })),
-    });
-  }),
-);
+    })
+  })
+)
 
 adjustmentRequestsRouter.post(
-  '/',
+  "/",
   validateRequest(requestSchema),
   asyncHandler(async (request, response) => {
     const workday = await ensureWorkday({
       companyId: request.authUser!.companyId,
       userId: request.authUser!.id,
       date: request.body.workdayDate,
-    });
+    })
 
     const createdRequest = await prisma.adjustmentRequest.create({
       data: {
@@ -133,38 +142,44 @@ adjustmentRequestsRouter.post(
         userId: request.authUser!.id,
         workdayId: workday.id,
         justification: request.body.justification,
-        status: 'PENDING',
+        status: "PENDING",
         pointAdjustments: {
-          create: (request.body as CreateAdjustmentRequestBody).records.map((record) => ({
-            timeEntryId: record.timeEntryId,
-            actionType: record.actionType,
-            targetKind: record.targetKind,
-            originalRecordedAt: record.originalRecordedAt ? new Date(record.originalRecordedAt) : null,
-            newRecordedAt: record.newRecordedAt ? new Date(record.newRecordedAt) : null,
-            reason: record.reason,
-          })),
+          create: (request.body as CreateAdjustmentRequestBody).records.map(
+            (record) => ({
+              timeEntryId: record.timeEntryId,
+              actionType: record.actionType,
+              targetKind: record.targetKind,
+              originalRecordedAt: record.originalRecordedAt
+                ? new Date(record.originalRecordedAt)
+                : null,
+              newRecordedAt: record.newRecordedAt
+                ? new Date(record.newRecordedAt)
+                : null,
+              reason: record.reason,
+            })
+          ),
         },
       },
       include: {
         pointAdjustments: true,
       },
-    });
+    })
 
     await prisma.workday.update({
       where: { id: workday.id },
       data: {
-        status: 'PENDING_ADJUSTMENT',
+        status: "PENDING_ADJUSTMENT",
       },
-    });
+    })
 
     await recordAuditLog(prisma, {
       companyId: request.authUser!.companyId,
       actorUserId: request.authUser!.id,
-      entityType: 'ADJUSTMENT_REQUEST',
+      entityType: "ADJUSTMENT_REQUEST",
       entityId: createdRequest.id,
-      action: 'CREATE',
+      action: "CREATE",
       metadata: {
-        summary: 'Solicitação de ajuste criada',
+        summary: "Solicitação de ajuste criada",
         details: {
           workdayId: workday.id,
           workdayDate: workday.date,
@@ -172,31 +187,37 @@ adjustmentRequestsRouter.post(
           records: request.body.records,
         },
       },
-    });
+    })
 
-    response.status(201).json({ item: createdRequest });
-  }),
-);
+    response.status(201).json({ item: createdRequest })
+  })
+)
 
 adjustmentRequestsRouter.patch(
-  '/:requestId/review',
-  requireRole('PLATFORM_ADMIN', 'COMPANY_ADMIN'),
+  "/:requestId/review",
+  requireRole("PLATFORM_ADMIN", "COMPANY_ADMIN"),
   validateRequest(reviewSchema),
   asyncHandler(async (request, response) => {
-    const requestId = Number(request.params.requestId);
+    const requestId = Number(request.params.requestId)
     const adjustmentRequest = await prisma.adjustmentRequest.findUniqueOrThrow({
       where: { id: requestId },
       include: {
         pointAdjustments: true,
         workday: true,
       },
-    });
+    })
 
-    if (adjustmentRequest.companyId !== request.authUser!.companyId) {
-      throw new AppError('You do not have permission to review this request.', 403);
+    if (
+      request.authUser!.role !== "PLATFORM_ADMIN" &&
+      adjustmentRequest.companyId !== request.authUser!.companyId
+    ) {
+      throw new AppError(
+        "You do not have permission to review this request.",
+        403
+      )
     }
 
-    const nextStatus = request.body.status;
+    const nextStatus = request.body.status
 
     await prisma.$transaction(async (transaction) => {
       await transaction.adjustmentRequest.update({
@@ -207,40 +228,46 @@ adjustmentRequestsRouter.patch(
           reviewedById: request.authUser!.id,
           reviewedAt: new Date(),
         },
-      });
+      })
 
-      if (nextStatus === 'REJECTED') {
+      if (nextStatus === "REJECTED") {
         await transaction.workday.update({
           where: { id: adjustmentRequest.workdayId },
           data: {
-            status: 'INCONSISTENT',
+            status: "INCONSISTENT",
           },
-        });
-        return;
+        })
+        return
       }
 
       for (const pointAdjustment of adjustmentRequest.pointAdjustments) {
-        if (pointAdjustment.actionType === 'DELETE' && pointAdjustment.timeEntryId) {
+        if (
+          pointAdjustment.actionType === "DELETE" &&
+          pointAdjustment.timeEntryId
+        ) {
           await transaction.timeEntry.update({
             where: { id: pointAdjustment.timeEntryId },
             data: {
-              status: 'SUPERSEDED',
+              status: "SUPERSEDED",
             },
-          });
-          continue;
+          })
+          continue
         }
 
-        if (pointAdjustment.actionType === 'UPDATE' && pointAdjustment.timeEntryId) {
+        if (
+          pointAdjustment.actionType === "UPDATE" &&
+          pointAdjustment.timeEntryId
+        ) {
           const currentEntry = await transaction.timeEntry.findUniqueOrThrow({
             where: { id: pointAdjustment.timeEntryId },
-          });
+          })
 
           await transaction.timeEntry.update({
             where: { id: currentEntry.id },
             data: {
-              status: 'SUPERSEDED',
+              status: "SUPERSEDED",
             },
-          });
+          })
 
           const nextSequenceResult = await transaction.timeEntry.aggregate({
             where: {
@@ -249,24 +276,28 @@ adjustmentRequestsRouter.patch(
             _max: {
               sequence: true,
             },
-          });
+          })
 
           await transaction.timeEntry.create({
             data: {
               workdayId: adjustmentRequest.workdayId,
               userId: adjustmentRequest.userId,
               kind: pointAdjustment.targetKind,
-              recordedAt: pointAdjustment.newRecordedAt ?? currentEntry.recordedAt,
-              source: 'ADJUSTMENT',
-              status: 'ACTIVE',
+              recordedAt:
+                pointAdjustment.newRecordedAt ?? currentEntry.recordedAt,
+              source: "ADJUSTMENT",
+              status: "ACTIVE",
               sequence: (nextSequenceResult._max.sequence ?? 0) + 1,
               timezone: currentEntry.timezone,
             },
-          });
-          continue;
+          })
+          continue
         }
 
-        if (pointAdjustment.actionType === 'CREATE' && pointAdjustment.newRecordedAt) {
+        if (
+          pointAdjustment.actionType === "CREATE" &&
+          pointAdjustment.newRecordedAt
+        ) {
           const nextSequenceResult = await transaction.timeEntry.aggregate({
             where: {
               workdayId: adjustmentRequest.workdayId,
@@ -274,7 +305,7 @@ adjustmentRequestsRouter.patch(
             _max: {
               sequence: true,
             },
-          });
+          })
 
           await transaction.timeEntry.create({
             data: {
@@ -282,74 +313,76 @@ adjustmentRequestsRouter.patch(
               userId: adjustmentRequest.userId,
               kind: pointAdjustment.targetKind,
               recordedAt: pointAdjustment.newRecordedAt,
-              source: 'ADJUSTMENT',
-              status: 'ACTIVE',
+              source: "ADJUSTMENT",
+              status: "ACTIVE",
               sequence: (nextSequenceResult._max.sequence ?? 0) + 1,
-              timezone: 'America/Sao_Paulo',
+              timezone: "America/Sao_Paulo",
             },
-          });
+          })
         }
       }
 
       const activeTimeEntries = await transaction.timeEntry.findMany({
         where: {
           workdayId: adjustmentRequest.workdayId,
-          status: 'ACTIVE',
+          status: "ACTIVE",
         },
         orderBy: [
           {
-            recordedAt: 'asc',
+            recordedAt: "asc",
           },
           {
-            sequence: 'asc',
+            sequence: "asc",
           },
         ],
-      });
+      })
 
       const normalizedActiveTimeEntries = activeTimeEntries.map((entry) => ({
         kind: toTimeEntryKind(entry.kind),
         recordedAt: entry.recordedAt,
         sequence: entry.sequence,
-      }));
+      }))
 
       if (!isAlternatingTimeEntrySequence(normalizedActiveTimeEntries)) {
         throw new AppError(
-          'The approved adjustment would create an invalid time entry sequence.',
-          400,
-        );
+          "The approved adjustment would create an invalid time entry sequence.",
+          400
+        )
       }
-    });
+    })
 
-    await recalculateWorkday(adjustmentRequest.workdayId);
+    if (nextStatus === "APPROVED") {
+      await recalculateWorkday(adjustmentRequest.workdayId)
+    }
 
     const workday = await prisma.workday.update({
       where: { id: adjustmentRequest.workdayId },
       data: {
-        status: 'ADJUSTED',
+        status: nextStatus === "APPROVED" ? "ADJUSTED" : "INCONSISTENT",
       },
       include: {
         timeEntries: {
           where: {
-            status: 'ACTIVE',
+            status: "ACTIVE",
           },
           orderBy: {
-            recordedAt: 'asc',
+            recordedAt: "asc",
           },
         },
       },
-    });
+    })
 
     await recordAuditLog(prisma, {
       companyId: adjustmentRequest.companyId,
       actorUserId: request.authUser!.id,
-      entityType: 'ADJUSTMENT_REQUEST',
+      entityType: "ADJUSTMENT_REQUEST",
       entityId: adjustmentRequest.id,
-      action: nextStatus === 'APPROVED' ? 'APPROVE' : 'REJECT',
+      action: nextStatus === "APPROVED" ? "APPROVE" : "REJECT",
       metadata: {
         summary:
-          nextStatus === 'APPROVED'
-            ? 'Solicitação de ajuste aprovada'
-            : 'Solicitação de ajuste recusada',
+          nextStatus === "APPROVED"
+            ? "Solicitação de ajuste aprovada"
+            : "Solicitação de ajuste recusada",
         details: {
           status: nextStatus,
           reviewNotes: request.body.reviewNotes ?? null,
@@ -358,7 +391,7 @@ adjustmentRequestsRouter.patch(
           pointAdjustments: adjustmentRequest.pointAdjustments.length,
         },
       },
-    });
+    })
 
     response.json({
       item: {
@@ -369,6 +402,6 @@ adjustmentRequestsRouter.patch(
           date: workday.date.toISOString().slice(0, 10),
         },
       },
-    });
-  }),
-);
+    })
+  })
+)
