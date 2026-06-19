@@ -25,6 +25,7 @@ export const WORKDAY_STATUSES = [
   "LATE",
   "PENDING_ADJUSTMENT",
   "ADJUSTED",
+  "REJECTED",
 ] as const
 export type WorkdayStatus = (typeof WORKDAY_STATUSES)[number]
 
@@ -71,8 +72,7 @@ export const AUDIT_LOG_ENTITY_TYPES = [
   "TIME_RECORD",
   "ADJUSTMENT_REQUEST",
 ] as const
-export type AuditLogEntityType =
-  (typeof AUDIT_LOG_ENTITY_TYPES)[number]
+export type AuditLogEntityType = (typeof AUDIT_LOG_ENTITY_TYPES)[number]
 
 export const AUDIT_LOG_ACTIONS = [
   "CREATE",
@@ -96,7 +96,11 @@ function isEnumValue<T extends readonly string[]>(
 
 export function toUserRole(value: string): UserRole {
   if (!isEnumValue(USER_ROLES, value)) {
-    if (LEGACY_COMPANY_ADMIN_ROLES.includes(value as (typeof LEGACY_COMPANY_ADMIN_ROLES)[number])) {
+    if (
+      LEGACY_COMPANY_ADMIN_ROLES.includes(
+        value as (typeof LEGACY_COMPANY_ADMIN_ROLES)[number]
+      )
+    ) {
       return "COMPANY_ADMIN"
     }
 

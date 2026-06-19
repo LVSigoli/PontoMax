@@ -23,7 +23,7 @@ import type {
   WorkdaySummary,
 } from "@/components/pages/PointRegister/types"
 import type { TableRowData } from "@/components/structure/Table/types"
-import type { UserApiItem } from "@/services/domain"
+import type { AdjustmentRequestApiItem, UserApiItem } from "@/services/domain"
 import { addDays, buildDateInputValue } from "@/utils/dateRangeFilter"
 
 const ALL_OPTION_VALUE = "__all__"
@@ -164,6 +164,7 @@ export function useHistory() {
     historyRecords,
     getRowKey,
     getHistoryRecordByRow,
+    markWorkdayPending,
     refreshLoadedHistory,
   } = useHistoryTable(selectedUserId, activeRange)
 
@@ -251,7 +252,10 @@ export function useHistory() {
     resetHistorySelection()
   }
 
-  async function handleAdjustmentRequestSubmitted() {
+  async function handleAdjustmentRequestSubmitted(
+    request: AdjustmentRequestApiItem
+  ) {
+    markWorkdayPending(request.workdayId)
     await refreshLoadedHistory()
     setAdjustmentWorkdayDate("")
     setAdjustmentRequestRecords([])

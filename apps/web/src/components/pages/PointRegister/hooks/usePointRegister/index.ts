@@ -10,6 +10,7 @@ import { swrKeys, useTodayTimeRecordsSWR } from "@/hooks/swr"
 import {
   getTimeRecordsOverview,
   registerTimeRecord,
+  type AdjustmentRequestApiItem,
   type WorkdayApiItem,
 } from "@/services/domain"
 import { formatHoursWithMinutes } from "@/services/utils"
@@ -217,8 +218,20 @@ export function usePointRegister() {
     adjustmentRequestSidePanelRef.current?.open()
   }
 
-  async function handleAdjustmentRequestSubmitted() {
+  async function handleAdjustmentRequestSubmitted(
+    request: AdjustmentRequestApiItem
+  ) {
     try {
+      setOverviewWorkdays((current) =>
+        current.map((workday) =>
+          workday.id === request.workdayId
+            ? {
+                ...workday,
+                status: "PENDING_ADJUSTMENT",
+              }
+            : workday
+        )
+      )
       await syncOverviewWorkdays()
       setAdjustmentRequestWorkdayDate(undefined)
       setAdjustmentRequestRecords([])

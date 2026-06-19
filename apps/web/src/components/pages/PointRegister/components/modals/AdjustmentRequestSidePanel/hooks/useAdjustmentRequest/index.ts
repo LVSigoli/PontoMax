@@ -7,7 +7,10 @@ import { useToastContext } from "@/contexts/ToastContext"
 import { swrKeyStartsWith, swrKeys } from "@/hooks/swr"
 
 // Services
-import { createAdjustmentRequest } from "@/services/domain"
+import {
+  createAdjustmentRequest,
+  type AdjustmentRequestApiItem,
+} from "@/services/domain"
 
 // Types
 import type { SelectionOption } from "@/components/structure/Select/types"
@@ -117,7 +120,7 @@ export function useAdjustmentRequest({
         return
       }
 
-      await createAdjustmentRequest({
+      const createdRequest = await createAdjustmentRequest({
         workdayDate: normalizedWorkdayDate,
         justification: form.justification.trim(),
         userId: targetUserId,
@@ -125,12 +128,23 @@ export function useAdjustmentRequest({
       })
 
       await Promise.all([
-        mutateSWRCache(swrKeyStartsWith(swrKeys.adjustmentRequests.list())),
+        mutateSWRCache(
+          swrKeyStartsWith(swrKeys.adjustmentRequests.list()),
+          (current: AdjustmentRequestApiItem[] | undefined) => {
+            if (!current) return current
+
+            return [
+              createdRequest,
+              ...current.filter((item) => item.id !== createdRequest.id),
+            ]
+          },
+          { revalidate: true }
+        ),
         mutateSWRCache(swrKeyStartsWith(swrKeys.analytics.dashboard())),
         mutateSWRCache(swrKeyStartsWith(swrKeys.timeRecords.summary())),
         mutateSWRCache(swrKeys.timeRecords.today()),
       ])
-      await onSubmitted?.()
+      await onSubmitted?.(createdRequest)
 
       showToast({
         variant: "success",

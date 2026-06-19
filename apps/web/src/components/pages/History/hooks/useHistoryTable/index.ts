@@ -5,10 +5,7 @@ import { mapWorkdayToSummary } from "@/components/pages/PointRegister/utils"
 import type { WorkdaySummary } from "@/components/pages/PointRegister/types"
 import type { TableRowData } from "@/components/structure/Table/types"
 import { useToastContext } from "@/contexts/ToastContext"
-import {
-  getTimeRecordsOverview,
-  type WorkdayApiItem,
-} from "@/services/domain"
+import { getTimeRecordsOverview, type WorkdayApiItem } from "@/services/domain"
 import { getErrorMessage } from "@/utils/getErrorMessage"
 
 import type { UserAnalysisItem } from "../../types"
@@ -182,7 +179,16 @@ export function useHistoryTable(userId: number | null, range: DateRange) {
 
       setIsLoadingMore(false)
     }
-  }, [hasMore, isInitialLoading, isLoadingMore, pagination.page, range.from, range.to, showToast, userId])
+  }, [
+    hasMore,
+    isInitialLoading,
+    isLoadingMore,
+    pagination.page,
+    range.from,
+    range.to,
+    showToast,
+    userId,
+  ])
 
   const refreshLoadedHistory = useCallback(async () => {
     if (userId === null) {
@@ -239,7 +245,15 @@ export function useHistoryTable(userId: number | null, range: DateRange) {
 
       throw error
     }
-  }, [loadInitialHistory, mutateSummary, pagination.page, range.from, range.to, showToast, userId])
+  }, [
+    loadInitialHistory,
+    mutateSummary,
+    pagination.page,
+    range.from,
+    range.to,
+    showToast,
+    userId,
+  ])
 
   useEffect(() => {
     activeRequestKeyRef.current = `${userId ?? "none"}:${range.from}:${range.to}`
@@ -295,6 +309,19 @@ export function useHistoryTable(userId: number | null, range: DateRange) {
     return mappedHistoryRecords[index]?.id ?? index
   }
 
+  function markWorkdayPending(workdayId: number) {
+    setHistoryRecords((current) =>
+      current.map((workday) =>
+        workday.id === workdayId
+          ? {
+              ...workday,
+              status: "PENDING_ADJUSTMENT",
+            }
+          : workday
+      )
+    )
+  }
+
   return {
     hasMore,
     errorMessage,
@@ -307,6 +334,7 @@ export function useHistoryTable(userId: number | null, range: DateRange) {
     historyRecords: mappedHistoryRecords,
     getRowKey,
     getHistoryRecordByRow,
+    markWorkdayPending,
     refreshLoadedHistory,
   }
 }

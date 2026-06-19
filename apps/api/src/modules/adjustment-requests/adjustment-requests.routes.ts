@@ -136,6 +136,7 @@ adjustmentRequestsRouter.post(
       where: { id: targetUserId },
       select: {
         companyId: true,
+        fullName: true,
         id: true,
       },
     })
@@ -195,7 +196,7 @@ adjustmentRequestsRouter.post(
       },
     })
 
-    await prisma.workday.update({
+    const updatedWorkday = await prisma.workday.update({
       where: { id: workday.id },
       data: {
         status: "PENDING_ADJUSTMENT",
@@ -219,7 +220,18 @@ adjustmentRequestsRouter.post(
       },
     })
 
-    response.status(201).json({ item: createdRequest })
+    response.status(201).json({
+      item: {
+        ...createdRequest,
+        requestedBy: {
+          fullName: targetUser.fullName,
+        },
+        workday: {
+          ...updatedWorkday,
+          date: workday.date.toISOString().slice(0, 10),
+        },
+      },
+    })
   })
 )
 
@@ -264,7 +276,7 @@ adjustmentRequestsRouter.patch(
         await transaction.workday.update({
           where: { id: adjustmentRequest.workdayId },
           data: {
-            status: "INCONSISTENT",
+            status: "REJECTED",
           },
         })
         return
@@ -388,7 +400,7 @@ adjustmentRequestsRouter.patch(
     const workday = await prisma.workday.update({
       where: { id: adjustmentRequest.workdayId },
       data: {
-        status: nextStatus === "APPROVED" ? "ADJUSTED" : "INCONSISTENT",
+        status: nextStatus === "APPROVED" ? "ADJUSTED" : "REJECTED",
       },
       include: {
         timeEntries: {

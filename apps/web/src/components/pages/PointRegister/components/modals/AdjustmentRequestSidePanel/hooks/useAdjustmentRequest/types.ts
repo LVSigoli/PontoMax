@@ -1,10 +1,11 @@
 import { PointRecord } from "@/components/pages/PointRegister/types"
+import type { AdjustmentRequestApiItem } from "@/services/domain"
 
 export interface UseAdjustmentRequestParams {
   records: PointRecord[]
   targetUserId?: number
   workdayDate?: string
-  onSubmitted?: () => Promise<void> | void
+  onSubmitted?: (request: AdjustmentRequestApiItem) => Promise<void> | void
 }
 
 export interface AdjustmentRequestForm {

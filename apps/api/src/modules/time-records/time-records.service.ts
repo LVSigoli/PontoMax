@@ -11,11 +11,7 @@ import {
   type TimeEntrySource,
 } from "../../common/constants/domain-enums.js"
 import { AppError } from "../../common/errors/app-error.js"
-import {
-  endOfDay,
-  getDateOnly,
-  startOfDay,
-} from "../../common/utils/date.js"
+import { endOfDay, getDateOnly, startOfDay } from "../../common/utils/date.js"
 import {
   calculateWorkedMinutes,
   isAlternatingTimeEntrySequence,
@@ -561,7 +557,8 @@ export async function getUserWorkdaySummary(params: {
 
       if (
         workday.status === "INCONSISTENT" ||
-        workday.status === "PENDING_ADJUSTMENT"
+        workday.status === "PENDING_ADJUSTMENT" ||
+        workday.status === "REJECTED"
       ) {
         summary.inconsistentCount += 1
       }
@@ -712,10 +709,7 @@ export async function createTimeEntry(params: {
   const kind = params.kind ?? expectedKind
 
   if (params.kind && params.kind !== expectedKind) {
-    throw new AppError(
-      `The next time entry kind must be ${expectedKind}.`,
-      400
-    )
+    throw new AppError(`The next time entry kind must be ${expectedKind}.`, 400)
   }
 
   if (
@@ -918,7 +912,9 @@ function normalizeWorkdayForTimezone<T extends WorkdayLike>(
   const overtimeMinutes = Math.max(0, workedMinutes - scheduledMinutes)
   const missingMinutes = Math.max(0, scheduledMinutes - workedMinutes)
   const status =
-    workday.status === "PENDING_ADJUSTMENT" || workday.status === "ADJUSTED"
+    workday.status === "PENDING_ADJUSTMENT" ||
+    workday.status === "ADJUSTED" ||
+    workday.status === "REJECTED"
       ? workday.status
       : mapWorkedStatus({
           totalEntries: timeEntries.length,
@@ -948,7 +944,9 @@ function normalizeWorkdayForTimezone<T extends WorkdayLike>(
 function shouldIgnoreWorkdayInSummary(workday: WorkdayLike) {
   return (
     workday.timeEntries?.length === 0 &&
-    (workday.status === "ADJUSTED" || workday.status === "PENDING_ADJUSTMENT")
+    (workday.status === "ADJUSTED" ||
+      workday.status === "PENDING_ADJUSTMENT" ||
+      workday.status === "REJECTED")
   )
 }
 

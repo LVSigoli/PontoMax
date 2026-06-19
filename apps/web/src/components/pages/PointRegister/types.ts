@@ -6,6 +6,7 @@ export type PointRecordStatus =
   | "Atrasado"
   | "Falta"
   | "Aprovado"
+  | "Recusado"
 
 export type PointRecordType = "Entrada" | "Saida"
 

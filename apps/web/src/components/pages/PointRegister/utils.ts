@@ -13,7 +13,7 @@ export const getPointTypeClass = (type: PointRecordType) => {
 }
 
 export const getPointStatusClass = (status: PointRecordStatus) => {
-  if (status === "Falta") {
+  if (status === "Falta" || status === "Recusado") {
     return "bg-danger-50 text-danger-700"
   }
 
@@ -127,6 +127,8 @@ export function mapWorkdayStatusToPointStatus(
 
   if (workday.status === "ADJUSTED") return "Aprovado"
 
+  if (workday.status === "REJECTED") return "Recusado"
+
   if (workday.status === "LATE") return "Atrasado"
 
   return "Registrado"
@@ -138,9 +140,7 @@ export function mapTimeEntryKindToPointType(
   return kind === "ENTRY" ? "Entrada" : "Saida"
 }
 
-export function formatPointLocation(
-  location: TimeEntryApiItem["location"]
-) {
+export function formatPointLocation(location: TimeEntryApiItem["location"]) {
   if (!location) {
     return "Nao informada"
   }

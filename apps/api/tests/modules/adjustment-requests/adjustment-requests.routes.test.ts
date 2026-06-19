@@ -136,6 +136,7 @@ describe("adjustment requests routes", () => {
     mocked.prisma.user.findUniqueOrThrow.mockResolvedValue({
       id: 1,
       companyId: 10,
+      fullName: "Manager Demo",
     })
     mocked.ensureWorkdayMock.mockResolvedValue({
       id: 501,
@@ -160,7 +161,10 @@ describe("adjustment requests routes", () => {
         },
       ],
     })
-    mocked.prisma.workday.update.mockResolvedValue({ id: 501 })
+    mocked.prisma.workday.update.mockResolvedValue({
+      id: 501,
+      status: "PENDING_ADJUSTMENT",
+    })
     mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
 
     const response = await request(app)
@@ -182,7 +186,7 @@ describe("adjustment requests routes", () => {
 
     expect(response.status).toBe(201)
     expect(response.body).toEqual({
-      item: {
+      item: expect.objectContaining({
         id: 601,
         companyId: 10,
         userId: 1,
@@ -200,7 +204,15 @@ describe("adjustment requests routes", () => {
             reason: "Entrada atrasada",
           },
         ],
-      },
+        requestedBy: {
+          fullName: "Manager Demo",
+        },
+        workday: expect.objectContaining({
+          id: 501,
+          date: "2026-05-11",
+          status: "PENDING_ADJUSTMENT",
+        }),
+      }),
     })
     expect(mocked.ensureWorkdayMock).toHaveBeenCalledWith({
       companyId: 10,
@@ -225,6 +237,7 @@ describe("adjustment requests routes", () => {
     mocked.prisma.user.findUniqueOrThrow.mockResolvedValue({
       id: 7,
       companyId: 42,
+      fullName: "Funcionario Demo",
     })
     mocked.ensureWorkdayMock.mockResolvedValue({
       id: 501,
@@ -239,7 +252,10 @@ describe("adjustment requests routes", () => {
       status: "PENDING",
       pointAdjustments: [],
     })
-    mocked.prisma.workday.update.mockResolvedValue({ id: 501 })
+    mocked.prisma.workday.update.mockResolvedValue({
+      id: 501,
+      status: "PENDING_ADJUSTMENT",
+    })
     mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
 
     const response = await request(app)
@@ -514,7 +530,7 @@ describe("adjustment requests routes", () => {
     mocked.prisma.workday.update.mockResolvedValue({
       id: 501,
       date: new Date("2026-05-11T00:00:00.000Z"),
-      status: "INCONSISTENT",
+      status: "REJECTED",
       timeEntries: [],
     })
     mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
@@ -568,7 +584,7 @@ describe("adjustment requests routes", () => {
     mocked.prisma.workday.update.mockResolvedValue({
       id: 501,
       date: new Date("2026-05-11T00:00:00.000Z"),
-      status: "INCONSISTENT",
+      status: "REJECTED",
       timeEntries: [],
     })
     mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
@@ -622,7 +638,7 @@ describe("adjustment requests routes", () => {
     mocked.prisma.workday.update.mockResolvedValue({
       id: 501,
       date: new Date("2026-05-11T00:00:00.000Z"),
-      status: "INCONSISTENT",
+      status: "REJECTED",
       timeEntries: [],
     })
     mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
@@ -642,7 +658,7 @@ describe("adjustment requests routes", () => {
         workday: {
           id: 501,
           date: "2026-05-11",
-          status: "INCONSISTENT",
+          status: "REJECTED",
           timeEntries: [],
         },
       },
@@ -659,13 +675,13 @@ describe("adjustment requests routes", () => {
     expect(transaction.workday.update).toHaveBeenCalledWith({
       where: { id: 501 },
       data: {
-        status: "INCONSISTENT",
+        status: "REJECTED",
       },
     })
     expect(mocked.prisma.workday.update).toHaveBeenCalledWith({
       where: { id: 501 },
       data: {
-        status: "INCONSISTENT",
+        status: "REJECTED",
       },
       include: {
         timeEntries: {

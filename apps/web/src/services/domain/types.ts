@@ -124,6 +124,7 @@ export interface WorkdayApiItem {
     | "LATE"
     | "PENDING_ADJUSTMENT"
     | "ADJUSTED"
+    | "REJECTED"
   scheduledMinutes: number
   workedMinutes: number
   overtimeMinutes: number
@@ -140,8 +141,7 @@ export interface WorkdayOverviewSummaryApiItem {
   pendingAdjustments: number
 }
 
-export interface WorkdayOverviewResponse
-  extends ApiPaginatedResponse<WorkdayApiItem> {}
+export interface WorkdayOverviewResponse extends ApiPaginatedResponse<WorkdayApiItem> {}
 
 export interface RegisterTimeRecordResponse {
   entry: TimeEntryApiItem
@@ -158,6 +158,7 @@ export interface TeamTodayApiItem {
     | "LATE"
     | "PENDING_ADJUSTMENT"
     | "ADJUSTED"
+    | "REJECTED"
   workedMinutes: number
   lastEntryAt: string | null
 }
@@ -191,6 +192,7 @@ export interface AdjustmentRequestApiItem {
   pointAdjustments: AdjustmentPointApiItem[]
   workday?: {
     date: string
+    status?: WorkdayApiItem["status"]
   }
 }
 
