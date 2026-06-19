@@ -12,6 +12,9 @@ const mocked = vi.hoisted(() => {
     ensureWorkdayMock: vi.fn(),
     recalculateWorkdayMock: vi.fn(),
     prisma: {
+      user: {
+        findUniqueOrThrow: vi.fn(),
+      },
       adjustmentRequest: {
         findMany: vi.fn(),
         findUniqueOrThrow: vi.fn(),
@@ -78,6 +81,7 @@ beforeEach(() => {
   })
   mocked.ensureWorkdayMock.mockReset()
   mocked.recalculateWorkdayMock.mockReset()
+  mocked.prisma.user.findUniqueOrThrow.mockReset()
   mocked.prisma.adjustmentRequest.findMany.mockReset()
   mocked.prisma.adjustmentRequest.findUniqueOrThrow.mockReset()
   mocked.prisma.adjustmentRequest.create.mockReset()
@@ -129,6 +133,10 @@ describe("adjustment requests routes", () => {
   })
 
   it("creates a new adjustment request", async () => {
+    mocked.prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: 1,
+      companyId: 10,
+    })
     mocked.ensureWorkdayMock.mockResolvedValue({
       id: 501,
       date: new Date("2026-05-11T00:00:00.000Z"),
@@ -205,6 +213,64 @@ describe("adjustment requests routes", () => {
         status: "PENDING_ADJUSTMENT",
       },
     })
+  })
+
+  it("creates a request for the employee selected by a platform administrator", async () => {
+    authUser = {
+      id: 99,
+      companyId: 10,
+      role: "PLATFORM_ADMIN",
+      email: "platform@example.com",
+    }
+    mocked.prisma.user.findUniqueOrThrow.mockResolvedValue({
+      id: 7,
+      companyId: 42,
+    })
+    mocked.ensureWorkdayMock.mockResolvedValue({
+      id: 501,
+      date: new Date("2026-05-11T00:00:00.000Z"),
+    })
+    mocked.prisma.adjustmentRequest.create.mockResolvedValue({
+      id: 601,
+      companyId: 42,
+      userId: 7,
+      workdayId: 501,
+      justification: "Correcao solicitada pelo administrador",
+      status: "PENDING",
+      pointAdjustments: [],
+    })
+    mocked.prisma.workday.update.mockResolvedValue({ id: 501 })
+    mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
+
+    const response = await request(app)
+      .post("/adjustment-requests")
+      .send({
+        userId: 7,
+        workdayDate: "2026-05-11",
+        justification: "Correcao solicitada pelo administrador",
+        records: [
+          {
+            actionType: "CREATE",
+            targetKind: "ENTRY",
+            newRecordedAt: "2026-05-11T11:00:00.000Z",
+          },
+        ],
+      })
+
+    expect(response.status).toBe(201)
+    expect(mocked.ensureWorkdayMock).toHaveBeenCalledWith({
+      companyId: 42,
+      userId: 7,
+      date: "2026-05-11",
+    })
+    expect(mocked.prisma.adjustmentRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          companyId: 42,
+          userId: 7,
+        }),
+      })
+    )
   })
 
   it("approves an adjustment request only when the final sequence stays valid", async () => {
@@ -420,6 +486,60 @@ describe("adjustment requests routes", () => {
       id: 601,
       companyId: 42,
       userId: 1,
+      workdayId: 501,
+      pointAdjustments: [],
+      workday: {
+        id: 501,
+      },
+    })
+
+    const transaction = {
+      adjustmentRequest: {
+        update: vi.fn().mockResolvedValue({ id: 601 }),
+      },
+      workday: {
+        update: vi.fn().mockResolvedValue({ id: 501 }),
+      },
+      timeEntry: {
+        update: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
+        aggregate: vi.fn(),
+        create: vi.fn(),
+      },
+    }
+
+    mocked.prisma.$transaction.mockImplementation(async (callback) =>
+      callback(transaction as never)
+    )
+    mocked.prisma.workday.update.mockResolvedValue({
+      id: 501,
+      date: new Date("2026-05-11T00:00:00.000Z"),
+      status: "INCONSISTENT",
+      timeEntries: [],
+    })
+    mocked.prisma.auditLog.create.mockResolvedValue({ id: 1 })
+
+    const response = await request(app)
+      .patch("/adjustment-requests/601/review")
+      .send({
+        status: "REJECTED",
+      })
+
+    expect(response.status).toBe(200)
+  })
+
+  it("allows a platform administrator to review their own request", async () => {
+    authUser = {
+      id: 99,
+      companyId: 10,
+      role: "PLATFORM_ADMIN",
+      email: "platform@example.com",
+    }
+
+    mocked.prisma.adjustmentRequest.findUniqueOrThrow.mockResolvedValue({
+      id: 601,
+      companyId: 10,
+      userId: 99,
       workdayId: 501,
       pointAdjustments: [],
       workday: {

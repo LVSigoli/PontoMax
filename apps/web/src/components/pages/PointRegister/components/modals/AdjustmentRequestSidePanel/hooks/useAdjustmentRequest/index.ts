@@ -30,6 +30,7 @@ import {
 export function useAdjustmentRequest({
   onSubmitted,
   records,
+  targetUserId,
   workdayDate,
 }: UseAdjustmentRequestParams) {
   // Refs
@@ -119,6 +120,7 @@ export function useAdjustmentRequest({
       await createAdjustmentRequest({
         workdayDate: normalizedWorkdayDate,
         justification: form.justification.trim(),
+        userId: targetUserId,
         records: adjustmentRecords,
       })
 

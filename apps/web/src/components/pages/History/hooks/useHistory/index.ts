@@ -71,20 +71,13 @@ export function useHistory() {
 
     return Number(selectedCompanyValue)
   }, [isPlatformAdmin, selectedCompanyValue])
-  const {
-    data: companies = [],
-    isLoading: isCompaniesLoading,
-  } = useCompaniesSWR({
-    enabled: isPlatformAdmin,
-  })
-  const userCompanyScope = isPlatformAdmin
-    ? selectedCompanyId
-    : user?.companyId
+  const { data: companies = [], isLoading: isCompaniesLoading } =
+    useCompaniesSWR({
+      enabled: isPlatformAdmin,
+    })
+  const userCompanyScope = isPlatformAdmin ? selectedCompanyId : user?.companyId
 
-  const {
-    data: companyUsers = [],
-    isLoading: isUsersLoading,
-  } = useUsersSWR(
+  const { data: companyUsers = [], isLoading: isUsersLoading } = useUsersSWR(
     { companyId: userCompanyScope },
     {
       enabled:
@@ -136,13 +129,7 @@ export function useHistory() {
       }))
 
     return shouldIncludeSelfOption ? [selfOption, ...otherUsers] : otherUsers
-  }, [
-    canFilterHistory,
-    companyUsers,
-    isPlatformAdmin,
-    selectedCompanyId,
-    user,
-  ])
+  }, [canFilterHistory, companyUsers, isPlatformAdmin, selectedCompanyId, user])
 
   const selectedHistoryUserOption = useMemo<SelectionOption[]>(() => {
     if (selectedUserId === null) return []
@@ -308,15 +295,13 @@ export function useHistory() {
     loadMoreLabel,
     loadMoreRef,
     selectedHistoryRecord,
+    selectedHistoryUserId: selectedUserId ?? undefined,
     tableData,
     tableActions: POINT_HISTORY_ACTIONS,
   }
 }
 
-function buildHistoryUserLabel(
-  user: UserApiItem,
-  includeCompanyName = false
-) {
+function buildHistoryUserLabel(user: UserApiItem, includeCompanyName = false) {
   const parts = [user.fullName]
 
   if (user.position?.trim()) {

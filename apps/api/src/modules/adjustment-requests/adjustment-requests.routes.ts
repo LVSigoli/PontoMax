@@ -29,6 +29,7 @@ const requestSchema = z.object({
   body: z.object({
     workdayDate: z.string().date(),
     justification: z.string().min(5),
+    userId: z.coerce.number().int().positive().optional(),
     records: z
       .array(
         z.object({
@@ -130,16 +131,45 @@ adjustmentRequestsRouter.post(
   "/",
   validateRequest(requestSchema),
   asyncHandler(async (request, response) => {
+    const targetUserId = request.body.userId ?? request.authUser!.id
+    const targetUser = await prisma.user.findUniqueOrThrow({
+      where: { id: targetUserId },
+      select: {
+        companyId: true,
+        id: true,
+      },
+    })
+
+    if (
+      request.authUser!.role === "EMPLOYEE" &&
+      targetUser.id !== request.authUser!.id
+    ) {
+      throw new AppError(
+        "You do not have permission to request this adjustment.",
+        403
+      )
+    }
+
+    if (
+      request.authUser!.role === "COMPANY_ADMIN" &&
+      targetUser.companyId !== request.authUser!.companyId
+    ) {
+      throw new AppError(
+        "You do not have permission to request this adjustment.",
+        403
+      )
+    }
+
     const workday = await ensureWorkday({
-      companyId: request.authUser!.companyId,
-      userId: request.authUser!.id,
+      companyId: targetUser.companyId,
+      userId: targetUser.id,
       date: request.body.workdayDate,
     })
 
     const createdRequest = await prisma.adjustmentRequest.create({
       data: {
-        companyId: request.authUser!.companyId,
-        userId: request.authUser!.id,
+        companyId: targetUser.companyId,
+        userId: targetUser.id,
         workdayId: workday.id,
         justification: request.body.justification,
         status: "PENDING",
@@ -173,7 +203,7 @@ adjustmentRequestsRouter.post(
     })
 
     await recordAuditLog(prisma, {
-      companyId: request.authUser!.companyId,
+      companyId: targetUser.companyId,
       actorUserId: request.authUser!.id,
       entityType: "ADJUSTMENT_REQUEST",
       entityId: createdRequest.id,

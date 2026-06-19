@@ -22,7 +22,7 @@ import type {
 export const AdjustmentRequestSidePanel = forwardRef<
   AdjustmentRequestSidePanelMethods,
   AdjustmentRequestSidePanelProps
->(({ records, workdayDate, onSubmitted }, ref) => {
+>(({ records, targetUserId, workdayDate, onSubmitted }, ref) => {
   const {
     isSubmitting,
     form,
@@ -38,7 +38,12 @@ export const AdjustmentRequestSidePanel = forwardRef<
     handleTableActionClick,
     handleTableCellChange,
     handleToggle,
-  } = useAdjustmentRequest({ onSubmitted, records, workdayDate })
+  } = useAdjustmentRequest({
+    onSubmitted,
+    records,
+    targetUserId,
+    workdayDate,
+  })
 
   useImperativeHandle(
     ref,

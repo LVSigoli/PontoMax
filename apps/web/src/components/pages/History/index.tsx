@@ -50,6 +50,7 @@ export const History: React.FC = () => {
     periodSummary,
     selectedCompanyOption,
     selectedHistoryRecord,
+    selectedHistoryUserId,
     selectedHistoryUserOption,
     selectedPeriodOption,
     tableActions,
@@ -123,6 +124,7 @@ export const History: React.FC = () => {
       <AdjustmentRequestSidePanel
         ref={adjustmentRequestSidePanelRef}
         records={adjustmentRequestRecords}
+        targetUserId={selectedHistoryUserId}
         workdayDate={adjustmentWorkdayDate}
         onSubmitted={handleAdjustmentRequestSubmitted}
       />
