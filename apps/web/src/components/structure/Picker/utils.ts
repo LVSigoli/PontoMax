@@ -13,7 +13,7 @@ const PICKER_PANEL_DIMENSIONS: Record<
 > = {
   date: { width: 280, height: 320 },
   time: { width: 280, height: 180 },
-  interval: { width: 180, height: 164 },
+  interval: { width: 220, height: 180 },
   dateTime: { width: 280, height: 440 },
 }
 
@@ -23,7 +23,9 @@ export function getPickerPanelDimensions(type: PickerType) {
   return PICKER_PANEL_DIMENSIONS[type]
 }
 
-export function getPickerIconName(type: PickerType): PickerFieldProps["iconName"] {
+export function getPickerIconName(
+  type: PickerType
+): PickerFieldProps["iconName"] {
   if (type === "date" || type === "dateTime") return "calendar"
 
   return "clock"
@@ -91,7 +93,7 @@ export function parseTimeValue(value: string | Date) {
 
   if (!value) return ""
 
-  const timePart = value.includes("T") ? value.split("T")[1] ?? "" : value
+  const timePart = value.includes("T") ? (value.split("T")[1] ?? "") : value
 
   return timePart.slice(0, 5)
 }

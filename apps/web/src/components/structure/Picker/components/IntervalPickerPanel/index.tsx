@@ -1,5 +1,6 @@
 import { useState } from "react"
 
+import { Button } from "@/components/structure/Button"
 import { Typography } from "@/components/structure/Typography"
 
 import { TimeFields } from "../TimeFields"
@@ -22,7 +23,9 @@ export const IntervalPickerPanel: React.FC<Props> = ({
   onChange,
   onClose,
 }) => {
-  const [draft, setDraft] = useState<DurationDraft>(() => parseDurationDraft(value))
+  const [draft, setDraft] = useState<DurationDraft>(() =>
+    parseDurationDraft(value)
+  )
 
   function syncValue(nextDraft: DurationDraft) {
     const nextValue = buildDurationValue(nextDraft)
@@ -90,6 +93,20 @@ export const IntervalPickerPanel: React.FC<Props> = ({
     onClose()
   }
 
+  function handleConfirm() {
+    const sanitizedDraft = {
+      hour: clampInputValue(draft.hour || "0", 0, 23),
+      minute: clampInputValue(draft.minute || "0", 0, 59),
+    }
+    const nextValue = buildDurationValue(sanitizedDraft)
+
+    if (!nextValue) return
+
+    setDraft(sanitizedDraft)
+    onChange(nextValue)
+    onClose()
+  }
+
   return (
     <div className="grid gap-3 bg-surface-overlay px-4 py-4">
       <Typography variant="b2" value="Informe a duração" />
@@ -103,13 +120,16 @@ export const IntervalPickerPanel: React.FC<Props> = ({
         onMinuteChange={handleMinuteChange}
       />
 
-      <button
-        type="button"
-        className="justify-self-start text-sm font-medium text-content-secondary transition hover:text-brand-600"
-        onClick={handleClear}
-      >
-        Limpar
-      </button>
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          variant="text"
+          value="Limpar"
+          className="text-content-secondary"
+          onClick={handleClear}
+        />
+
+        <Button variant="text" value="Confirmar" onClick={handleConfirm} />
+      </div>
     </div>
   )
 }

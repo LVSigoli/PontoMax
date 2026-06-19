@@ -51,6 +51,7 @@ async function run() {
     { method: "GET", path: `/${apiPrefix}/work-schedules`, expectedStatus: 200 },
     { method: "GET", path: `/${apiPrefix}/adjustment-requests`, expectedStatus: 200 },
     { method: "GET", path: `/${apiPrefix}/analytics/overview`, expectedStatus: 200 },
+    { method: "GET", path: `/${apiPrefix}/analytics/dashboard`, expectedStatus: 200 },
   ]
 
   for (const endpoint of authenticatedEndpoints) {
