@@ -1,12 +1,12 @@
-import crypto from 'node:crypto';
+import crypto from "node:crypto"
 
-import { env } from '../../config/env.js';
-import { prisma } from '../../lib/prisma.js';
-import { durationToMilliseconds } from '../../common/utils/duration.js';
+import { env } from "../../config/env.js"
+import { prisma } from "../../lib/prisma.js"
+import { durationToMilliseconds } from "../../common/utils/duration.js"
 
 export async function issuePasswordResetToken(userId: number) {
-  const resetToken = generateOpaqueToken();
-  const tokenHash = createTokenHash(resetToken);
+  const resetToken = generateOpaqueToken()
+  const tokenHash = createTokenHash(resetToken)
 
   await prisma.$transaction([
     prisma.passwordResetToken.updateMany({
@@ -22,25 +22,25 @@ export async function issuePasswordResetToken(userId: number) {
       data: {
         userId,
         tokenHash,
-        expiresAt: new Date(Date.now() + durationToMilliseconds('1d')),
+        expiresAt: new Date(Date.now() + durationToMilliseconds("1d")),
       },
     }),
-  ]);
+  ])
 
-  return resetToken;
+  return resetToken
 }
 
 export function createTokenHash(token: string) {
-  return crypto.createHash('sha256').update(token).digest('hex');
+  return crypto.createHash("sha256").update(token).digest("hex")
 }
 
 export function makePasswordSetupUrl(resetToken: string) {
-  const url = new URL('/login', env.APP_URL);
-  url.searchParams.set('view', 'replace-password');
-  url.searchParams.set('token', resetToken);
-  return url.toString();
+  const url = new URL("/login", env.APP_URL)
+  url.searchParams.set("view", "replace-password")
+  url.searchParams.set("token", resetToken)
+  return url.toString()
 }
 
 function generateOpaqueToken() {
-  return crypto.randomBytes(24).toString('base64url');
+  return crypto.randomBytes(24).toString("base64url")
 }

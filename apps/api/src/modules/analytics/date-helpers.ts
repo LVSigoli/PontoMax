@@ -3,7 +3,7 @@ export function subDays(value: Date, days: number) {
     Date.UTC(
       value.getUTCFullYear(),
       value.getUTCMonth(),
-      value.getUTCDate() - days,
-    ),
-  );
+      value.getUTCDate() - days
+    )
+  )
 }

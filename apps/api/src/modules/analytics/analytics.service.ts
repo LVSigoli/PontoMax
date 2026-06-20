@@ -1,116 +1,18 @@
 import { endOfDay, getDateOnly, startOfDay } from "../../common/utils/date.js"
 import { prisma } from "../../lib/prisma.js"
-import { subDays } from "./date-helpers.js"
+import { type AnalyticsDashboardParams } from "./analytics.types.js"
 import {
-  DEFAULT_ANALYTICS_PERIOD,
-  type AnalyticsDashboardParams,
-  type AnalyticsPeriod,
-} from "./analytics.types.js"
-
-type AnalyticsRange = {
-  from: Date
-  period: AnalyticsPeriod
-  to: Date
-}
+  formatChartLabel,
+  getAnalyticsDateKey,
+  getRangeLength,
+  listRangeDates,
+  resolveAnalyticsRange,
+} from "./analytics.utils.js"
 
 type BalanceEntry = {
   balanceMinutes: number
   id: number
   name: string
-}
-
-function getDateKey(value: Date) {
-  return value.toISOString().slice(0, 10)
-}
-
-function addDays(value: Date, amount: number) {
-  return new Date(
-    Date.UTC(
-      value.getUTCFullYear(),
-      value.getUTCMonth(),
-      value.getUTCDate() + amount
-    )
-  )
-}
-
-function getRangeLength(from: Date, to: Date) {
-  return Math.floor((to.getTime() - from.getTime()) / 86400000) + 1
-}
-
-function listRangeDates(from: Date, to: Date) {
-  const dates: Date[] = []
-
-  for (
-    let current = from;
-    current.getTime() <= to.getTime();
-    current = addDays(current, 1)
-  ) {
-    dates.push(current)
-  }
-
-  return dates
-}
-
-function formatChartLabel(value: Date, totalDays: number) {
-  if (totalDays <= 7) {
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      weekday: "short",
-    })
-      .format(value)
-      .replace(",", "")
-      .replaceAll(".", "")
-  }
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  }).format(value)
-}
-
-function resolveAnalyticsRange(
-  params: AnalyticsDashboardParams = {}
-): AnalyticsRange {
-  const today = getDateOnly(new Date())
-  const period = params.period ?? DEFAULT_ANALYTICS_PERIOD
-
-  if (period === "today") {
-    return {
-      from: today,
-      period,
-      to: today,
-    }
-  }
-
-  if (period === "last30Days") {
-    return {
-      from: subDays(today, 29),
-      period,
-      to: today,
-    }
-  }
-
-  if (period === "currentMonth") {
-    return {
-      from: new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)),
-      period,
-      to: today,
-    }
-  }
-
-  if (period === "custom" && params.from && params.to) {
-    return {
-      from: getDateOnly(params.from),
-      period,
-      to: getDateOnly(params.to),
-    }
-  }
-
-  return {
-    from: subDays(today, 6),
-    period: DEFAULT_ANALYTICS_PERIOD,
-    to: today,
-  }
 }
 
 export async function getAnalyticsDashboard(
@@ -214,7 +116,7 @@ export async function getAnalyticsDashboard(
   const rangeDates = listRangeDates(range.from, range.to)
   const solicitationBuckets = new Map(
     rangeDates.map((date) => [
-      getDateKey(date),
+      getAnalyticsDateKey(date),
       {
         approved: 0,
         pending: 0,
@@ -224,7 +126,7 @@ export async function getAnalyticsDashboard(
   )
 
   for (const adjustment of adjustments) {
-    const key = getDateKey(getDateOnly(adjustment.requestedAt))
+    const key = getAnalyticsDateKey(getDateOnly(adjustment.requestedAt))
     const bucket = solicitationBuckets.get(key)
 
     if (!bucket) {
@@ -248,7 +150,7 @@ export async function getAnalyticsDashboard(
 
   const workedHoursBuckets = new Map(
     rangeDates.map((date) => [
-      getDateKey(date),
+      getAnalyticsDateKey(date),
       {
         totalMinutes: 0,
       },
@@ -256,7 +158,7 @@ export async function getAnalyticsDashboard(
   )
 
   for (const workday of workdays) {
-    const bucket = workedHoursBuckets.get(getDateKey(workday.date))
+    const bucket = workedHoursBuckets.get(getAnalyticsDateKey(workday.date))
 
     if (!bucket) {
       continue
@@ -266,7 +168,7 @@ export async function getAnalyticsDashboard(
   }
 
   const solicitationChart = rangeDates.map((date) => {
-    const key = getDateKey(date)
+    const key = getAnalyticsDateKey(date)
     const bucket = solicitationBuckets.get(key) ?? {
       approved: 0,
       pending: 0,
@@ -282,7 +184,7 @@ export async function getAnalyticsDashboard(
   })
 
   const workedHours = rangeDates.map((date) => {
-    const key = getDateKey(date)
+    const key = getAnalyticsDateKey(date)
     const bucket = workedHoursBuckets.get(key) ?? {
       totalMinutes: 0,
     }

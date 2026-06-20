@@ -53,7 +53,8 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
     const sidePanelRef = useRef<SidePanelMethods>(null)
 
     // Contexts
-    const { companies, journeys, isLoading, saveEntity } = useManagementContext()
+    const { companies, journeys, isLoading, saveEntity } =
+      useManagementContext()
 
     // States
     const [form, setForm] = useState<FormData>(() =>
@@ -127,7 +128,10 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
         return (
           <div className="grid gap-3">
             {Array.from({ length: 6 }, (_, index) => (
-              <div key={`management-form-skeleton-${index}`} className="grid gap-2">
+              <div
+                key={`management-form-skeleton-${index}`}
+                className="grid gap-2"
+              >
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-11 w-full rounded-xl" />
               </div>
@@ -168,7 +172,10 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
       if (view.id === "employees") {
         const employeeForm = form as EmployeeFormData
         const companyOptions = makeCompanyOptions(companies)
-        const journeyOptions = makeJourneyOptions(journeys)
+        const companyJourneys = journeys.filter(
+          (journey) => journey.companyId === employeeForm.companyId
+        )
+        const journeyOptions = makeJourneyOptions(companyJourneys)
 
         return (
           <>
@@ -207,7 +214,18 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
                 label: "Selecione uma empresa",
                 options: companyOptions,
                 value: String(employeeForm.companyId),
-                onChange: (value) => handleChange("companyId", Number(value)),
+                onChange: (value) => {
+                  const companyId = Number(value)
+                  const journeyId =
+                    journeys.find((journey) => journey.companyId === companyId)
+                      ?.id ?? 0
+
+                  setForm((currentForm) => ({
+                    ...currentForm,
+                    companyId,
+                    journeyId,
+                  }))
+                },
               })}
 
               {renderSelect({
@@ -299,7 +317,9 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
             title="Escala"
             value={journeyForm.scale}
             placeholder="Ex.: 5X2, 4X2 ou 12X36"
-            onChange={(value) => handleChange("scale", normalizeScaleCode(value))}
+            onChange={(value) =>
+              handleChange("scale", normalizeScaleCode(value))
+            }
           />
 
           <div className="grid gap-2">

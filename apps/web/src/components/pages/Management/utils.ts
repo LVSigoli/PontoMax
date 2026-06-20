@@ -31,14 +31,20 @@ export function makeEmployeeForm(
   journeys: Journey[],
   employee?: Employee
 ): EmployeeForm {
+  const companyId = employee?.companyId ?? companies[0]?.id ?? 0
+  const defaultJourneyId =
+    employee?.journeyId ??
+    journeys.find((journey) => journey.companyId === companyId)?.id ??
+    0
+
   return {
     userRole: employee?.userRole ?? "EMPLOYEE",
     name: employee?.name ?? "",
     cpf: employee?.cpf ?? "",
     email: employee?.email ?? "",
     role: employee?.role ?? "",
-    companyId: employee?.companyId ?? companies[0]?.id ?? 0,
-    journeyId: employee?.journeyId ?? journeys[0]?.id ?? 0,
+    companyId,
+    journeyId: defaultJourneyId,
     isActive: employee?.isActive ?? true,
     managerAccess: employee?.userRole === "COMPANY_ADMIN",
   }
@@ -123,8 +129,7 @@ export function mapUserApiToEmployee(user: UserApiItem): Employee {
     companyId: user.companyId,
     journeyId: user.journeyId ?? 0,
     isActive: user.isActive,
-    managerAccess:
-      user.role === "COMPANY_ADMIN",
+    managerAccess: user.role === "COMPANY_ADMIN",
   }
 }
 
@@ -240,7 +245,11 @@ export function clockToMinutes(value: string) {
   return Number(hours) * 60 + Number(minutes)
 }
 
-function calculateJourneyWorkMinutes(startTime: string, endTime: string, interval: string) {
+function calculateJourneyWorkMinutes(
+  startTime: string,
+  endTime: string,
+  interval: string
+) {
   if (!startTime || !endTime) return 0
 
   const start = clockToMinutes(startTime)
