@@ -16,7 +16,15 @@ export const MONTH_OPTIONS: SelectionOption[] = [
   { value: "11", label: "Dezembro" },
 ]
 
-export const WEEKDAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] as const
+export const WEEKDAY_LABELS = [
+  "Seg",
+  "Ter",
+  "Qua",
+  "Qui",
+  "Sex",
+  "Sáb",
+  "Dom",
+] as const
 
 export const HOLIDAY_TYPE_META = {
   Nacional: {
@@ -108,7 +116,8 @@ function groupHolidaysByDate(holidays: Holiday[]) {
       return leftDateDiff
     }
 
-    const leftTypeDiff = HOLIDAY_TYPE_ORDER[left.type] - HOLIDAY_TYPE_ORDER[right.type]
+    const leftTypeDiff =
+      HOLIDAY_TYPE_ORDER[left.type] - HOLIDAY_TYPE_ORDER[right.type]
 
     if (leftTypeDiff !== 0) {
       return leftTypeDiff

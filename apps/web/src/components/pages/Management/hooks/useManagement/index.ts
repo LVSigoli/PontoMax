@@ -15,8 +15,13 @@ import type { SelectionOption } from "@/components/structure/Select/types"
 import type { TableRowData } from "@/components/structure/Table/types"
 import type { ManagementDrawerMethods } from "../../components/ManagementDrawer/types"
 import type { ManagementEntity, ManagementTabOption } from "../../types"
-
-const ALL_OPTION_VALUE = "__all__"
+import {
+  ALL_OPTION_VALUE,
+  buildRemovalKey,
+  matchesCompanySearch,
+  matchesEmployeeSearch,
+  matchesJourneySearch,
+} from "./filters"
 
 export function useManagement() {
   // Refs
@@ -42,7 +47,9 @@ export function useManagement() {
   const [selectedRoleValue, setSelectedRoleValue] = useState(ALL_OPTION_VALUE)
   const [selectedElement, setSelectedElement] =
     useState<ManagementEntity | null>(null)
-  const [pendingRemovalKey, setPendingRemovalKey] = useState<string | null>(null)
+  const [pendingRemovalKey, setPendingRemovalKey] = useState<string | null>(
+    null
+  )
 
   // Hooks
   const { companies, employees, journeys, isLoading, removeEntity } =
@@ -111,13 +118,22 @@ export function useManagement() {
         search,
       })
       const matchesCompany =
-        selectedCompanyId === undefined || employee.companyId === selectedCompanyId
+        selectedCompanyId === undefined ||
+        employee.companyId === selectedCompanyId
       const matchesRole =
-        selectedRoleValue === ALL_OPTION_VALUE || employee.role === selectedRoleValue
+        selectedRoleValue === ALL_OPTION_VALUE ||
+        employee.role === selectedRoleValue
 
       return matchesSearch && matchesCompany && matchesRole
     })
-  }, [companies, employees, journeys, search, selectedCompanyValue, selectedRoleValue])
+  }, [
+    companies,
+    employees,
+    journeys,
+    search,
+    selectedCompanyValue,
+    selectedRoleValue,
+  ])
   const filteredJourneys = useMemo(() => {
     const selectedCompanyId =
       selectedCompanyValue === ALL_OPTION_VALUE
@@ -127,7 +143,8 @@ export function useManagement() {
     return journeys.filter((journey) => {
       const matchesSearch = matchesJourneySearch(journey, search)
       const matchesCompany =
-        selectedCompanyId === undefined || journey.companyId === selectedCompanyId
+        selectedCompanyId === undefined ||
+        journey.companyId === selectedCompanyId
 
       return matchesSearch && matchesCompany
     })
@@ -140,7 +157,14 @@ export function useManagement() {
   }, [activeTab.id, filteredCompanies, filteredEmployees, filteredJourneys])
   const tableData = useMemo(
     () => buildTableData(),
-    [activeTab.id, filteredCompanies, filteredEmployees, filteredJourneys, companies, journeys]
+    [
+      activeTab.id,
+      filteredCompanies,
+      filteredEmployees,
+      filteredJourneys,
+      companies,
+      journeys,
+    ]
   )
   const resultLabel = `${activeItems.length} registro(s) encontrado(s)`
 
@@ -279,63 +303,4 @@ export function useManagement() {
     handleTabChange,
     handleActionClick,
   }
-}
-
-function buildRemovalKey(tabId: string, entityId: number) {
-  return `${tabId}:${entityId}:remove`
-}
-
-function matchesCompanySearch(
-  company: { cnpj: string; legalName?: string; name: string; tradeName?: string | null },
-  search: string
-) {
-  const normalizedSearch = search.trim().toLowerCase()
-
-  if (!normalizedSearch) return true
-
-  return [
-    company.name,
-    company.tradeName ?? "",
-    company.legalName ?? "",
-    company.cnpj,
-  ].some((value) => value.toLowerCase().includes(normalizedSearch))
-}
-
-function matchesEmployeeSearch(params: {
-  companies: Array<{ id: number; name: string }>
-  employee: { companyId: number; email: string; journeyId: number; name: string; role: string }
-  journeys: Array<{ id: number; name: string }>
-  search: string
-}) {
-  const normalizedSearch = params.search.trim().toLowerCase()
-
-  if (!normalizedSearch) return true
-
-  const companyName =
-    params.companies.find((company) => company.id === params.employee.companyId)
-      ?.name ?? "-"
-  const journeyName =
-    params.journeys.find((journey) => journey.id === params.employee.journeyId)
-      ?.name ?? "-"
-
-  return [
-    params.employee.name,
-    params.employee.email,
-    params.employee.role,
-    companyName,
-    journeyName,
-  ].some((value) => value.toLowerCase().includes(normalizedSearch))
-}
-
-function matchesJourneySearch(
-  journey: { description?: string | null; name: string; scale: string },
-  search: string
-) {
-  const normalizedSearch = search.trim().toLowerCase()
-
-  if (!normalizedSearch) return true
-
-  return [journey.name, journey.description ?? "", journey.scale].some((value) =>
-    value.toLowerCase().includes(normalizedSearch)
-  )
 }

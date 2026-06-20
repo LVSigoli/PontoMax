@@ -2,11 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useAuth } from "@/contexts/AuthContext"
 import { useToastContext } from "@/contexts/ToastContext"
-import {
-  useAuditLogsSWR,
-  useCompaniesSWR,
-  useUsersSWR,
-} from "@/hooks/swr"
+import { useAuditLogsSWR, useCompaniesSWR, useUsersSWR } from "@/hooks/swr"
 import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
 import type { SelectionOption } from "@/components/structure/Select/types"
 import type { TableRowData } from "@/components/structure/Table/types"
@@ -23,6 +19,7 @@ import {
   buildAuditTableData,
   getAuditRowId,
 } from "../../utils"
+import { addDays, buildDateInputValue, buildUserLabel } from "./utils"
 
 type AuditFilterValue = string
 
@@ -34,9 +31,12 @@ export function useAudit() {
   const isPlatformAdmin = user?.role === "PLATFORM_ADMIN"
   const isCompanyAdmin = user?.role === "COMPANY_ADMIN"
 
-  const [selectedCompanyValue, setSelectedCompanyValue] = useState<AuditFilterValue>(
-    isPlatformAdmin ? ALL_OPTION_VALUE : String(user?.companyId ?? ALL_OPTION_VALUE)
-  )
+  const [selectedCompanyValue, setSelectedCompanyValue] =
+    useState<AuditFilterValue>(
+      isPlatformAdmin
+        ? ALL_OPTION_VALUE
+        : String(user?.companyId ?? ALL_OPTION_VALUE)
+    )
   const [selectedActorValue, setSelectedActorValue] =
     useState<AuditFilterValue>(ALL_OPTION_VALUE)
   const [selectedEntityValue, setSelectedEntityValue] =
@@ -47,10 +47,9 @@ export function useAudit() {
   const [selectedFrom, setSelectedFrom] = useState(
     buildDateInputValue(addDays(new Date(), -29))
   )
-  const [selectedTo, setSelectedTo] = useState(
-    buildDateInputValue(new Date())
-  )
-  const [selectedPageSize, setSelectedPageSize] = useState<AuditFilterValue>("20")
+  const [selectedTo, setSelectedTo] = useState(buildDateInputValue(new Date()))
+  const [selectedPageSize, setSelectedPageSize] =
+    useState<AuditFilterValue>("20")
   const [selectedPage, setSelectedPage] = useState(1)
   const [selectedAuditLog, setSelectedAuditLog] =
     useState<AuditLogApiItem | null>(null)
@@ -70,25 +69,25 @@ export function useAudit() {
     selectedActionValue === ALL_OPTION_VALUE ? undefined : selectedActionValue
   const selectedPageSizeNumber = Number(selectedPageSize)
 
-  const {
-    data: companies = [],
-    isLoading: isCompaniesLoading,
-  } = useCompaniesSWR({
-    enabled: Boolean(isPlatformAdmin),
-  })
+  const { data: companies = [], isLoading: isCompaniesLoading } =
+    useCompaniesSWR({
+      enabled: Boolean(isPlatformAdmin),
+    })
 
   const shouldLoadUsers = Boolean(selectedCompanyId) || isCompanyAdmin
-  const {
-    data: companyUsers = [],
-    isLoading: isUsersLoading,
-  } = useUsersSWR(
+  const { data: companyUsers = [], isLoading: isUsersLoading } = useUsersSWR(
     { companyId: selectedCompanyId },
     {
       enabled: shouldLoadUsers,
     }
   )
 
-  const { data: auditResponse, error, isLoading, mutate } = useAuditLogsSWR(
+  const {
+    data: auditResponse,
+    error,
+    isLoading,
+    mutate,
+  } = useAuditLogsSWR(
     {
       companyId: selectedCompanyId,
       actorUserId: selectedActorId,
@@ -138,8 +137,7 @@ export function useAudit() {
     )
   }, [companyOptions, isPlatformAdmin, selectedCompanyValue])
 
-  const canShowActorFilter =
-    !isPlatformAdmin || selectedCompanyId !== undefined
+  const canShowActorFilter = !isPlatformAdmin || selectedCompanyId !== undefined
 
   const actorOptions = useMemo<SelectionOption[]>(() => {
     if (!canShowActorFilter) return []
@@ -161,19 +159,21 @@ export function useAudit() {
 
   const entityOptions = AUDIT_ENTITY_OPTIONS
   const selectedEntityOption = useMemo<SelectionOption[]>(() => {
-    return entityOptions.filter((option) => option.value === selectedEntityValue)
+    return entityOptions.filter(
+      (option) => option.value === selectedEntityValue
+    )
   }, [entityOptions, selectedEntityValue])
 
   const actionOptions = AUDIT_ACTION_OPTIONS
   const selectedActionOption = useMemo<SelectionOption[]>(() => {
-    return actionOptions.filter((option) => option.value === selectedActionValue)
+    return actionOptions.filter(
+      (option) => option.value === selectedActionValue
+    )
   }, [actionOptions, selectedActionValue])
 
   const pageSizeOptions = AUDIT_PAGE_SIZE_OPTIONS
   const selectedPageSizeOption = useMemo<SelectionOption[]>(() => {
-    return pageSizeOptions.filter(
-      (option) => option.value === selectedPageSize
-    )
+    return pageSizeOptions.filter((option) => option.value === selectedPageSize)
   }, [pageSizeOptions, selectedPageSize])
 
   const auditSubtitle = isPlatformAdmin
@@ -204,7 +204,10 @@ export function useAudit() {
 
     showToast({
       variant: "error",
-      message: getErrorMessage(error, "Nao foi possivel carregar os eventos de auditoria."),
+      message: getErrorMessage(
+        error,
+        "Nao foi possivel carregar os eventos de auditoria."
+      ),
     })
   }, [error, showToast])
 
@@ -267,10 +270,7 @@ export function useAudit() {
     closeDetailsPanel()
   }
 
-  function handleDateChange(
-    setter: (value: string) => void,
-    value: string
-  ) {
+  function handleDateChange(setter: (value: string) => void, value: string) {
     setter(value)
     setSelectedPage(1)
     clearSelectedAuditLog()
@@ -373,26 +373,4 @@ export function useAudit() {
     selectedTo,
     tableData,
   }
-}
-
-function buildUserLabel(fullName: string, position: string | null) {
-  if (position?.trim()) {
-    return `${fullName} - ${position.trim()}`
-  }
-
-  return fullName
-}
-
-function buildDateInputValue(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-
-  return `${year}-${month}-${day}`
-}
-
-function addDays(date: Date, days: number) {
-  const nextDate = new Date(date)
-  nextDate.setDate(nextDate.getDate() + days)
-  return nextDate
 }

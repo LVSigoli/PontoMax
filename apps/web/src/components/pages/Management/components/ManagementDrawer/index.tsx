@@ -1,4 +1,3 @@
-// External Libraries
 import {
   forwardRef,
   useCallback,
@@ -7,102 +6,65 @@ import {
   useState,
 } from "react"
 
-// Components
 import { Button } from "@/components/structure/Button"
-import { Input } from "@/components/structure/Input"
-import { Picker } from "@/components/structure/Picker"
-import { Select } from "@/components/structure/Select"
-import { Skeleton } from "@/components/structure/Skeleton"
 import { SidePanel } from "@/components/structure/SidePanel"
-import { Toggle } from "@/components/structure/Toggle"
-import { Typography } from "@/components/structure/Typography"
-
-// Constants
-import { SCALE_OPTIONS } from "../../constants"
-
-// Types
-import type { SelectionOption } from "@/components/structure/Select/types"
 import type { SidePanelMethods } from "@/components/structure/SidePanel/types"
+
+import { useManagementContext } from "../../contexts/ManagementContext"
 import type { Company, Employee, Journey } from "../../types"
+import {
+  getEntityLabel,
+  makeCompanyForm,
+  makeEmployeeForm,
+  makeJourneyForm,
+} from "../../utils"
+import { CompanyFormFields } from "./components/CompanyFormFields"
+import { EmployeeFormFields } from "./components/EmployeeFormFields"
+import { JourneyFormFields } from "./components/JourneyFormFields"
+import { ManagementFormSkeleton } from "./components/ManagementFormSkeleton"
 import type {
   CompanyFormData,
   EmployeeFormData,
   FormData,
   JourneyFormData,
   ManagementDrawerMethods,
+  ManagementFormValue,
   Props,
 } from "./types"
 
-// Utils
-import { useManagementContext } from "../../contexts/ManagementContext"
-import {
-  clockToMinutes,
-  getEntityLabel,
-  makeCompanyForm,
-  makeCompanyOptions,
-  makeEmployeeForm,
-  makeJourneyForm,
-  makeJourneyOptions,
-  minutesToClock,
-  normalizeScaleCode,
-} from "../../utils"
-
 export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
-  ({ element, view }, ref) => {
-    // Refs
+  function ManagementDrawer({ element, view }, ref) {
     const sidePanelRef = useRef<SidePanelMethods>(null)
-
-    // Contexts
     const { companies, journeys, isLoading, saveEntity } =
       useManagementContext()
-
-    // States
     const [form, setForm] = useState<FormData>(() =>
       makeDrawerForm(view, element, companies, journeys)
     )
     const [isSubmitting, setIsSubmitting] = useState(false)
-
-    // Constants
-    const drawerTitle = `Cadastro de ${getEntityLabel(view.id)}`
     const mode = element ? "edit" : "create"
-    const description =
-      mode === "create"
-        ? `Adicione um novo ${getEntityLabel(view.id)}`
-        : `Edite os dados de ${getEntityLabel(view.id)}`
+    const entityLabel = getEntityLabel(view.id)
 
-    const getInitialForm = useCallback(() => {
-      return makeDrawerForm(view, element, companies, journeys)
-    }, [companies, element, journeys, view])
-
-    const handleClose = useCallback(() => {
-      sidePanelRef.current?.close()
-    }, [])
-
-    const handleOpen = useCallback(() => {
+    const getInitialForm = useCallback(
+      () => makeDrawerForm(view, element, companies, journeys),
+      [companies, element, journeys, view]
+    )
+    const close = useCallback(() => sidePanelRef.current?.close(), [])
+    const open = useCallback(() => {
       setForm(getInitialForm())
       sidePanelRef.current?.open()
     }, [getInitialForm])
-
-    const handleToggle = useCallback(() => {
+    const toggle = useCallback(() => {
       setForm(getInitialForm())
       sidePanelRef.current?.toggle()
     }, [getInitialForm])
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        close: handleClose,
-        open: handleOpen,
-        toggle: handleToggle,
-      }),
-      [handleClose, handleOpen, handleToggle]
-    )
+    useImperativeHandle(ref, () => ({ close, open, toggle }), [
+      close,
+      open,
+      toggle,
+    ])
 
-    function handleCancel() {
-      handleClose()
-    }
-
-    function handleChange(field: string, value: string | number | boolean) {
+    function handleChange(field: string, value: ManagementFormValue) {
       setForm((currentForm) => ({
         ...currentForm,
         [field]: value,
@@ -115,285 +77,60 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
       try {
         setIsSubmitting(true)
         await saveEntity(view.id, element, form)
-
-        handleClose()
-      } catch {
+        close()
       } finally {
         setIsSubmitting(false)
       }
     }
 
     function renderForm() {
-      if (isLoading) {
-        return (
-          <div className="grid gap-3">
-            {Array.from({ length: 6 }, (_, index) => (
-              <div
-                key={`management-form-skeleton-${index}`}
-                className="grid gap-2"
-              >
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-11 w-full rounded-xl" />
-              </div>
-            ))}
-          </div>
-        )
-      }
+      if (isLoading) return <ManagementFormSkeleton />
 
       if (view.id === "companies") {
-        const companyForm = form as CompanyFormData
-
         return (
-          <>
-            <Input
-              title="Nome"
-              value={companyForm.name}
-              placeholder="Digite o nome"
-              onChange={(value) => handleChange("name", value)}
-            />
-
-            <Input
-              title="CNPJ"
-              value={companyForm.cnpj}
-              mask="cnpj"
-              placeholder="00.000.000/0000-00"
-              onChange={(value) => handleChange("cnpj", value)}
-            />
-
-            <Toggle
-              label="Empresa ativa?"
-              active={companyForm.isActive ?? true}
-              onChange={(value) => handleChange("isActive", value)}
-            />
-          </>
+          <CompanyFormFields
+            form={form as CompanyFormData}
+            onChange={handleChange}
+          />
         )
       }
 
       if (view.id === "employees") {
-        const employeeForm = form as EmployeeFormData
-        const companyOptions = makeCompanyOptions(companies)
-        const companyJourneys = journeys.filter(
-          (journey) => journey.companyId === employeeForm.companyId
-        )
-        const journeyOptions = makeJourneyOptions(companyJourneys)
-
         return (
-          <>
-            <Input
-              title="Nome"
-              value={employeeForm.name}
-              placeholder="Informe o nome"
-              onChange={(value) => handleChange("name", value)}
-            />
-
-            <Input
-              title="CPF"
-              value={employeeForm.cpf}
-              mask="cpf"
-              placeholder="000.000.000-00"
-              onChange={(value) => handleChange("cpf", value)}
-            />
-
-            <Input
-              title="E-mail"
-              value={employeeForm.email}
-              mask="email"
-              placeholder="Informe o e-mail"
-              onChange={(value) => handleChange("email", value)}
-            />
-
-            <Input
-              title="Cargo"
-              value={employeeForm.role}
-              placeholder="Informe o cargo"
-              onChange={(value) => handleChange("role", value)}
-            />
-
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {renderSelect({
-                label: "Selecione uma empresa",
-                options: companyOptions,
-                value: String(employeeForm.companyId),
-                onChange: (value) => {
-                  const companyId = Number(value)
-                  const journeyId =
-                    journeys.find((journey) => journey.companyId === companyId)
-                      ?.id ?? 0
-
-                  setForm((currentForm) => ({
-                    ...currentForm,
-                    companyId,
-                    journeyId,
-                  }))
-                },
-              })}
-
-              {renderSelect({
-                label: "Selecione uma jornada",
-                options: journeyOptions,
-                value: String(employeeForm.journeyId),
-                onChange: (value) => handleChange("journeyId", Number(value)),
-              })}
-            </div>
-
-            <Toggle
-              label="Acesso ao painel gerencial?"
-              active={employeeForm.managerAccess}
-              onChange={(value) => handleChange("managerAccess", value)}
-            />
-
-            <Toggle
-              label="Funcionario ativo?"
-              active={employeeForm.isActive}
-              onChange={(value) => handleChange("isActive", value)}
-            />
-          </>
+          <EmployeeFormFields
+            form={form as EmployeeFormData}
+            companies={companies}
+            journeys={journeys}
+            onChange={handleChange}
+            onCompanyChange={(companyId, journeyId) =>
+              setForm((currentForm) => ({
+                ...currentForm,
+                companyId,
+                journeyId,
+              }))
+            }
+          />
         )
       }
 
-      const journeyForm = form as JourneyFormData
-      const companyOptions = makeCompanyOptions(companies)
-      const dailyWorkloadValue = minutesToClock(
-        journeyForm.dailyWorkMinutes ?? 0
-      )
-
       return (
-        <>
-          <Toggle
-            label="Horario flexivel?"
-            active={journeyForm.flexible}
-            onChange={(value) => handleChange("flexible", value)}
-          />
-
-          <Input
-            title="Nome"
-            value={journeyForm.name}
-            placeholder="Informe o nome"
-            onChange={(value) => handleChange("name", value)}
-          />
-
-          {renderSelect({
-            label: "Selecione uma empresa",
-            options: companyOptions,
-            value: String(journeyForm.companyId ?? ""),
-            onChange: (value) => handleChange("companyId", Number(value)),
-          })}
-
-          {journeyForm.flexible ? (
-            <Picker
-              type="time"
-              label="Informe a quantidade de horas a serem trabalhadas"
-              value={dailyWorkloadValue}
-              onChange={(value) =>
-                handleChange("dailyWorkMinutes", clockToMinutes(value))
-              }
-            />
-          ) : (
-            <>
-              <Picker
-                type="time"
-                label="Informe a hora de entrada"
-                value={journeyForm.startTime}
-                onChange={(value) => handleChange("startTime", value)}
-              />
-
-              <Picker
-                type="time"
-                label="Informe a hora de saida"
-                value={journeyForm.endTime}
-                onChange={(value) => handleChange("endTime", value)}
-              />
-
-              <Picker
-                type="interval"
-                label="Informe o tempo de intervalo"
-                value={journeyForm.interval}
-                onChange={(value) => handleChange("interval", value)}
-              />
-            </>
-          )}
-
-          <Input
-            title="Escala"
-            value={journeyForm.scale}
-            placeholder="Ex.: 5X2, 4X2 ou 12X36"
-            onChange={(value) =>
-              handleChange("scale", normalizeScaleCode(value))
-            }
-          />
-
-          <div className="grid gap-2">
-            <Typography
-              variant="b2"
-              value="Atalhos de escala"
-              className="font-semibold"
-            />
-
-            <div className="flex flex-wrap gap-2">
-              {SCALE_OPTIONS.map((option) => (
-                <Button
-                  key={option.value}
-                  value={option.label}
-                  color="primary"
-                  variant={
-                    journeyForm.scale === option.value ? "filled" : "outlined"
-                  }
-                  className="h-9 px-3"
-                  onClick={() =>
-                    handleChange("scale", normalizeScaleCode(option.value))
-                  }
-                />
-              ))}
-            </div>
-
-            <Typography
-              variant="legal"
-              value="Você pode editar a escala manualmente no formato NxM, como 4X2."
-              className="text-content-muted"
-            />
-          </div>
-
-          <Toggle
-            label="Jornada ativa?"
-            active={journeyForm.isActive ?? true}
-            onChange={(value) => handleChange("isActive", value)}
-          />
-        </>
-      )
-    }
-
-    function renderSelect({
-      label,
-      options,
-      value,
-      onChange: handleSelectChange,
-    }: {
-      label: string
-      options: SelectionOption[]
-      value: string
-      onChange: (value: string) => void
-    }) {
-      return (
-        <div className="grid gap-1">
-          <Typography variant="b2" value={label} />
-          <Select
-            options={options}
-            selectedItem={options.filter((option) => option.value === value)}
-            buttonClassName="border-border-default"
-            onSelectionChange={(selection) => {
-              const selectedValue = selection[0]?.value
-              if (selectedValue) handleSelectChange(selectedValue)
-            }}
-          />
-        </div>
+        <JourneyFormFields
+          form={form as JourneyFormData}
+          companies={companies}
+          onChange={handleChange}
+        />
       )
     }
 
     return (
       <SidePanel
         ref={sidePanelRef}
-        title={drawerTitle}
-        subtitle={description}
+        title={`Cadastro de ${entityLabel}`}
+        subtitle={
+          mode === "create"
+            ? `Adicione um novo ${entityLabel}`
+            : `Edite os dados de ${entityLabel}`
+        }
         widthClassName="max-w-[504px]"
         className="bg-surface-page"
       >
@@ -406,7 +143,6 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
               {renderForm()}
             </form>
           </div>
-
           <footer className="grid grid-cols-2 gap-3 border-t border-border-subtle bg-surface-page px-4 py-5 sm:px-5">
             <Button
               fitWidth
@@ -414,9 +150,8 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
               color="primary"
               variant="outlined"
               disabled={isSubmitting}
-              onClick={handleCancel}
+              onClick={close}
             />
-
             <Button
               fitWidth
               value="Salvar"
@@ -430,8 +165,6 @@ export const ManagementDrawer = forwardRef<ManagementDrawerMethods, Props>(
   }
 )
 
-ManagementDrawer.displayName = "ManagementDrawer"
-
 function makeDrawerForm(
   view: Props["view"],
   element: Props["element"],
@@ -442,6 +175,5 @@ function makeDrawerForm(
   if (view.id === "employees") {
     return makeEmployeeForm(companies, journeys, element as Employee)
   }
-
   return makeJourneyForm(element as Journey)
 }
