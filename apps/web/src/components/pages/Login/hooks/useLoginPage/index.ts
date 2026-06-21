@@ -13,12 +13,12 @@ export function useLoginPage() {
   const router = useRouter()
   const { user, isValidating } = useAuth()
 
+  // Constants
   const view = router.isReady ? getLoginView(router.query.view) : "login"
 
+  // Effects
   useEffect(() => {
-    if (!router.isReady) return
-    if (isValidating) return
-    if (!user) return
+    if (!router.isReady || !user || isValidating) return
 
     void router.replace("/")
   }, [isValidating, router, user])
